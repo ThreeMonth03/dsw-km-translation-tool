@@ -79,6 +79,12 @@ class TranslationOutputLayout:
         return self.output_root / "builds" / "final_translated.po"
 
     @property
+    def final_km_path(self) -> Path:
+        """Return the generated final KM path."""
+
+        return self.output_root / "builds" / "final_translated.km"
+
+    @property
     def diff_path(self) -> Path:
         """Return the generated review diff path."""
 

@@ -11,16 +11,18 @@ TARGET_LANG ?= zh_Hant
 OUTPUT_ROOT ?= translation/$(TARGET_LANG)
 TREE_DIR ?= $(OUTPUT_ROOT)/tree
 FINAL_PO ?= $(OUTPUT_ROOT)/builds/final_translated.po
+FINAL_KM ?= $(OUTPUT_ROOT)/builds/final_translated.km
 REPORT ?= $(OUTPUT_ROOT)/reports/final_report.json
 TREE_JSON ?= $(OUTPUT_ROOT)/reports/tree_snapshot.json
 REVIEW_DIFF ?= $(OUTPUT_ROOT)/reviews/final_translated.diff
 OUTLINE_MD ?= $(TREE_DIR)/outline.md
 SHARED_BLOCKS_OUTLINE_MD ?= $(TREE_DIR)/shared_blocks_outline.md
 REVIEW_FLAGS ?=
+PO_TO_KM_FLAGS ?=
 STATUS_LIMIT ?= 5
 SYNC_GROUP ?= shared-block
 
-.PHONY: help venv install-dev install-hooks compile format format-check lint test test-infra test-translation export-tree export-tree-force status sync sync-watch tree-to-po review-po validate workflow
+.PHONY: help venv install-dev install-hooks compile format format-check lint test test-infra test-translation export-tree export-tree-force status sync sync-watch tree-to-po po-to-km review-po validate workflow
 
 venv: $(VENV_PYTHON)
 
@@ -46,6 +48,7 @@ help:
 	'  sync              Sync shared strings and refresh $(FINAL_PO) + $(REVIEW_DIFF) + $(OUTLINE_MD) + $(TREE_DIR)/shared_blocks/ + $(SHARED_BLOCKS_OUTLINE_MD)' \
 	'  sync-watch        Watch editable inputs with watchdog' \
 	'  tree-to-po        Build $(FINAL_PO) from $(TREE_DIR)' \
+	'  po-to-km          Build $(FINAL_KM) from $(FINAL_PO) + $(MODEL)' \
 	'  review-po         Review how $(FINAL_PO) differs from $(PO)' \
 	'  validate          Validate $(FINAL_PO) against $(MODEL)' \
 	'  workflow          Run the optional end-to-end smoke workflow'
@@ -137,6 +140,15 @@ tree-to-po: venv
 		--out-po $(FINAL_PO) \
 		--source-lang $(SOURCE_LANG) \
 		--target-lang $(TARGET_LANG)
+
+po-to-km: venv
+	$(PYTHON) src/po_to_km.py \
+		--translated-po $(FINAL_PO) \
+		--original-km $(MODEL) \
+		--out-km $(FINAL_KM) \
+		--source-lang $(SOURCE_LANG) \
+		--target-lang $(TARGET_LANG) \
+		$(PO_TO_KM_FLAGS)
 
 review-po: venv
 	$(PYTHON) src/review_po_changes.py \

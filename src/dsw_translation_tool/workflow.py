@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
 from .data_models import (
+    KmBuildResult,
     OutlineBuildResult,
     PoBuildResult,
     PoDiffReviewResult,
@@ -18,6 +20,7 @@ from .data_models import (
     WorkflowContext,
 )
 from .knowledge_model_service import KnowledgeModelService
+from .knowledge_model_support import KnowledgeModelBundleWriter
 from .outline import TranslationOutlineBuilder
 from .po import PoCatalogWriter
 from .review import PoDiffReviewer
@@ -39,6 +42,7 @@ class TranslationWorkflowService:
         tree_repository: Optional injected translation tree repository.
         model_service: Optional injected model service class or instance.
         po_writer: Optional injected PO writer.
+        km_writer: Optional injected KM writer.
         reviewer: Optional injected PO diff reviewer.
         synchronizer: Optional injected shared-string synchronizer.
         outline_builder: Optional injected outline builder.
@@ -54,6 +58,7 @@ class TranslationWorkflowService:
         tree_repository: TranslationTreeRepository | None = None,
         model_service: KnowledgeModelService | None = None,
         po_writer: PoCatalogWriter | None = None,
+        km_writer: KnowledgeModelBundleWriter | None = None,
         reviewer: PoDiffReviewer | None = None,
         synchronizer: SharedStringSynchronizer | None = None,
         outline_builder: TranslationOutlineBuilder | None = None,
@@ -69,6 +74,7 @@ class TranslationWorkflowService:
         )
         self.model_service = model_service or KnowledgeModelService()
         self.po_writer = po_writer or PoCatalogWriter()
+        self.km_writer = km_writer or KnowledgeModelBundleWriter()
         self.reviewer = reviewer or PoDiffReviewer()
         self.synchronizer = synchronizer or SharedStringSynchronizer(
             tree_repository=self.tree_repository,
@@ -202,6 +208,77 @@ class TranslationWorkflowService:
             validation=tree_validation,
         )
 
+    def build_km_from_po(
+        self,
+        translated_po_path: str,
+        original_model_path: str,
+        out_model_path: str,
+        output_organization_id: str | None = None,
+        output_km_id: str | None = None,
+        output_name: str | None = None,
+    ) -> KmBuildResult:
+        """Generate a translated KM bundle directly from a translated PO file.
+
+        Args:
+            translated_po_path: Translated PO file containing target `msgstr`
+                values.
+            original_model_path: Original KM bundle used as the structural
+                source.
+            out_model_path: Destination path for the generated KM bundle.
+            output_organization_id: Optional organization ID for the generated
+                translated KM. Defaults to the source organization.
+            output_km_id: Optional KM ID for the generated translated KM.
+                Defaults to the source KM ID suffixed with target language.
+            output_name: Optional display name for the generated translated KM.
+                Defaults to the source name suffixed with target language.
+
+        Returns:
+            Result containing generated KM content and application summary.
+
+        Raises:
+            ValueError: If the PO file does not validate against the original
+                KM model or if the generated KM cannot be verified.
+        """
+
+        po_entries = self.context_builder.parse_po_entries(translated_po_path)
+        report = self.validate_po_against_model(
+            po_path=translated_po_path,
+            model_path=original_model_path,
+        )
+        if self._report_has_model_errors(report):
+            preview = "\n".join(self._format_model_validation_preview(report)[:50])
+            raise ValueError(f"PO validation against KM failed:\n{preview}")
+
+        km_content, translations = self.km_writer.rewrite_translations(
+            original_model_path=original_model_path,
+            po_entries=po_entries,
+            output_organization_id=output_organization_id,
+            output_km_id=output_km_id,
+            output_name=output_name,
+            target_lang=self.target_lang,
+        )
+        out_km_file = Path(out_model_path)
+        out_km_file.parent.mkdir(parents=True, exist_ok=True)
+        out_km_file.write_text(km_content, encoding="utf-8")
+
+        self._verify_generated_km_output(
+            po_entries=po_entries,
+            generated_model_path=str(out_km_file),
+        )
+        generated_root = json.loads(km_content)
+        return KmBuildResult(
+            km_content=km_content,
+            translations=translations,
+            total_entries=len(po_entries),
+            translated_entries=len(translations),
+            preserved_entries=len(po_entries) - len(translations),
+            output_km=out_km_file,
+            output_package_id=generated_root.get("id"),
+            output_organization_id=generated_root.get("organizationId"),
+            output_km_id=generated_root.get("kmId"),
+            output_name=generated_root.get("name"),
+        )
+
     def collect_status(self, tree_dir: str) -> TranslationStatusReport:
         """Collect translation status from the exported tree.
 
@@ -297,6 +374,74 @@ class TranslationWorkflowService:
             result,
             output_outline=str(outline_result.output_outline),
         )
+
+    @staticmethod
+    def _report_has_model_errors(report: dict[str, Any]) -> bool:
+        """Return whether a PO-versus-KM validation report contains errors."""
+
+        return any(report.get(key, 0) for key in ("missingEntities", "missingFields", "mismatches"))
+
+    @staticmethod
+    def _format_model_validation_preview(report: dict[str, Any]) -> list[str]:
+        """Build a human-readable preview from a PO-versus-KM validation report."""
+
+        preview: list[str] = []
+        for detail in report.get("missingEntitiesDetails", ()):
+            preview.append(f"Missing entity: {detail['uuid']}:{detail['field']}")
+        for detail in report.get("missingFieldsDetails", ()):
+            preview.append(f"Missing field: {detail['uuid']}:{detail['field']}")
+        for detail in report.get("mismatchesDetails", ()):
+            preview.append(
+                "Source mismatch: "
+                f"{detail['uuid']}:{detail['field']} "
+                f"PO msgid={detail['msgid']!r} KM={detail['actual']!r}"
+            )
+        if not preview:
+            preview.append("Unknown validation error.")
+        return preview
+
+    def _verify_generated_km_output(
+        self,
+        po_entries: list,
+        generated_model_path: str,
+    ) -> None:
+        """Verify that generated KM text matches the PO-driven expected state.
+
+        Args:
+            po_entries: Flattened PO entries used to build the output.
+            generated_model_path: Generated KM path to reload and verify.
+
+        Raises:
+            ValueError: If any final KM field does not match its expected PO
+                translation or preserved source text.
+        """
+
+        latest_by_uuid, _ = self.model_service.load_model(generated_model_path)
+        mismatches: list[str] = []
+        for entry in po_entries:
+            expected_text = self._normalize_expected_translation(entry.msgstr or entry.msgid)
+            actual_text = self.model_service.get_event_text_value(
+                latest_by_uuid.get(entry.uuid),
+                entry.field,
+            )
+            if actual_text == expected_text:
+                continue
+            mismatches.append(
+                f"{entry.uuid}:{entry.field} expected {expected_text!r} but got {actual_text!r}"
+            )
+            if len(mismatches) >= 50:
+                break
+
+        if mismatches:
+            raise ValueError("Generated KM verification failed:\n" + "\n".join(mismatches))
+
+    @staticmethod
+    def _normalize_expected_translation(value: Any) -> Any:
+        """Normalize expected verification text using KM string rules."""
+
+        if not isinstance(value, str):
+            return value
+        return value.replace("\u2028", "").replace("\u2029", "")
 
     def build_shared_blocks_markdown(
         self,

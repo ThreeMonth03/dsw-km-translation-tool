@@ -185,6 +185,36 @@ def run_tree_to_po_cli(
     )
 
 
+def run_po_to_km_cli(
+    repo_root: Path,
+    translated_po_path: Path,
+    original_model_path: Path,
+    output_km_path: Path,
+) -> subprocess.CompletedProcess[str]:
+    """Run the PO-to-KM CLI script for one test scenario.
+
+    Args:
+        repo_root: Repository root used as subprocess cwd.
+        translated_po_path: Source translated PO path.
+        original_model_path: Original KM bundle path.
+        output_km_path: Generated KM output path.
+
+    Returns:
+        Completed subprocess result.
+    """
+
+    return run_cli_script(
+        repo_root,
+        "src/po_to_km.py",
+        "--translated-po",
+        str(translated_po_path),
+        "--original-km",
+        str(original_model_path),
+        "--out-km",
+        str(output_km_path),
+    )
+
+
 def run_sync_cli(
     repo_root: Path,
     tree_dir: Path,

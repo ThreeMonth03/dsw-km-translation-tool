@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Protocol
 
 from .constants import SHARED_BLOCK_CONTEXT_FILENAME, TRANSLATION_FILENAME
-from .layout import DEFAULT_PO_PATH, DEFAULT_SOURCE_LANG, DEFAULT_TARGET_LANG
+from .layout import DEFAULT_MODEL_PATH, DEFAULT_PO_PATH, DEFAULT_SOURCE_LANG, DEFAULT_TARGET_LANG
 
 DEFAULT_SYNC_COMMIT_MESSAGE = "chore(sync): refresh translation artifacts"
 GITHUB_BOT_NAME = "github-actions[bot]"
@@ -120,6 +120,18 @@ class CiSyncCommitConfig:
         return self.translation_root_dir / "builds" / "final_translated.po"
 
     @property
+    def final_km_path(self) -> Path:
+        """Return the generated translated KM output path."""
+
+        return self.translation_root_dir / "builds" / "final_translated.km"
+
+    @property
+    def final_km_git_path(self) -> str:
+        """Return the generated KM path relative to the host repo."""
+
+        return self.final_km_path.relative_to(self.host_repo_dir).as_posix()
+
+    @property
     def diff_path(self) -> Path:
         """Return the generated review diff path."""
 
@@ -155,6 +167,12 @@ class CiSyncCommitConfig:
 
         return self.tooling_repo_dir / DEFAULT_PO_PATH
 
+    @property
+    def original_model_path(self) -> Path:
+        """Return the canonical original KM path inside the tooling repository."""
+
+        return self.tooling_repo_dir / DEFAULT_MODEL_PATH
+
     def validate(self) -> None:
         """Validate that the requested sync operation can run locally.
 
@@ -188,6 +206,8 @@ class CiSyncCommitConfig:
             )
         if not self.original_po_path.exists():
             raise CiSyncError(f"Missing original PO file: {self.original_po_path}")
+        if not self.original_model_path.exists():
+            raise CiSyncError(f"Missing original KM file: {self.original_model_path}")
 
 
 def default_command_runner(
@@ -246,6 +266,13 @@ def run_ci_sync_commit(
     _run_sync_with_origin_restore(config, runner)
     _run_checked(
         runner,
+        _build_po_to_km_command(config),
+        cwd=config.tooling_repo_dir,
+        description="build translated KM artifact",
+        echo_output=True,
+    )
+    _run_checked(
+        runner,
         _build_translation_test_command(config),
         cwd=config.tooling_repo_dir,
         env={"DSW_COLLAB_OUTPUT_ROOT": str(config.translation_root_dir)},
@@ -253,6 +280,7 @@ def run_ci_sync_commit(
         echo_output=True,
     )
 
+    _mark_generated_km_as_intent_to_add(config, runner)
     if not _translation_root_has_tracked_changes(config, runner):
         print("[ci-sync] No tracked translation changes detected after sync.")
         return False
@@ -359,6 +387,32 @@ def _build_sync_command(config: CiSyncCommitConfig) -> list[str]:
     ]
 
 
+def _build_po_to_km_command(config: CiSyncCommitConfig) -> list[str]:
+    """Build the explicit PO-to-KM CLI command for one CI operation.
+
+    Args:
+        config: Sync-and-commit configuration.
+
+    Returns:
+        Command argument vector.
+    """
+
+    return [
+        str(config.tooling_python_path),
+        "src/po_to_km.py",
+        "--translated-po",
+        str(config.final_po_path),
+        "--original-km",
+        str(config.original_model_path),
+        "--out-km",
+        str(config.final_km_path),
+        "--source-lang",
+        config.source_lang,
+        "--target-lang",
+        config.target_lang,
+    ]
+
+
 def _build_translation_test_command(config: CiSyncCommitConfig) -> list[str]:
     """Build the explicit translation-test command for one CI operation.
 
@@ -375,6 +429,25 @@ def _build_translation_test_command(config: CiSyncCommitConfig) -> list[str]:
         "pytest",
         "tests/translation",
     ]
+
+
+def _mark_generated_km_as_intent_to_add(
+    config: CiSyncCommitConfig,
+    runner: CommandRunner,
+) -> None:
+    """Make a newly generated KM visible to tracked-only status checks.
+
+    Args:
+        config: Sync-and-commit configuration.
+        runner: Injectable subprocess runner.
+    """
+
+    _run_checked(
+        runner,
+        ["git", "add", "-N", "--", config.final_km_git_path],
+        cwd=config.host_repo_dir,
+        description="mark generated KM artifact for change detection",
+    )
 
 
 def _translation_root_has_tracked_changes(

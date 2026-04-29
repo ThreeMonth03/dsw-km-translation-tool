@@ -290,6 +290,10 @@ Both workflows share the same policy:
 
 The shared helper behind both workflows lives at
 [`src/ci_sync_commit.py`](./src/ci_sync_commit.py).
+After shared-string sync builds `builds/final_translated.po`, that helper also
+builds `builds/final_translated.km` with the translated KM identity, so
+external repositories can gain the KM artifact without changing their copied
+workflow YAML.
 
 The auto-sync writer is intentionally aggressive when a checked-in translation
 source file is malformed in CI:
@@ -343,6 +347,35 @@ make tree-to-po
 
 This also stops and restores the affected `translation.md` if a fence is
 broken or text appears outside fenced translation blocks.
+
+#### Build KM From Final PO
+
+```shell
+make po-to-km
+```
+
+This rewrites `translation/zh_Hant/builds/final_translated.po` back into
+`translation/zh_Hant/builds/final_translated.km` by updating the original
+`files/dsw_root_2.7.0.km` bundle at the event fields that define the current
+translatable text.
+
+The generated KM is given a translated package identity so it can be imported
+next to the official source KM without colliding with it. By default,
+`dsw:root:2.7.0` becomes `dsw:root-zh-hant:2.7.0`, and the display name becomes
+`Common DSW Knowledge Model (zh_Hant)`.
+
+You can override the generated identity directly if needed:
+
+```shell
+python src/po_to_km.py \
+  --output-organization-id local \
+  --output-km-id root-zh-hant \
+  --output-name "Common DSW Knowledge Model (zh_Hant)"
+```
+
+Empty `msgstr` values are treated as untranslated and keep the original KM
+source text. This output is a translated KM bundle, not a DSW locale ZIP
+package.
 
 #### Review PO Differences
 

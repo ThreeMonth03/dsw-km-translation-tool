@@ -60,3 +60,34 @@ class PoBuildResult:
     translations: dict[tuple[str, str], str]
     validation: TreeValidationResult
     output_po: Path
+
+
+@dataclass(frozen=True)
+class KmBuildResult:
+    """Result of rebuilding a KM file from a translated PO file.
+
+    Args:
+        km_content: Generated KM JSON text.
+        translations: Applied non-empty `(uuid, field)` translations.
+        total_entries: Total flattened PO entry count scanned from the PO file.
+        translated_entries: Number of entries whose non-empty `msgstr` was
+            applied to the KM output.
+        preserved_entries: Number of entries that kept the original KM source
+            text because the PO `msgstr` was empty.
+        output_km: Generated KM file path.
+        output_package_id: Generated top-level package bundle ID.
+        output_organization_id: Generated organization ID.
+        output_km_id: Generated KM ID.
+        output_name: Generated display name.
+    """
+
+    km_content: str
+    translations: dict[tuple[str, str], str]
+    total_entries: int
+    translated_entries: int
+    preserved_entries: int
+    output_km: Path
+    output_package_id: str | None = None
+    output_organization_id: str | None = None
+    output_km_id: str | None = None
+    output_name: str | None = None

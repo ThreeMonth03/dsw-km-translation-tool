@@ -23,10 +23,11 @@ from .tree import (
     TreeScanResult,
     TreeValidationResult,
 )
-from .workflow import PoBuildResult, WorkflowContext
+from .workflow import KmBuildResult, PoBuildResult, WorkflowContext
 
 __all__ = [
     "ModelInfo",
+    "KmBuildResult",
     "OutlineBuildResult",
     "PoBlock",
     "PoBuildResult",
