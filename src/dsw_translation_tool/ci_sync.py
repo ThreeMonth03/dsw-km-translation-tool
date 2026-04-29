@@ -11,7 +11,13 @@ from pathlib import Path
 from typing import Protocol
 
 from .constants import SHARED_BLOCK_CONTEXT_FILENAME, TRANSLATION_FILENAME
-from .layout import DEFAULT_MODEL_PATH, DEFAULT_PO_PATH, DEFAULT_SOURCE_LANG, DEFAULT_TARGET_LANG
+from .layout import (
+    DEFAULT_MODEL_PATH,
+    DEFAULT_PO_PATH,
+    DEFAULT_SOURCE_LANG,
+    DEFAULT_TARGET_LANG,
+    TranslationOutputLayout,
+)
 
 DEFAULT_SYNC_COMMIT_MESSAGE = "chore(sync): refresh translation artifacts"
 GITHUB_BOT_NAME = "github-actions[bot]"
@@ -108,22 +114,31 @@ class CiSyncCommitConfig:
         return (self.host_repo_dir / self.translation_root_path).resolve()
 
     @property
+    def output_layout(self) -> TranslationOutputLayout:
+        """Return the shared artifact layout rooted in the host repository."""
+
+        return TranslationOutputLayout(
+            output_root=self.translation_root_dir,
+            target_lang=self.target_lang,
+        )
+
+    @property
     def tree_dir(self) -> Path:
         """Return the absolute translation tree directory."""
 
-        return self.translation_root_dir / "tree"
+        return self.output_layout.tree_dir
 
     @property
     def final_po_path(self) -> Path:
         """Return the generated PO output path."""
 
-        return self.translation_root_dir / "builds" / "final_translated.po"
+        return self.output_layout.final_po_path
 
     @property
     def final_km_path(self) -> Path:
         """Return the generated translated KM output path."""
 
-        return self.translation_root_dir / "builds" / "final_translated.km"
+        return self.output_layout.final_km_path
 
     @property
     def final_km_git_path(self) -> str:
@@ -135,25 +150,25 @@ class CiSyncCommitConfig:
     def diff_path(self) -> Path:
         """Return the generated review diff path."""
 
-        return self.translation_root_dir / "reviews" / "final_translated.diff"
+        return self.output_layout.diff_path
 
     @property
     def outline_path(self) -> Path:
         """Return the generated outline markdown path."""
 
-        return self.tree_dir / "outline.md"
+        return self.output_layout.outline_path
 
     @property
     def shared_blocks_dir(self) -> Path:
         """Return the canonical split shared-block directory root."""
 
-        return self.tree_dir / "shared_blocks"
+        return self.output_layout.shared_blocks_dir
 
     @property
     def shared_blocks_outline_path(self) -> Path:
         """Return the compact shared-block outline markdown path."""
 
-        return self.tree_dir / "shared_blocks_outline.md"
+        return self.output_layout.shared_blocks_outline_path
 
     @property
     def tooling_python_path(self) -> Path:
