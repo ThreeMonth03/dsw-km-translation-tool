@@ -14,6 +14,13 @@ from .outline import TranslationOutlineBuilder
 from .po import PoCatalogParser, PoCatalogWriter
 from .review import PoDiffReviewer
 from .sync import SharedStringSynchronizer
+from .translation_repository_config import (
+    TranslationRepositoryConfig,
+    TranslationRepositoryConfigError,
+    load_translation_repository_config,
+    version_branch,
+    version_paths,
+)
 from .tree import TranslationTreeRepository
 from .workflow import TranslationWorkflowService
 
@@ -32,8 +39,13 @@ __all__ = [
     "TRANSLATION_FILENAME",
     "TranslationOutputLayout",
     "TranslationOutlineBuilder",
+    "TranslationRepositoryConfig",
+    "TranslationRepositoryConfigError",
     "TranslationTreeRepository",
     "TranslationWorkflowService",
     "UUID_FILENAME",
     "ZERO_UUID",
+    "load_translation_repository_config",
+    "version_branch",
+    "version_paths",
 ]
