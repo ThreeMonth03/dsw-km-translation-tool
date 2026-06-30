@@ -105,6 +105,7 @@ def promote_new_km_versions(
     current_branch = _git_current_branch(host_repo, run)
     all_new_versions = tuple(plan.version for plan in plans)
     update_supported_versions_in_config(resolved_config_path, all_new_versions)
+    updated_config_text = resolved_config_path.read_text(encoding="utf-8")
     _commit_and_push_current_branch(
         repo_root=host_repo,
         branch=current_branch,
@@ -121,7 +122,7 @@ def promote_new_km_versions(
             version=plan.version,
             branch=plan.branch,
             base_branch=plan.base_branch,
-            operations_config_path=resolved_config_path,
+            operations_config_text=updated_config_text,
             registry_token=registry_token,
             runner=run,
         )
@@ -213,7 +214,7 @@ def _promote_one_version(
     version: str,
     branch: str,
     base_branch: str,
-    operations_config_path: Path,
+    operations_config_text: str,
     registry_token: str,
     runner: CommandRunner,
 ) -> None:
@@ -229,7 +230,7 @@ def _promote_one_version(
         cwd=repo_root,
         description=f"create version branch {branch}",
     )
-    _copy_file(operations_config_path, _resolve_repo_path(repo_root, config_path))
+    _write_text(_resolve_repo_path(repo_root, config_path), operations_config_text)
     repository_config = load_translation_repository_config(
         _resolve_repo_path(repo_root, config_path)
     )
@@ -520,9 +521,9 @@ def _resolve_repo_path(repo_root: Path, path: Path) -> Path:
     return (repo_root / path).resolve()
 
 
-def _copy_file(source: Path, destination: Path) -> None:
+def _write_text(destination: Path, text: str) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
+    destination.write_text(text, encoding="utf-8")
 
 
 def _tooling_python(tooling_repo: Path) -> Path:
