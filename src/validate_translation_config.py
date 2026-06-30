@@ -52,6 +52,7 @@ def main() -> None:
         f"Supported versions: {', '.join(versions)}",
         f"Latest branch: {version_branch(config, latest_version)}",
         f"Latest source KM path: {latest_paths.source_km_path.as_posix()}",
+        f"Registry API: {config.registry.api_url}",
         f"Translation tree path: {latest_paths.translation_tree_dir.as_posix()}",
         f"Protected chapters: {', '.join(config.migration.protected_chapters) or '(none)'}",
     ]

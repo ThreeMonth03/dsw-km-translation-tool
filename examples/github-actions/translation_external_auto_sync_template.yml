@@ -63,6 +63,13 @@ jobs:
         working-directory: tooling-repo
         run: make install-dev BOOTSTRAP_PYTHON=python
 
+      - name: Discover upstream KM versions
+        run: >-
+          tooling-repo/.venv/bin/python tooling-repo/src/discover_km_versions.py
+          --repo-root "$GITHUB_WORKSPACE/translation-repo"
+          --config "${{ env.TRANSLATION_CONFIG }}"
+          --report reviews/km_version_discovery.json
+
       - name: Pull latest Localize PO snapshot
         run: >-
           tooling-repo/.venv/bin/python tooling-repo/src/pull_localize_po.py

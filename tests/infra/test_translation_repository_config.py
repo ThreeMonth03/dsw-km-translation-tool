@@ -52,6 +52,9 @@ localize:
   download_url: https://localize.ds-wizard.org/download/knowledge-models/common-dsw-knowledge-model/zh_Hant/
   repository: https://github.com/ds-wizard/dsw-root-locales.git
 
+registry:
+  api_url: https://api.registry.ds-wizard.org
+
 migration:
   mode: exact-only
   non_exact_policy: leave_empty_needs_translation
@@ -73,6 +76,7 @@ def test_config_loader_normalizes_versions_and_paths(workspace: Path) -> None:
     config = load_translation_repository_config(config_path)
 
     assert config.knowledge_model.supported_versions == ("2.6.9", "2.6.10", "2.7.0")
+    assert config.registry.api_url == "https://api.registry.ds-wizard.org"
     assert config.migration.protected_chapters == ("0003", "0004", "0005")
     assert version_branch(config, "v2.7.0") == "translation/v2.7.0"
 
@@ -96,6 +100,24 @@ def test_version_sorting_handles_multi_digit_segments() -> None:
         "2.6.10",
         "2.7.0",
     ]
+
+
+def test_config_loader_uses_default_registry_when_omitted(workspace: Path) -> None:
+    """Verify registry config remains optional for existing translation repos."""
+
+    config_path = workspace / "translation-config.yml"
+    write_config(config_path)
+    config_path.write_text(
+        config_path.read_text(encoding="utf-8").replace(
+            "\nregistry:\n  api_url: https://api.registry.ds-wizard.org\n",
+            "\n",
+        ),
+        encoding="utf-8",
+    )
+
+    config = load_translation_repository_config(config_path)
+
+    assert config.registry.api_url == "https://api.registry.ds-wizard.org"
 
 
 def test_config_loader_rejects_unsupported_migration_mode(workspace: Path) -> None:
@@ -134,6 +156,7 @@ def test_validate_translation_config_cli_reports_summary(
     assert result.returncode == 0, result.stderr or result.stdout
     assert "KM translation config is valid." in result.stdout
     assert "Latest branch: translation/v2.7.0" in result.stdout
+    assert "Registry API: https://api.registry.ds-wizard.org" in result.stdout
     assert "Protected chapters: 0003, 0004, 0005" in result.stdout
     assert "## KM Translation Config" in summary_path.read_text(encoding="utf-8")
 

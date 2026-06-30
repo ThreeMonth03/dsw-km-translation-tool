@@ -61,6 +61,13 @@ class LocalizeConfig:
 
 
 @dataclass(frozen=True)
+class RegistryConfig:
+    """DSW Registry endpoint used for KM version discovery."""
+
+    api_url: str
+
+
+@dataclass(frozen=True)
 class MigrationConfig:
     """Cross-version and Localize merge policy."""
 
@@ -98,10 +105,12 @@ class TranslationRepositoryConfig:
     branches: BranchConfig
     tooling: ToolingConfig
     localize: LocalizeConfig
+    registry: RegistryConfig
     migration: MigrationConfig
 
 
 VERSION_RE = re.compile(r"^v?(?P<number>\d+(?:\.\d+){1,3})$")
+DEFAULT_REGISTRY_API_URL = "https://api.registry.ds-wizard.org"
 
 
 def load_translation_repository_config(path: str | Path) -> TranslationRepositoryConfig:
@@ -137,6 +146,7 @@ def load_translation_repository_config(path: str | Path) -> TranslationRepositor
         ref=_require_str(_require_dict(payload, "tooling"), "ref"),
     )
     localize = _load_localize_config(_require_dict(payload, "localize"))
+    registry = _load_registry_config(_optional_dict(payload, "registry"))
     migration = _load_migration_config(_require_dict(payload, "migration"))
 
     return TranslationRepositoryConfig(
@@ -146,6 +156,7 @@ def load_translation_repository_config(path: str | Path) -> TranslationRepositor
         branches=branches,
         tooling=tooling,
         localize=localize,
+        registry=registry,
         migration=migration,
     )
 
@@ -187,6 +198,12 @@ def _load_localize_config(payload: dict[str, Any]) -> LocalizeConfig:
     return LocalizeConfig(
         download_url=_require_str(payload, "download_url"),
         repository=_optional_str(payload, "repository"),
+    )
+
+
+def _load_registry_config(payload: dict[str, Any]) -> RegistryConfig:
+    return RegistryConfig(
+        api_url=_optional_str(payload, "api_url") or DEFAULT_REGISTRY_API_URL,
     )
 
 
@@ -283,6 +300,13 @@ def format_package_id(organization_id: str, km_id: str, version: str) -> str:
 
 def _require_dict(parent: dict[str, Any], key: str) -> dict[str, Any]:
     value = parent.get(key)
+    if not isinstance(value, dict):
+        raise TranslationRepositoryConfigError(f"Expected mapping at `{key}`")
+    return value
+
+
+def _optional_dict(parent: dict[str, Any], key: str) -> dict[str, Any]:
+    value = parent.get(key, {})
     if not isinstance(value, dict):
         raise TranslationRepositoryConfigError(f"Expected mapping at `{key}`")
     return value
