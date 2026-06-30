@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pull the latest Localize/Weblate PO into a versioned translation branch."""
+"""Pull the latest Localize/Weblate PO into a translation branch."""
 
 from __future__ import annotations
 

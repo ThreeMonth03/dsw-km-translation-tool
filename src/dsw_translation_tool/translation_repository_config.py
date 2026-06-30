@@ -1,4 +1,4 @@
-"""Configuration helpers for versioned KM translation repositories."""
+"""Configuration helpers for KM translation repositories."""
 
 from __future__ import annotations
 
@@ -39,10 +39,10 @@ class TranslationLanguageConfig:
 
 @dataclass(frozen=True)
 class BranchConfig:
-    """Version branch naming policy."""
+    """Translation branch naming policy."""
 
-    version_branch_prefix: str
-    tracking_branch: str | None
+    tracking_branch: str
+    version_branch_prefix: str | None
 
 
 @dataclass(frozen=True)
@@ -79,7 +79,7 @@ class MigrationConfig:
 
 @dataclass(frozen=True)
 class KmVersionWorkspacePaths:
-    """Conventional paths for one KM translation version branch."""
+    """Conventional workspace paths for one KM package version."""
 
     version: str
     package_id: str
@@ -115,7 +115,7 @@ DEFAULT_REGISTRY_API_URL = "https://api.registry.ds-wizard.org"
 
 
 def load_translation_repository_config(path: str | Path) -> TranslationRepositoryConfig:
-    """Load and validate a versioned KM translation repository config.
+    """Load and validate a KM translation repository config.
 
     Args:
         path: Path to ``translation-config.yml``.
@@ -137,12 +137,7 @@ def load_translation_repository_config(path: str | Path) -> TranslationRepositor
 
     knowledge_model = _load_knowledge_model_config(_require_dict(payload, "knowledge_model"))
     translation = _load_translation_config(_require_dict(payload, "translation"))
-    branches = BranchConfig(
-        version_branch_prefix=_require_str(
-            _require_dict(payload, "branches"), "version_branch_prefix"
-        ),
-        tracking_branch=_optional_str(_require_dict(payload, "branches"), "tracking_branch"),
-    )
+    branches = _load_branch_config(_require_dict(payload, "branches"), knowledge_model)
     tooling = ToolingConfig(
         repository=_require_str(_require_dict(payload, "tooling"), "repository"),
         ref=_require_str(_require_dict(payload, "tooling"), "ref"),
@@ -196,6 +191,25 @@ def _load_translation_config(payload: dict[str, Any]) -> TranslationLanguageConf
     )
 
 
+def _load_branch_config(
+    payload: dict[str, Any],
+    knowledge_model: KnowledgeModelRepositoryConfig,
+) -> BranchConfig:
+    tracking = _optional_str(payload, "tracking_branch")
+    version_branch_prefix = _optional_str(payload, "version_branch_prefix")
+    if not tracking and not version_branch_prefix:
+        raise TranslationRepositoryConfigError(
+            "branches.tracking_branch is required unless branches.version_branch_prefix "
+            "is configured for legacy version-specific branches"
+        )
+    if not tracking:
+        tracking = f"{version_branch_prefix}{knowledge_model.supported_versions[-1]}"
+    return BranchConfig(
+        tracking_branch=tracking,
+        version_branch_prefix=version_branch_prefix,
+    )
+
+
 def _load_localize_config(payload: dict[str, Any]) -> LocalizeConfig:
     return LocalizeConfig(
         download_url=_require_str(payload, "download_url"),
@@ -230,19 +244,21 @@ def version_branch(config: TranslationRepositoryConfig, version: str) -> str:
 
     normalized = normalize_version(version)
     validate_supported_version(config, normalized)
+    if config.branches.version_branch_prefix is None:
+        raise TranslationRepositoryConfigError(
+            "branches.version_branch_prefix is required for version-specific branch names"
+        )
     return f"{config.branches.version_branch_prefix}{normalized}"
 
 
 def tracking_branch(config: TranslationRepositoryConfig) -> str:
     """Return the branch that should track the latest configured KM version."""
 
-    if config.branches.tracking_branch:
-        return config.branches.tracking_branch
-    return version_branch(config, config.knowledge_model.supported_versions[-1])
+    return config.branches.tracking_branch
 
 
 def version_paths(config: TranslationRepositoryConfig, version: str) -> KmVersionWorkspacePaths:
-    """Return conventional workspace paths for one KM version branch."""
+    """Return conventional workspace paths for one KM package version."""
 
     normalized = normalize_version(version)
     validate_supported_version(config, normalized)

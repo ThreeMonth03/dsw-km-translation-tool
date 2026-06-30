@@ -240,8 +240,8 @@ def test_ci_sync_commit_uses_repo_root_layout_for_external_translation_repo(
     assert translation_test_env["DSW_COLLAB_OUTPUT_ROOT"] == str(config.host_repo_dir)
 
 
-def test_ci_sync_commit_can_use_versioned_host_repo_sources(workspace) -> None:
-    """Verify version branches can carry their own source PO and KM files.
+def test_ci_sync_commit_can_use_host_repo_source_snapshots(workspace) -> None:
+    """Verify translation branches can carry their own source PO and KM files.
 
     Args:
         workspace: Per-test temporary workspace fixture.
@@ -311,8 +311,8 @@ def test_ci_sync_commit_merges_localize_latest_before_building_km(workspace) -> 
     assert (config.host_repo_dir / report_path).exists()
 
 
-def test_ci_sync_commit_can_restore_from_version_branch(workspace) -> None:
-    """Verify CI recovery can restore malformed files from a version branch.
+def test_ci_sync_commit_can_restore_from_tracking_branch(workspace) -> None:
+    """Verify CI recovery can restore malformed files from a tracking branch.
 
     Args:
         workspace: Per-test temporary workspace fixture.
@@ -320,7 +320,7 @@ def test_ci_sync_commit_can_restore_from_version_branch(workspace) -> None:
 
     config = replace(
         build_ci_sync_config(workspace, translation_root="."),
-        restore_source_ref="origin/translation/v2.7.0",
+        restore_source_ref="origin/translation/latest",
     )
     broken_file = config.tree_dir / "chapter" / "translation.md"
     runner = ScriptedRunner(
@@ -352,7 +352,7 @@ def test_ci_sync_commit_can_restore_from_version_branch(workspace) -> None:
         "git",
         "restore",
         "--source",
-        "origin/translation/v2.7.0",
+        "origin/translation/latest",
         "--worktree",
         "--",
         "tree/chapter/translation.md",

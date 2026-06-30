@@ -1,4 +1,4 @@
-"""Helpers for pulling Localize/Weblate PO snapshots into version branches."""
+"""Helpers for pulling Localize/Weblate PO snapshots into translation branches."""
 
 from __future__ import annotations
 

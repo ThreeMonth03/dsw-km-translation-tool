@@ -58,25 +58,24 @@ def test_external_translation_auto_sync_template_matches_writer_policy(
     workflow_text = workflow_path.read_text(encoding="utf-8")
 
     assert workflow["on"]["schedule"][0]["cron"] == "0 1,13 * * *"
-    assert workflow["on"]["pull_request"]["branches"] == ["translation/v2.7.0"]
+    assert workflow["on"]["pull_request"]["branches"] == ["translation/latest"]
     assert workflow["permissions"]["contents"] == "write"
     assert workflow["env"]["TOOLING_REPOSITORY"] == "ThreeMonth03/DSW_Translation_tool"
     assert workflow["env"]["TOOLING_REF"] == "master"
-    assert workflow["env"]["KM_VERSION"] == "2.7.0"
-    assert workflow["env"]["VERSION_BRANCH"] == "translation/v2.7.0"
+    assert workflow["env"]["TRACKING_BRANCH"] == "translation/latest"
     assert workflow["env"]["TRANSLATION_CONFIG"] == "translation-config.yml"
     assert workflow["env"]["TRANSLATION_ROOT"] == "."
     assert "github.event.pull_request.head.repo.full_name == github.repository" in workflow_text
     assert "github.actor != 'github-actions[bot]'" in workflow_text
     assert "tooling-repo/src/ci_sync_commit.py" in workflow_text
     assert "tooling-repo/src/discover_km_versions.py" in workflow_text
-    assert "tooling-repo/src/pull_km_bundle.py" in workflow_text
+    assert "tooling-repo/src/sync_latest_km.py" in workflow_text
     assert "tooling-repo/src/pull_localize_po.py" in workflow_text
     assert "DSW_REGISTRY_TOKEN" in workflow_text
     assert "--config" in workflow_text
-    assert "--km-version" in workflow_text
+    assert "--km-version" not in workflow_text
     assert "--skip-without-token" in workflow_text
     assert "reviews/km_version_discovery.json" in workflow_text
     assert "--restore-source-ref" in workflow_text
-    assert "origin/${{ env.VERSION_BRANCH }}" in workflow_text
+    assert "origin/${{ env.TRACKING_BRANCH }}" in workflow_text
     assert "Skipping auto-sync commit for fork pull requests." in workflow_text

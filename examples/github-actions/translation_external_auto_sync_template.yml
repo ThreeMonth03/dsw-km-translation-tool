@@ -4,7 +4,7 @@ on:
   schedule:
     - cron: "0 1,13 * * *"
   pull_request:
-    branches: [translation/v2.7.0]
+    branches: [translation/latest]
 
 permissions:
   contents: write
@@ -12,14 +12,13 @@ permissions:
 concurrency:
   group: >-
     external-translation-auto-sync-${{ github.event_name == 'pull_request' &&
-    github.event.pull_request.head.ref || 'translation/v2.7.0' }}
+    github.event.pull_request.head.ref || 'translation/latest' }}
   cancel-in-progress: false
 
 env:
   TOOLING_REPOSITORY: ThreeMonth03/DSW_Translation_tool
   TOOLING_REF: master
-  KM_VERSION: 2.7.0
-  VERSION_BRANCH: translation/v2.7.0
+  TRACKING_BRANCH: translation/latest
   TRANSLATION_CONFIG: translation-config.yml
   TRANSLATION_ROOT: .
 
@@ -37,15 +36,15 @@ jobs:
         with:
           ref: >-
             ${{ github.event_name == 'pull_request' &&
-            github.event.pull_request.head.ref || env.VERSION_BRANCH }}
+            github.event.pull_request.head.ref || env.TRACKING_BRANCH }}
           path: translation-repo
           fetch-depth: 0
 
-      - name: Fetch version branch for recovery restores
+      - name: Fetch tracking branch for recovery restores
         working-directory: translation-repo
         run: >-
           git fetch origin
-          "${{ env.VERSION_BRANCH }}:refs/remotes/origin/${{ env.VERSION_BRANCH }}"
+          "${{ env.TRACKING_BRANCH }}:refs/remotes/origin/${{ env.TRACKING_BRANCH }}"
 
       - name: Checkout tooling repository
         uses: actions/checkout@v4
@@ -70,14 +69,14 @@ jobs:
           --config "${{ env.TRANSLATION_CONFIG }}"
           --report reviews/km_version_discovery.json
 
-      - name: Pull source KM bundle snapshot
+      - name: Sync to latest KM version
         env:
           DSW_REGISTRY_TOKEN: ${{ secrets.DSW_REGISTRY_TOKEN }}
         run: >-
-          tooling-repo/.venv/bin/python tooling-repo/src/pull_km_bundle.py
+          tooling-repo/.venv/bin/python tooling-repo/src/sync_latest_km.py
           --repo-root "$GITHUB_WORKSPACE/translation-repo"
+          --tooling-repo "$GITHUB_WORKSPACE/tooling-repo"
           --config "${{ env.TRANSLATION_CONFIG }}"
-          --km-version "${{ env.KM_VERSION }}"
           --skip-without-token
 
       - name: Pull latest Localize PO snapshot
@@ -85,10 +84,9 @@ jobs:
           tooling-repo/.venv/bin/python tooling-repo/src/pull_localize_po.py
           --repo-root "$GITHUB_WORKSPACE/translation-repo"
           --config "${{ env.TRANSLATION_CONFIG }}"
-          --km-version "${{ env.KM_VERSION }}"
 
       # This helper may restore malformed translation.md or one split
-      # shared_blocks/<group-id>/context.md file from the version branch once,
+      # shared_blocks/<group-id>/context.md file from the tracking branch once,
       # then rerun sync. That keeps CI unblocked, but can overwrite malformed
       # PR-branch edits.
       - name: Sync, validate, and auto-commit translation artifacts
@@ -97,11 +95,10 @@ jobs:
           --host-repo "$GITHUB_WORKSPACE/translation-repo"
           --tooling-repo "$GITHUB_WORKSPACE/tooling-repo"
           --config "${{ env.TRANSLATION_CONFIG }}"
-          --km-version "${{ env.KM_VERSION }}"
           --translation-root "${{ env.TRANSLATION_ROOT }}"
           --target-ref "${{ github.event_name == 'pull_request' &&
-          github.event.pull_request.head.ref || env.VERSION_BRANCH }}"
-          --restore-source-ref "origin/${{ env.VERSION_BRANCH }}"
+          github.event.pull_request.head.ref || env.TRACKING_BRANCH }}"
+          --restore-source-ref "origin/${{ env.TRACKING_BRANCH }}"
           --mode "${{ github.event_name }}"
 
   skip-fork-pr:

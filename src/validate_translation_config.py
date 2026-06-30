@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate a versioned KM translation repository configuration."""
+"""Validate a KM translation repository configuration."""
 
 from __future__ import annotations
 
@@ -10,7 +10,6 @@ from dsw_translation_tool.translation_repository_config import (
     TranslationRepositoryConfigError,
     load_translation_repository_config,
     tracking_branch,
-    version_branch,
     version_paths,
 )
 
@@ -19,7 +18,7 @@ def build_argument_parser() -> argparse.ArgumentParser:
     """Build CLI arguments."""
 
     parser = argparse.ArgumentParser(
-        description="Validate translation-config.yml for versioned KM translation repos.",
+        description="Validate translation-config.yml for KM translation repos.",
     )
     parser.add_argument(
         "--config",
@@ -51,7 +50,6 @@ def main() -> None:
         f"Knowledge model: {config.knowledge_model.organization_id}:{config.knowledge_model.km_id}",
         f"Target language: {config.translation.target_language}",
         f"Supported versions: {', '.join(versions)}",
-        f"Latest branch: {version_branch(config, latest_version)}",
         f"Tracking branch: {tracking_branch(config)}",
         f"Latest source KM path: {latest_paths.source_km_path.as_posix()}",
         f"Localize PO URL: {config.localize.download_url}",

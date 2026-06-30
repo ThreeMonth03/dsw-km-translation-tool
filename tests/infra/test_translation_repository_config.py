@@ -1,4 +1,4 @@
-"""Tests for versioned KM translation repository configuration."""
+"""Tests for KM translation repository configuration."""
 
 from __future__ import annotations
 
@@ -43,7 +43,6 @@ translation:
   translated_name: Common DSW Knowledge Model (zh-Hant)
 
 branches:
-  version_branch_prefix: translation/v
   tracking_branch: translation/latest
 
 tooling:
@@ -70,7 +69,7 @@ migration:
 
 
 def test_config_loader_normalizes_versions_and_paths(workspace: Path) -> None:
-    """Verify that KM repository config derives branch and workspace paths."""
+    """Verify that KM repository config derives the tracking branch and workspace paths."""
 
     config_path = workspace / "translation-config.yml"
     write_config(config_path, supported_versions=["2.7.0", "2.6.10", "v2.6.9"])
@@ -80,7 +79,6 @@ def test_config_loader_normalizes_versions_and_paths(workspace: Path) -> None:
     assert config.knowledge_model.supported_versions == ("2.6.9", "2.6.10", "2.7.0")
     assert config.registry.api_url == "https://api.registry.ds-wizard.org"
     assert config.migration.protected_chapters == ("0003", "0004", "0005")
-    assert version_branch(config, "v2.7.0") == "translation/v2.7.0"
     assert tracking_branch(config) == "translation/latest"
 
     paths = version_paths(config, "2.7.0")
@@ -123,6 +121,25 @@ def test_config_loader_uses_default_registry_when_omitted(workspace: Path) -> No
     assert config.registry.api_url == "https://api.registry.ds-wizard.org"
 
 
+def test_config_loader_supports_legacy_version_branch_prefix(workspace: Path) -> None:
+    """Verify existing version-branch configs still load as a tracking branch fallback."""
+
+    config_path = workspace / "translation-config.yml"
+    write_config(config_path)
+    config_path.write_text(
+        config_path.read_text(encoding="utf-8").replace(
+            "  tracking_branch: translation/latest\n",
+            "  version_branch_prefix: translation/v\n",
+        ),
+        encoding="utf-8",
+    )
+
+    config = load_translation_repository_config(config_path)
+
+    assert tracking_branch(config) == "translation/v2.7.0"
+    assert version_branch(config, "v2.7.0") == "translation/v2.7.0"
+
+
 def test_config_loader_rejects_unsupported_migration_mode(workspace: Path) -> None:
     """Verify that only conservative exact migration is accepted."""
 
@@ -158,7 +175,6 @@ def test_validate_translation_config_cli_reports_summary(
 
     assert result.returncode == 0, result.stderr or result.stdout
     assert "KM translation config is valid." in result.stdout
-    assert "Latest branch: translation/v2.7.0" in result.stdout
     assert "Tracking branch: translation/latest" in result.stdout
     assert "Localize PO URL: https://localize.ds-wizard.org/download/" in result.stdout
     assert "Registry API: https://api.registry.ds-wizard.org" in result.stdout
@@ -166,7 +182,9 @@ def test_validate_translation_config_cli_reports_summary(
     assert "## KM Translation Config" in summary_path.read_text(encoding="utf-8")
 
 
-def test_versioned_ci_sync_config_derives_branch_and_source_paths(workspace: Path) -> None:
+def test_versioned_ci_sync_config_derives_tracking_branch_and_source_paths(
+    workspace: Path,
+) -> None:
     """Verify CI sync config can be derived from translation-config.yml."""
 
     host_repo = workspace / "translation-repo"
@@ -186,8 +204,8 @@ def test_versioned_ci_sync_config_derives_branch_and_source_paths(workspace: Pat
 
     assert config.translation_root == "."
     assert config.translation_root_arg == "."
-    assert config.target_ref == "translation/v2.7.0"
-    assert config.restore_source_ref == "origin/translation/v2.7.0"
+    assert config.target_ref == "translation/latest"
+    assert config.restore_source_ref == "origin/translation/latest"
     assert config.source_lang == "en"
     assert config.target_lang == "zh_Hant"
     assert config.source_po_path == Path("sources/localize/zh_Hant/latest.po")

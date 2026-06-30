@@ -1,4 +1,4 @@
-"""Build CI sync configuration from a versioned translation repository config."""
+"""Build CI sync configuration from a translation repository config."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from pathlib import Path
 from .ci_sync import DEFAULT_SYNC_COMMIT_MESSAGE, CiSyncCommitConfig
 from .translation_repository_config import (
     load_translation_repository_config,
-    version_branch,
+    tracking_branch,
     version_paths,
 )
 
@@ -31,7 +31,7 @@ def build_versioned_ci_sync_config(
     output_name: str | None = None,
     restore_source_ref: str | None = None,
 ) -> CiSyncCommitConfig:
-    """Build sync automation config for one KM version branch.
+    """Build sync automation config for the latest-KM tracking branch.
 
     Args:
         host_repo_path: Translation repository checkout path.
@@ -42,9 +42,9 @@ def build_versioned_ci_sync_config(
         km_version: KM version to sync. Defaults to the latest configured
             supported version.
         translation_root: Translation artifact root inside the host repository.
-            Defaults to ``.`` for version branches.
+            Defaults to ``.`` for tracking branches.
         target_ref: Branch/ref that should receive generated commits. Defaults
-            to the configured version branch.
+            to the configured tracking branch.
         source_lang: Optional source language override.
         target_lang: Optional target language override.
         commit_message: Commit message used when sync changes are detected.
@@ -54,7 +54,7 @@ def build_versioned_ci_sync_config(
         output_km_id: Optional translated KM ID override.
         output_name: Optional translated KM display name override.
         restore_source_ref: Optional git ref used for recovery restores. Defaults
-            to ``origin/<version branch>``.
+            to ``origin/<tracking branch>``.
 
     Returns:
         Populated CI sync configuration.
@@ -65,7 +65,7 @@ def build_versioned_ci_sync_config(
     repository_config = load_translation_repository_config(resolved_config_path)
     version = km_version or repository_config.knowledge_model.supported_versions[-1]
     paths = version_paths(repository_config, version)
-    branch = version_branch(repository_config, version)
+    branch = tracking_branch(repository_config)
 
     return CiSyncCommitConfig(
         host_repo_path=host_repo,

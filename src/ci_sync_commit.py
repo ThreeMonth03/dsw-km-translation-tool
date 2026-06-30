@@ -48,7 +48,7 @@ def build_argument_parser() -> argparse.ArgumentParser:
         default=None,
         help=(
             "Branch/ref that should receive the pushed sync commit. Defaults to "
-            "the configured version branch when --config is used."
+            "the configured tracking branch when --config is used."
         ),
     )
     parser.add_argument(
@@ -109,7 +109,7 @@ def build_argument_parser() -> argparse.ArgumentParser:
         default=None,
         help=(
             "Git ref used when restoring a malformed translation source file during "
-            "CI recovery. Defaults to origin/master, or origin/<version branch> "
+            "CI recovery. Defaults to origin/master, or origin/<tracking branch> "
             "when --config is used."
         ),
     )

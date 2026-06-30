@@ -17,7 +17,6 @@ translation:
   translated_name: Common DSW Knowledge Model (zh-Hant)
 
 branches:
-  version_branch_prefix: translation/v
   tracking_branch: translation/latest
 
 tooling:
