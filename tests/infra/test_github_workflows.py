@@ -70,9 +70,12 @@ def test_external_translation_auto_sync_template_matches_writer_policy(
     assert "github.actor != 'github-actions[bot]'" in workflow_text
     assert "tooling-repo/src/ci_sync_commit.py" in workflow_text
     assert "tooling-repo/src/discover_km_versions.py" in workflow_text
+    assert "tooling-repo/src/pull_km_bundle.py" in workflow_text
     assert "tooling-repo/src/pull_localize_po.py" in workflow_text
+    assert "DSW_REGISTRY_TOKEN" in workflow_text
     assert "--config" in workflow_text
     assert "--km-version" in workflow_text
+    assert "--skip-without-token" in workflow_text
     assert "reviews/km_version_discovery.json" in workflow_text
     assert "--restore-source-ref" in workflow_text
     assert "origin/${{ env.VERSION_BRANCH }}" in workflow_text

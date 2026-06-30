@@ -70,6 +70,16 @@ jobs:
           --config "${{ env.TRANSLATION_CONFIG }}"
           --report reviews/km_version_discovery.json
 
+      - name: Pull source KM bundle snapshot
+        env:
+          DSW_REGISTRY_TOKEN: ${{ secrets.DSW_REGISTRY_TOKEN }}
+        run: >-
+          tooling-repo/.venv/bin/python tooling-repo/src/pull_km_bundle.py
+          --repo-root "$GITHUB_WORKSPACE/translation-repo"
+          --config "${{ env.TRANSLATION_CONFIG }}"
+          --km-version "${{ env.KM_VERSION }}"
+          --skip-without-token
+
       - name: Pull latest Localize PO snapshot
         run: >-
           tooling-repo/.venv/bin/python tooling-repo/src/pull_localize_po.py
