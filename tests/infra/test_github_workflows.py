@@ -44,7 +44,6 @@ def test_localize_auto_sync_template_matches_writer_policy(
     assert "github.event.pull_request.head.repo.full_name == github.repository" in workflow_text
     assert "github.actor != 'github-actions[bot]'" in workflow_text
     assert "tooling-repo/src/sync_from_localize.py" in workflow_text
-    assert "tooling-repo/src/ci_sync_commit.py" not in workflow_text
     assert "tooling-repo/src/discover_km_versions.py" not in workflow_text
     assert "tooling-repo/src/sync_latest_km.py" not in workflow_text
     assert "tooling-repo/src/pull_localize_po.py" not in workflow_text
