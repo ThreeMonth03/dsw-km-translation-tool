@@ -19,6 +19,7 @@ not push from Git to Weblate.
 | Localize auto sync | `contents: write` | none | Writes Git only |
 | Localize status report | `contents: read` | none | No |
 | Localize alignment report | `contents: read` | none | No |
+| KM version monitor | `contents: read` | none | No |
 | Reviewed migration to Weblate | `contents: read` | `LOCALIZE_API_TOKEN` only when applying | Writes Weblate only after manual apply |
 
 The auto-sync writer currently supports direct commits to the tracking branch.

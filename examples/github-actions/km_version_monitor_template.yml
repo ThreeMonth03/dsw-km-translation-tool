@@ -1,0 +1,61 @@
+name: KM Version Monitor
+
+on:
+  schedule:
+    - cron: "15 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  TOOLING_REPOSITORY: ThreeMonth03/DSW_Translation_tool
+  TOOLING_REF: master
+  TRACKING_BRANCH: master
+  TRANSLATION_CONFIG: translation-config.yml
+
+jobs:
+  monitor-km-version:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout translation repository
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.TRACKING_BRANCH }}
+          path: translation-repo
+
+      - name: Checkout KM translation tooling
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ env.TOOLING_REPOSITORY }}
+          ref: ${{ env.TOOLING_REF }}
+          path: tooling-repo
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install tooling dependencies
+        working-directory: tooling-repo
+        run: make install-dev BOOTSTRAP_PYTHON=python
+
+      - name: Discover published KM versions
+        run: >-
+          tooling-repo/.venv/bin/python tooling-repo/src/discover_km_versions.py
+          --repo-root "$GITHUB_WORKSPACE/translation-repo"
+          --config "${{ env.TRANSLATION_CONFIG }}"
+          --report "$GITHUB_WORKSPACE/translation-repo/reviews/km_version_discovery.json"
+          --details-out "$GITHUB_WORKSPACE/translation-repo/reviews/km_version_discovery.md"
+          --summary "$GITHUB_STEP_SUMMARY"
+          --fail-on-new-version
+
+      - name: Upload KM version report artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: km-version-monitor
+          path: |
+            translation-repo/reviews/km_version_discovery.json
+            translation-repo/reviews/km_version_discovery.md

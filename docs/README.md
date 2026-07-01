@@ -13,7 +13,7 @@ command reference; durable design and operating procedures live here.
 | Operate Localize/Weblate-to-Git sync | [Localize Sync Runbook](localize-sync-runbook.md) |
 | Check repository/Weblate build alignment | [Localize Sync Runbook](localize-sync-runbook.md) |
 | Configure workflow permissions and secrets | [Security and Permissions](security-and-permissions.md) |
-| Prepare a future KM version update | [KM Update Runbook](km-update-runbook.md) |
+| Monitor or prepare a future KM version update | [KM Update Runbook](km-update-runbook.md) |
 | Find a Make target or CLI command | [Command Reference](command-reference.md) |
 | Prepare a one-shot repository-to-Weblate migration | [Localize Sync Runbook](localize-sync-runbook.md) and [Command Reference](command-reference.md) |
 

@@ -159,6 +159,18 @@ Discover configured or registry-published KM versions:
   --config "$TRANSLATION_REPO_DIR/translation-config.yml"
 ```
 
+Generate the read-only KM version monitor reports used by CI:
+
+```shell
+"$TOOL_REPO_DIR/.venv/bin/python" "$TOOL_REPO_DIR/src/discover_km_versions.py" \
+  --repo-root "$TRANSLATION_REPO_DIR" \
+  --config translation-config.yml \
+  --report "$TRANSLATION_REPO_DIR/reviews/km_version_discovery.json" \
+  --details-out "$TRANSLATION_REPO_DIR/reviews/km_version_discovery.md" \
+  --summary "$TRANSLATION_REPO_DIR/reviews/km_version_discovery_summary.md" \
+  --fail-on-new-version
+```
+
 Pull the latest configured KM bundle when repository policy allows it:
 
 ```shell

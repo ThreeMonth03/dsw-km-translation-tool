@@ -9,6 +9,8 @@ from pathlib import Path
 from dsw_translation_tool.km_registry import (
     KmRegistryError,
     discover_km_versions,
+    render_km_version_discovery_markdown,
+    write_km_version_discovery_markdown,
     write_km_version_discovery_report,
 )
 from dsw_translation_tool.translation_repository_config import TranslationRepositoryConfigError
@@ -36,6 +38,16 @@ def build_argument_parser() -> argparse.ArgumentParser:
         help="Optional JSON report path, for example reviews/km_version_discovery.json.",
     )
     parser.add_argument(
+        "--summary",
+        default=None,
+        help="Optional Markdown summary path, for example $GITHUB_STEP_SUMMARY.",
+    )
+    parser.add_argument(
+        "--details-out",
+        default=None,
+        help="Optional path to write a full Markdown discovery report.",
+    )
+    parser.add_argument(
         "--fail-on-new-version",
         action="store_true",
         help="Exit with a non-zero status when Registry has versions missing from config.",
@@ -60,10 +72,19 @@ def main() -> None:
     print(f"  Registry versions  : {_format_versions(result.registry_versions)}")
     print(f"  New versions       : {_format_versions(result.new_versions)}")
     print(f"  Missing in registry: {_format_versions(result.missing_versions)}")
+    print()
+    print(render_km_version_discovery_markdown(result), end="")
     if args.report:
         report_path = _resolve_path(repo_root, args.report)
         write_km_version_discovery_report(result=result, report_path=report_path)
         print(f"  Report             : {report_path}")
+    if args.summary:
+        summary_path = _resolve_path(repo_root, args.summary)
+        write_km_version_discovery_markdown(result=result, report_path=summary_path)
+    if args.details_out:
+        details_path = _resolve_path(repo_root, args.details_out)
+        write_km_version_discovery_markdown(result=result, report_path=details_path)
+        print(f"  Markdown report    : {details_path}")
     if args.fail_on_new_version and result.new_versions:
         raise SystemExit(
             "Registry has KM versions missing from translation-config.yml: "

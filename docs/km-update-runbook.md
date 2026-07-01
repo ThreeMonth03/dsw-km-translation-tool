@@ -10,6 +10,14 @@ Start only after the KM version is published and available from the DSW
 Registry or another official upstream source. Do not add draft or unpublished
 bundles, such as a not-yet-published `2.8.0`.
 
+The scheduled KM version monitor is the normal alert mechanism. It runs
+`discover_km_versions.py --fail-on-new-version` and uploads
+`reviews/km_version_discovery.*` as artifacts. A failing monitor means the
+Registry has at least one published version that is not yet configured in the
+translation repository. The monitor is intentionally read-only: it does not
+pull KM bundles, edit `translation-config.yml`, rebuild `tree/`, or push Git
+commits.
+
 ## Dry-Run First
 
 Work in a disposable branch or local clone first.

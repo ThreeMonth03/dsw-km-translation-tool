@@ -172,6 +172,71 @@ def write_km_version_discovery_report(
     )
 
 
+def render_km_version_discovery_markdown(result: KmVersionDiscoveryResult) -> str:
+    """Render KM version discovery as maintainer-readable Markdown."""
+
+    status = "new version available" if result.new_versions else "current"
+    lines = [
+        "## KM Version Monitor",
+        "",
+        f"Knowledge model: `{result.organization_id}:{result.km_id}`",
+        f"Registry API: `{result.registry_api_url}`",
+        f"Status: **{status}**",
+        "",
+        "| Metric | Versions |",
+        "| --- | --- |",
+        f"| Configured versions | {_format_versions(result.configured_versions)} |",
+        f"| Registry versions | {_format_versions(result.registry_versions)} |",
+        f"| New versions | {_format_versions(result.new_versions)} |",
+        f"| Missing in registry | {_format_versions(result.missing_versions)} |",
+        f"| Latest configured | {_format_version(result.latest_configured_version)} |",
+        f"| Latest registry | {_format_version(result.latest_registry_version)} |",
+        "",
+    ]
+    if result.new_versions:
+        lines.extend(
+            [
+                "### Follow-up",
+                "",
+                (
+                    "A newer published KM exists in the Registry. Run the KM update "
+                    "runbook on a disposable branch before changing `translation-config.yml`."
+                ),
+                "",
+            ]
+        )
+    if result.packages:
+        lines.extend(
+            [
+                "### Registry Packages",
+                "",
+                "| Version | Name | Metamodel | Created at |",
+                "| --- | --- | ---: | --- |",
+            ]
+        )
+        for package in result.packages:
+            lines.append(
+                "| "
+                f"{package.version} | "
+                f"{_format_cell(package.name or '')} | "
+                f"{package.metamodel_version if package.metamodel_version is not None else ''} | "
+                f"{_format_cell(package.created_at or '')} |"
+            )
+    return "\n".join(lines) + "\n"
+
+
+def write_km_version_discovery_markdown(
+    *,
+    result: KmVersionDiscoveryResult,
+    report_path: Path,
+) -> None:
+    """Append a discovery result as Markdown."""
+
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    with report_path.open("a", encoding="utf-8") as handle:
+        handle.write(render_km_version_discovery_markdown(result))
+
+
 def _parse_package(payload: Any) -> KmRegistryPackage:
     if not isinstance(payload, dict):
         raise KmRegistryError("KM Registry package entry must be a JSON object")
@@ -210,6 +275,18 @@ def _optional_int(payload: dict[str, Any], key: str) -> int | None:
     if not isinstance(value, int):
         raise KmRegistryError(f"KM Registry package entry has invalid `{key}`")
     return value
+
+
+def _format_versions(versions: tuple[str, ...]) -> str:
+    return ", ".join(f"`{version}`" for version in versions) if versions else "(none)"
+
+
+def _format_version(version: str | None) -> str:
+    return f"`{version}`" if version else "(none)"
+
+
+def _format_cell(value: str) -> str:
+    return " ".join(value.split()).replace("|", "\\|")
 
 
 def _download_url(url: str) -> bytes:
