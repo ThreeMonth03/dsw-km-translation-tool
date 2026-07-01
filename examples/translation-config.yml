@@ -33,7 +33,4 @@ registry:
 migration:
   mode: exact-only
   non_exact_policy: leave_empty_needs_translation
-  protected_chapters:
-    - "0004"
-    - "0005"
-    - "0006"
+  protected_chapters: []

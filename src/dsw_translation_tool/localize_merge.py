@@ -75,6 +75,7 @@ class LocalizePoMerger:
         report_path: str | Path,
         tree_dir: str | Path | None = None,
         protected_chapters: tuple[str, ...] = (),
+        conflict_policy: str = "conservative",
     ) -> LocalizeMergeResult:
         """Merge a pulled Localize PO into the repo-generated PO.
 
@@ -88,11 +89,17 @@ class LocalizePoMerger:
                 chapter UUIDs.
             protected_chapters: Chapter numeric prefixes that should keep repo
                 translations.
+            conflict_policy: ``conservative`` keeps repository translations
+                when both the repository and Weblate changed the same entry;
+                ``latest-wins`` accepts non-fuzzy Weblate text as the source of
+                truth. Protected chapter entries are still kept.
 
         Returns:
             Merge summary.
         """
 
+        if conflict_policy not in {"conservative", "latest-wins"}:
+            raise ValueError("conflict_policy must be either 'conservative' or 'latest-wins'")
         base_entries = parse_po_entry_states(base_po_path)
         latest_entries = parse_po_entry_states(latest_po_path)
         repo_entries = parse_po_entry_states(repo_po_path)
@@ -113,6 +120,7 @@ class LocalizePoMerger:
                 latest_state=latest_state,
                 repo_state=repo_state,
                 protected=key in protected_keys,
+                conflict_policy=conflict_policy,
             )
             merged_translations[key] = result_text
             if decision.decision != "unchanged":
@@ -145,6 +153,7 @@ class LocalizePoMerger:
         latest_state: PoEntryState | None,
         repo_state: PoEntryState,
         protected: bool,
+        conflict_policy: str,
     ) -> tuple[str, LocalizeMergeDecision]:
         uuid, field = key
         if base_state is None or latest_state is None:
@@ -201,6 +210,17 @@ class LocalizePoMerger:
                 latest=latest_state.msgstr,
                 repo=repo_state.msgstr,
                 result=repo_state.msgstr,
+            )
+        if conflict_policy == "latest-wins":
+            return latest_state.msgstr, make_decision(
+                key=key,
+                decision="accepted-latest",
+                protected=protected,
+                msgid=repo_state.msgid,
+                base=base_state.msgstr,
+                latest=latest_state.msgstr,
+                repo=repo_state.msgstr,
+                result=latest_state.msgstr,
             )
         if not latest_state.msgstr and repo_state.msgstr:
             return repo_state.msgstr, make_decision(

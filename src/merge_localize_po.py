@@ -17,7 +17,7 @@ def build_argument_parser() -> argparse.ArgumentParser:
     """Build the CLI argument parser."""
 
     parser = argparse.ArgumentParser(
-        description="Conservatively merge Localize PO snapshots into a repo PO.",
+        description="Merge Localize/Weblate PO snapshots into a repo PO.",
     )
     parser.add_argument("--config", default="translation-config.yml")
     parser.add_argument("--repo-root", default=".")
@@ -28,6 +28,15 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("--out-po", default=None)
     parser.add_argument("--report", default=None)
     parser.add_argument("--tree-dir", default=None)
+    parser.add_argument(
+        "--conflict-policy",
+        choices=("conservative", "latest-wins"),
+        default="conservative",
+        help=(
+            "How to handle entries changed in both the repository and Weblate. "
+            "Use latest-wins when Weblate is the source of truth."
+        ),
+    )
     return parser
 
 
@@ -72,12 +81,14 @@ def main() -> None:
             paths.translation_tree_dir,
         ),
         protected_chapters=repository_config.migration.protected_chapters,
+        conflict_policy=args.conflict_policy,
     )
     print("Localize PO merge")
     print(f"  Version              : {version}")
     print(f"  Output PO            : {result.output_po_path}")
     print(f"  Report               : {result.report_path}")
     print(f"  Total entries        : {result.total_entries}")
+    print(f"  Conflict policy      : {args.conflict_policy}")
     print(f"  Accepted latest      : {result.accepted_latest}")
     print(f"  Conflicts            : {result.conflicts}")
     print(f"  Protected skips      : {result.protected_skips}")

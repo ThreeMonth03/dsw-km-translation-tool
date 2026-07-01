@@ -215,6 +215,7 @@ def test_versioned_ci_sync_config_derives_tracking_branch_and_source_paths(
     assert config.localize_base_po_path == Path("sources/localize/zh_Hant/base.po")
     assert config.localize_merge_report_path == Path("reviews/localize_merge_report.json")
     assert config.protected_chapters == ("0003", "0004", "0005")
+    assert config.localize_conflict_policy == "latest-wins"
     assert config.original_po_path == host_repo / "sources/localize/zh_Hant/latest.po"
     assert config.original_model_path == (
         host_repo / "sources/knowledge-models/dsw-root-2.7.0/dsw-root-2.7.0.km"

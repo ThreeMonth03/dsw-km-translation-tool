@@ -43,6 +43,7 @@ def merge_workspace(
     repo_entries: list[tuple[str, str, str, str]],
     protected_chapters: tuple[str, ...] = (),
     latest_fuzzy: bool = False,
+    conflict_policy: str = "conservative",
 ) -> tuple[Path, dict[str, object]]:
     """Run a PO merge and return output path plus parsed report."""
 
@@ -64,6 +65,7 @@ def merge_workspace(
         report_path=report_path,
         tree_dir=tree_dir,
         protected_chapters=protected_chapters,
+        conflict_policy=conflict_policy,
     )
 
     return out_po, json.loads(report_path.read_text(encoding="utf-8"))
@@ -118,6 +120,44 @@ def test_merge_reports_conflict_when_repo_and_latest_both_changed(workspace: Pat
     assert output_msgstr(out_po, UUID_A) == "本地"
     assert report["conflicts"] == 1
     assert report["decisions"][0]["decision"] == "conflict"
+
+
+def test_merge_can_accept_latest_when_weblate_is_source_of_truth(workspace: Path) -> None:
+    """Verify latest-wins mode accepts Weblate text over competing repo edits."""
+
+    out_po, report = merge_workspace(
+        workspace,
+        base_entries=[(UUID_A, "text", "Hello", "舊")],
+        latest_entries=[(UUID_A, "text", "Hello", "Weblate")],
+        repo_entries=[(UUID_A, "text", "Hello", "本地")],
+        conflict_policy="latest-wins",
+    )
+
+    assert output_msgstr(out_po, UUID_A) == "Weblate"
+    assert report["accepted_latest"] == 1
+    assert report["conflicts"] == 0
+    assert report["decisions"][0]["decision"] == "accepted-latest"
+
+
+def test_merge_keeps_protected_repo_text_even_in_latest_wins_mode(workspace: Path) -> None:
+    """Verify one-shot migration protection still overrides latest-wins mode."""
+
+    uuid_dir = workspace / "tree" / "0001 Root" / "0003 Protected" / "0001 Node"
+    uuid_dir.mkdir(parents=True)
+    (uuid_dir / "_uuid.txt").write_text(UUID_A, encoding="utf-8")
+
+    out_po, report = merge_workspace(
+        workspace,
+        base_entries=[(UUID_A, "text", "Hello", "舊")],
+        latest_entries=[(UUID_A, "text", "Hello", "Weblate")],
+        repo_entries=[(UUID_A, "text", "Hello", "本地")],
+        protected_chapters=("0003",),
+        conflict_policy="latest-wins",
+    )
+
+    assert output_msgstr(out_po, UUID_A) == "本地"
+    assert report["protected_skips"] == 1
+    assert report["decisions"][0]["decision"] == "protected"
 
 
 def test_merge_does_not_overwrite_non_empty_repo_with_empty_latest(workspace: Path) -> None:

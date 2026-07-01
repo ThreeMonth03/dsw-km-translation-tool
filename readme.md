@@ -5,6 +5,10 @@
 This section is for people who only need to translate content.
 You do not need to understand the Python code in this repository.
 
+For zh-Hant production work, Localize/Weblate is now the primary editing
+surface. Use the translation tree below only for legacy local edits, emergency
+repairs, or one-shot migration work requested by maintainers.
+
 #### 1. Install The Tooling Once
 
 When using this repository for the first time, run:
@@ -173,15 +177,16 @@ If the tests pass, open a pull request with your translation changes.
 If the tests do not pass, please notify the developer or project maintainer
 and report the problem instead of trying to work around it manually.
 
-#### 8. Upload The Final PO (Optional Legacy Path)
+#### 8. Upload The Final PO (Legacy Path)
 
-After the translation pull request has been merged, you can optionally upload
-`translation/zh_Hant/builds/final_translated.po` manually to:
+After the translation pull request has been merged, you can manually upload
+`translation/zh_Hant/builds/final_translated.po` to:
 
 `https://localize.ds-wizard.org/projects/knowledge-models/common-dsw-knowledge-model/zh_Hant/`
 
-If needed, ask the developer or project maintainer to run final validation
-before upload.
+Use this path only when maintainers have explicitly decided that repository
+translations should be pushed back to Localize/Weblate. It must not run on a
+schedule.
 
 For the zh-Hant migration workflow, prefer the reviewed-chapter migration
 command described below. It produces a focused PO and report instead of
@@ -332,6 +337,37 @@ chapter need different translations for the same source string, Localize can
 only keep one of them; prefer the reviewed chapter translation for the migration
 and document the affected source strings.
 
+#### Localize/Weblate To Git Sync
+
+After the migration is complete, Localize/Weblate is the translation source of
+truth. The translation repository mirrors it and provides reviewable history,
+generated tree artifacts, and the final translated KM.
+
+Use the high-level sync entry point for normal automation:
+
+```shell
+.venv/bin/python src/sync_from_localize.py \
+  --host-repo /path/to/translation-repo \
+  --tooling-repo /path/to/DSW_Translation_tool \
+  --config translation-config.yml \
+  --translation-root . \
+  --target-ref master \
+  --mode schedule
+```
+
+This command:
+
+- downloads the current Localize/Weblate PO into
+  `sources/localize/zh_Hant/latest.po`
+- keeps the previous PO snapshot as `sources/localize/zh_Hant/base.po`
+- syncs `tree/`, `builds/final_translated.po`, review files, and
+  `builds/final_translated.km`
+- uses `latest-wins` for non-fuzzy Weblate changes when both Weblate and the
+  repository changed the same string
+- commits and pushes only Git repository changes
+
+It never uploads repository translations back to Localize/Weblate.
+
 #### Run Infrastructure Unit Tests
 
 ```shell
@@ -356,22 +392,26 @@ copy-ready external template:
   repository. It intentionally lives outside `.github/workflows/` so it does
   not run inside this tooling repository.
 
-Both workflows share the same policy:
+The external translation workflow treats Localize/Weblate as the source of
+truth. Its policy is:
 
 - they run on `schedule` at Asia/Taipei `09:00` and `21:00`
 - they also run on `pull_request` targeting `master`
-- scheduled runs commit directly to `master`
+- scheduled runs pull Localize/Weblate and commit directly to `master`
 - PR runs commit only for same-repository branches
+- PR runs act as a sync gate: a merge candidate must include the latest
+  Localize/Weblate translations before it reaches `master`
 - fork PRs are validated by the normal test workflows, but the auto-writer
   skips any commit/push step
 - bot-authored follow-up PR events are skipped to avoid recursive sync commits
+- no workflow performs scheduled repository-to-Localize uploads
 
-The shared helper behind both workflows lives at
-[`src/ci_sync_commit.py`](./src/ci_sync_commit.py).
-After shared-string sync builds `builds/final_translated.po`, that helper also
-builds `builds/final_translated.km` with the translated KM identity, so
-external repositories can gain the KM artifact without changing their copied
-workflow YAML.
+The high-level helper for external translation repositories is
+[`src/sync_from_localize.py`](./src/sync_from_localize.py). It pulls the current
+Localize/Weblate PO, then delegates artifact generation and Git commits to
+[`src/ci_sync_commit.py`](./src/ci_sync_commit.py). After shared-string sync
+builds `builds/final_translated.po`, the CI helper also builds
+`builds/final_translated.km` with the translated KM identity.
 
 The auto-sync writer is intentionally aggressive when a checked-in translation
 source file is malformed in CI:

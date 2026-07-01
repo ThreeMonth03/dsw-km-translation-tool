@@ -87,6 +87,7 @@ def build_versioned_ci_sync_config(
         localize_base_po_path=paths.localize_base_po_path,
         localize_merge_report_path=paths.localize_merge_report_path,
         protected_chapters=repository_config.migration.protected_chapters,
+        localize_conflict_policy="latest-wins",
     )
 
 

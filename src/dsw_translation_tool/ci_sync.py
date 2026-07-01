@@ -89,6 +89,8 @@ class CiSyncCommitConfig:
             decisions. Relative paths are resolved inside the host repository.
         protected_chapters: Chapter numeric prefixes that should keep repo
             translations during Localize merges.
+        localize_conflict_policy: Conflict policy passed to the Localize merge.
+            Use ``latest-wins`` when Weblate is the source of truth.
     """
 
     host_repo_path: Path
@@ -108,6 +110,7 @@ class CiSyncCommitConfig:
     localize_base_po_path: Path | None = None
     localize_merge_report_path: Path | None = None
     protected_chapters: tuple[str, ...] = ()
+    localize_conflict_policy: str = "conservative"
 
     @property
     def host_repo_dir(self) -> Path:
@@ -302,6 +305,10 @@ class CiSyncCommitConfig:
             raise CiSyncError(
                 "Localize merge requires both localize_base_po_path and localize_merge_report_path."
             )
+        if self.localize_conflict_policy not in {"conservative", "latest-wins"}:
+            raise CiSyncError(
+                "Localize conflict policy must be either 'conservative' or 'latest-wins'."
+            )
 
 
 def default_command_runner(
@@ -418,8 +425,10 @@ def _run_localize_merge(config: CiSyncCommitConfig) -> None:
         report_path=merge_report_path,
         tree_dir=config.tree_dir,
         protected_chapters=config.protected_chapters,
+        conflict_policy=config.localize_conflict_policy,
     )
     print("[ci-sync] Localize merge")
+    print(f"[ci-sync]   Conflict policy: {config.localize_conflict_policy}")
     print(f"[ci-sync]   Accepted latest: {result.accepted_latest}")
     print(f"[ci-sync]   Conflicts: {result.conflicts}")
     print(f"[ci-sync]   Protected skips: {result.protected_skips}")
