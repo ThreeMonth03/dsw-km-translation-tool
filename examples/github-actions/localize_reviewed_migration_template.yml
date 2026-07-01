@@ -1,0 +1,89 @@
+name: Localize Reviewed Migration
+
+on:
+  workflow_dispatch:
+    inputs:
+      chapters:
+        description: "Reviewed chapter prefixes to migrate"
+        required: true
+        default: "0004 0005 0006"
+      apply:
+        description: "Upload the prepared PO to Localize"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+permissions:
+  contents: read
+
+env:
+  TOOLING_REPOSITORY: ThreeMonth03/DSW_Translation_tool
+  TOOLING_REF: master
+  TRANSLATION_CONFIG: translation-config.yml
+
+jobs:
+  migrate-reviewed:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout translation repository
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          path: translation-repo
+
+      - name: Checkout KM translation tooling
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.TOOLING_REPOSITORY }}
+          ref: ${{ env.TOOLING_REF }}
+          path: tooling-repo
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install tooling dependencies
+        working-directory: tooling-repo
+        run: make install-dev BOOTSTRAP_PYTHON=python
+
+      - name: Pull latest Localize PO snapshot
+        run: >-
+          tooling-repo/.venv/bin/python tooling-repo/src/pull_localize_po.py
+          --repo-root "$GITHUB_WORKSPACE/translation-repo"
+          --config "${{ env.TRANSLATION_CONFIG }}"
+
+      - name: Rebuild repo PO from translation tree
+        run: >-
+          tooling-repo/.venv/bin/python tooling-repo/src/tree_to_po.py
+          --tree-dir "$GITHUB_WORKSPACE/translation-repo/tree"
+          --original-po "$GITHUB_WORKSPACE/translation-repo/sources/localize/zh_Hant/latest.po"
+          --out-po "$GITHUB_WORKSPACE/translation-repo/builds/final_translated.po"
+
+      - name: Prepare reviewed migration PO
+        env:
+          LOCALIZE_API_TOKEN: ${{ secrets.LOCALIZE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          args=(
+            --repo-root "$GITHUB_WORKSPACE/translation-repo"
+            --config "${{ env.TRANSLATION_CONFIG }}"
+            --chapters ${{ github.event.inputs.chapters }}
+            --fill-localize-blanks-from-repo
+          )
+          if [ "${{ github.event.inputs.apply }}" = "true" ]; then
+            args+=(--apply)
+          fi
+          tooling-repo/.venv/bin/python tooling-repo/src/migrate_reviewed_to_localize.py "${args[@]}"
+
+      - name: Upload migration report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: localize-reviewed-migration
+          path: |
+            translation-repo/reviews/localize_migration_report.json
+            translation-repo/reviews/localize_migration_upload.po

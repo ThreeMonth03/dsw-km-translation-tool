@@ -1,4 +1,4 @@
-name: External Translation Auto Sync Template
+name: Localize Translation Auto Sync Template
 
 on:
   schedule:
@@ -18,6 +18,8 @@ concurrency:
 env:
   TOOLING_REPOSITORY: ThreeMonth03/DSW_Translation_tool
   TOOLING_REF: master
+  TRACKING_BRANCH: master
+  TRANSLATION_CONFIG: translation-config.yml
   TRANSLATION_ROOT: .
 
 jobs:
@@ -34,9 +36,15 @@ jobs:
         with:
           ref: >-
             ${{ github.event_name == 'pull_request' &&
-            github.event.pull_request.head.ref || 'master' }}
+            github.event.pull_request.head.ref || env.TRACKING_BRANCH }}
           path: translation-repo
           fetch-depth: 0
+
+      - name: Fetch tracking branch for recovery restores
+        working-directory: translation-repo
+        run: >-
+          git fetch origin
+          "${{ env.TRACKING_BRANCH }}:refs/remotes/origin/${{ env.TRACKING_BRANCH }}"
 
       - name: Checkout tooling repository
         uses: actions/checkout@v4
@@ -55,18 +63,22 @@ jobs:
         run: make install-dev BOOTSTRAP_PYTHON=python
 
       # This helper may restore malformed translation.md or one split
-      # shared_blocks/<group-id>/translation.txt file from origin/master once,
+      # shared_blocks/<group-id>/context.md file from the tracking branch once,
       # then rerun sync. That keeps CI unblocked, but can overwrite malformed
       # PR-branch edits.
-      - name: Sync, validate, and auto-commit translation artifacts
+      - name: Pull Localize, sync, validate, and auto-commit artifacts
+        env:
+          SYNC_MODE: ${{ github.event_name }}
         run: >-
-          tooling-repo/.venv/bin/python tooling-repo/src/ci_sync_commit.py
+          tooling-repo/.venv/bin/python tooling-repo/src/sync_from_localize.py
           --host-repo "$GITHUB_WORKSPACE/translation-repo"
           --tooling-repo "$GITHUB_WORKSPACE/tooling-repo"
+          --config "${{ env.TRANSLATION_CONFIG }}"
           --translation-root "${{ env.TRANSLATION_ROOT }}"
           --target-ref "${{ github.event_name == 'pull_request' &&
-          github.event.pull_request.head.ref || 'master' }}"
-          --mode "${{ github.event_name }}"
+          github.event.pull_request.head.ref || env.TRACKING_BRANCH }}"
+          --restore-source-ref "origin/${{ env.TRACKING_BRANCH }}"
+          --mode "$SYNC_MODE"
 
   skip-fork-pr:
     if: >-

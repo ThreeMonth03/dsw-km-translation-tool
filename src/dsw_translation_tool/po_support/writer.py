@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ..data_models import PoReferenceSection
+from ..data_models import PoReference, PoReferenceSection
 from .parser import PoCatalogParser
 from .render import PoSectionRenderer
 from .sections import PoReferenceSectionReader
@@ -30,12 +30,15 @@ class PoCatalogWriter:
         self,
         original_po_path: str,
         translations_by_key: dict[tuple[str, str], str],
+        clear_fuzzy_for_keys: frozenset[tuple[str, str]] | None = None,
     ) -> str:
         """Rewrite PO `msgstr` values using the provided translation map.
 
         Args:
             original_po_path: Original PO file used as the structural template.
             translations_by_key: Mapping from `(uuid, field)` to target text.
+            clear_fuzzy_for_keys: Optional keys whose PO sections should have
+                fuzzy flags removed when rendering.
 
         Returns:
             Rewritten PO content.
@@ -59,6 +62,7 @@ class PoCatalogWriter:
                 start_index=index,
                 section=section,
                 translations_by_key=translations_by_key,
+                clear_fuzzy_for_keys=clear_fuzzy_for_keys or frozenset(),
             )
             output_lines.extend(rewritten_lines)
 
@@ -70,6 +74,7 @@ class PoCatalogWriter:
         start_index: int,
         section: PoReferenceSection,
         translations_by_key: dict[tuple[str, str], str],
+        clear_fuzzy_for_keys: frozenset[tuple[str, str]] = frozenset(),
     ) -> tuple[list[str], int]:
         """Rewrite one PO section following its reference comments.
 
@@ -78,6 +83,8 @@ class PoCatalogWriter:
             start_index: First unread line after the reference section.
             section: Parsed section metadata.
             translations_by_key: Mapping from `(uuid, field)` to target text.
+            clear_fuzzy_for_keys: Keys whose rendered sections should no
+                longer carry a fuzzy marker.
 
         Returns:
             Rewritten output lines and next unread line index.
@@ -90,6 +97,8 @@ class PoCatalogWriter:
             lines,
             index,
         )
+        if self.section_has_key(parsed_tokens, clear_fuzzy_for_keys):
+            extra_comment_lines = self.clear_fuzzy_comment_lines(extra_comment_lines)
         msgid_lines, index = self.section_reader.collect_msgid_lines(lines, index)
 
         if index >= len(lines) or not lines[index].startswith("msgstr "):
@@ -121,3 +130,27 @@ class PoCatalogWriter:
             )
         )
         return output_lines, next_index
+
+    @staticmethod
+    def section_has_key(
+        parsed_tokens: list[PoReference],
+        keys: frozenset[tuple[str, str]],
+    ) -> bool:
+        """Return whether a PO section references any selected key."""
+
+        return any((token.uuid, token.field) in keys for token in parsed_tokens)
+
+    @staticmethod
+    def clear_fuzzy_comment_lines(lines: list[str]) -> list[str]:
+        """Remove only fuzzy flags from PO extra comment lines."""
+
+        cleaned: list[str] = []
+        for line in lines:
+            if line.startswith("#,") and "fuzzy" in [part.strip() for part in line[2:].split(",")]:
+                flags = [part.strip() for part in line[2:].split(",") if part.strip()]
+                remaining = [flag for flag in flags if flag != "fuzzy"]
+                if remaining:
+                    cleaned.append(f"#, {', '.join(remaining)}\n")
+                continue
+            cleaned.append(line)
+        return cleaned

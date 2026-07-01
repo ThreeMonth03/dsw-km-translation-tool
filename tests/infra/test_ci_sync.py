@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import subprocess
+from dataclasses import replace
 from pathlib import Path
 
 from dsw_translation_tool.ci_sync import CiSyncCommitConfig, run_ci_sync_commit
+from dsw_translation_tool.localize_merge import parse_po_entry_states
+from tests.infra.test_localize_merge import UUID_A, write_po
 
 
 class RecordingRunner:
@@ -235,6 +238,127 @@ def test_ci_sync_commit_uses_repo_root_layout_for_external_translation_repo(
     translation_test_env = runner.calls[2]["env"]
     assert translation_test_env is not None
     assert translation_test_env["DSW_COLLAB_OUTPUT_ROOT"] == str(config.host_repo_dir)
+    assert translation_test_env["DSW_SOURCE_PO_PATH"] == str(config.original_po_path)
+    assert translation_test_env["DSW_SOURCE_KM_PATH"] == str(config.original_model_path)
+
+
+def test_ci_sync_commit_can_use_host_repo_source_snapshots(workspace) -> None:
+    """Verify translation branches can carry their own source PO and KM files.
+
+    Args:
+        workspace: Per-test temporary workspace fixture.
+    """
+
+    config = build_ci_sync_config(workspace, translation_root=".")
+    source_po = Path("sources/localize/zh_Hant/latest.po")
+    source_km = Path("sources/knowledge-models/dsw-root-2.7.0/dsw-root-2.7.0.km")
+    (config.host_repo_dir / source_po).parent.mkdir(parents=True, exist_ok=True)
+    (config.host_repo_dir / source_po).write_text("", encoding="utf-8")
+    (config.host_repo_dir / source_km).parent.mkdir(parents=True, exist_ok=True)
+    (config.host_repo_dir / source_km).write_text("{}", encoding="utf-8")
+    config = replace(
+        config,
+        source_po_path=source_po,
+        source_km_path=source_km,
+        output_organization_id="dsw",
+        output_km_id="root-zh-hant",
+        output_name="Common DSW Knowledge Model (zh-Hant)",
+    )
+    runner = RecordingRunner()
+
+    committed = run_ci_sync_commit(config, runner=runner)
+
+    assert committed is False
+    sync_command = runner.calls[0]["args"]
+    assert str(config.host_repo_dir / source_po) in sync_command
+    po_to_km_command = runner.calls[1]["args"]
+    assert str(config.host_repo_dir / source_km) in po_to_km_command
+    assert "--output-organization-id" in po_to_km_command
+    assert "dsw" in po_to_km_command
+    assert "--output-km-id" in po_to_km_command
+    assert "root-zh-hant" in po_to_km_command
+    assert "--output-name" in po_to_km_command
+    assert "Common DSW Knowledge Model (zh-Hant)" in po_to_km_command
+
+
+def test_ci_sync_commit_merges_localize_latest_before_building_km(workspace) -> None:
+    """Verify optional Localize merge updates final PO before KM generation.
+
+    Args:
+        workspace: Per-test temporary workspace fixture.
+    """
+
+    config = build_ci_sync_config(workspace, translation_root=".")
+    base_po = Path("sources/localize/zh_Hant/base.po")
+    latest_po = Path("sources/localize/zh_Hant/latest.po")
+    report_path = Path("reviews/localize_merge_report.json")
+    (config.host_repo_dir / base_po).parent.mkdir(parents=True)
+    (config.host_repo_dir / report_path).parent.mkdir(parents=True)
+    write_po(config.host_repo_dir / base_po, [(UUID_A, "text", "Hello", "舊")])
+    write_po(config.host_repo_dir / latest_po, [(UUID_A, "text", "Hello", "新")])
+    config.final_po_path.parent.mkdir(parents=True)
+    write_po(config.final_po_path, [(UUID_A, "text", "Hello", "舊")])
+    config = replace(
+        config,
+        source_po_path=latest_po,
+        localize_base_po_path=base_po,
+        localize_merge_report_path=report_path,
+    )
+    runner = RecordingRunner()
+
+    committed = run_ci_sync_commit(config, runner=runner)
+
+    assert committed is False
+    assert parse_po_entry_states(config.final_po_path)[(UUID_A, "text")].msgstr == "新"
+    assert (config.host_repo_dir / report_path).exists()
+
+
+def test_ci_sync_commit_can_restore_from_tracking_branch(workspace) -> None:
+    """Verify CI recovery can restore malformed files from a tracking branch.
+
+    Args:
+        workspace: Per-test temporary workspace fixture.
+    """
+
+    config = replace(
+        build_ci_sync_config(workspace, translation_root="."),
+        restore_source_ref="origin/translation/latest",
+    )
+    broken_file = config.tree_dir / "chapter" / "translation.md"
+    runner = ScriptedRunner(
+        [
+            subprocess.CompletedProcess(
+                ["sync"],
+                1,
+                stdout="",
+                stderr=(
+                    "Invalid translation file and no valid backup was available.\n"
+                    f"File: {broken_file}\n"
+                    "Reason: broken fence"
+                ),
+            ),
+            subprocess.CompletedProcess(["restore"], 0, stdout="", stderr=""),
+            subprocess.CompletedProcess(["sync"], 0, stdout="", stderr=""),
+            subprocess.CompletedProcess(["po-to-km"], 0, stdout="", stderr=""),
+            subprocess.CompletedProcess(["pytest"], 0, stdout="", stderr=""),
+            subprocess.CompletedProcess(["git", "add", "-N"], 0, stdout="", stderr=""),
+            subprocess.CompletedProcess(["git", "status"], 0, stdout="", stderr=""),
+        ]
+    )
+
+    committed = run_ci_sync_commit(config, runner=runner)
+
+    assert committed is False
+    commands = [call["args"] for call in runner.calls]
+    assert commands[1] == [
+        "git",
+        "restore",
+        "--source",
+        "origin/translation/latest",
+        "--worktree",
+        "--",
+        "tree/chapter/translation.md",
+    ]
 
 
 def test_ci_sync_commit_restores_broken_translation_markdown_from_origin_master(

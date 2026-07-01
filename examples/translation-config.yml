@@ -1,0 +1,36 @@
+schema_version: 1
+
+knowledge_model:
+  organization_id: dsw
+  km_id: root
+  upstream_repository: https://github.com/ds-wizard/dsw-root-locales.git
+  bundle_path: files/dsw_root_2.7.0.km
+  supported_versions:
+    - 2.7.0
+
+translation:
+  source_language: en
+  target_language: zh_Hant
+  target_language_label: zh-Hant
+  translated_organization_id: dsw
+  translated_km_id: root-zh-hant
+  translated_name: Common DSW Knowledge Model (zh-Hant)
+
+branches:
+  tracking_branch: master
+
+tooling:
+  repository: ThreeMonth03/DSW_Translation_tool
+  ref: master
+
+localize:
+  download_url: https://localize.ds-wizard.org/download/knowledge-models/common-dsw-knowledge-model/zh_Hant/
+  repository: https://github.com/ds-wizard/dsw-root-locales.git
+
+registry:
+  api_url: https://api.registry.ds-wizard.org
+
+migration:
+  mode: exact-only
+  non_exact_policy: leave_empty_needs_translation
+  protected_chapters: []
