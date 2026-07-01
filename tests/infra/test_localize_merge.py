@@ -139,6 +139,22 @@ def test_merge_can_accept_latest_when_weblate_is_source_of_truth(workspace: Path
     assert report["decisions"][0]["decision"] == "accepted-latest"
 
 
+def test_merge_latest_wins_accepts_initial_localize_snapshot(workspace: Path) -> None:
+    """Verify first-time Localize snapshots still replace stale repo text."""
+
+    out_po, report = merge_workspace(
+        workspace,
+        base_entries=[(UUID_A, "text", "Hello", "Weblate")],
+        latest_entries=[(UUID_A, "text", "Hello", "Weblate")],
+        repo_entries=[(UUID_A, "text", "Hello", "本地")],
+        conflict_policy="latest-wins",
+    )
+
+    assert output_msgstr(out_po, UUID_A) == "Weblate"
+    assert report["accepted_latest"] == 1
+    assert report["conflicts"] == 0
+
+
 def test_merge_keeps_protected_repo_text_even_in_latest_wins_mode(workspace: Path) -> None:
     """Verify one-shot migration protection still overrides latest-wins mode."""
 

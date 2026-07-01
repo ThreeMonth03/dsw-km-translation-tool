@@ -178,7 +178,18 @@ class LocalizePoMerger:
                 repo=repo_state.msgstr,
                 result=repo_state.msgstr,
             )
-        if latest_state.msgstr == base_state.msgstr:
+        if repo_state.msgstr == latest_state.msgstr:
+            return repo_state.msgstr, make_decision(
+                key=key,
+                decision="unchanged",
+                protected=protected,
+                msgid=repo_state.msgid,
+                base=base_state.msgstr,
+                latest=latest_state.msgstr,
+                repo=repo_state.msgstr,
+                result=repo_state.msgstr,
+            )
+        if conflict_policy == "conservative" and latest_state.msgstr == base_state.msgstr:
             return repo_state.msgstr, make_decision(
                 key=key,
                 decision="unchanged",
@@ -243,17 +254,6 @@ class LocalizePoMerger:
                 latest=latest_state.msgstr,
                 repo=repo_state.msgstr,
                 result=latest_state.msgstr,
-            )
-        if repo_state.msgstr == latest_state.msgstr:
-            return repo_state.msgstr, make_decision(
-                key=key,
-                decision="unchanged",
-                protected=protected,
-                msgid=repo_state.msgid,
-                base=base_state.msgstr,
-                latest=latest_state.msgstr,
-                repo=repo_state.msgstr,
-                result=repo_state.msgstr,
             )
         return repo_state.msgstr, make_decision(
             key=key,
