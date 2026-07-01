@@ -1,0 +1,63 @@
+name: Localize Repository Alignment Report
+
+on:
+  schedule:
+    - cron: "45 1,13 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  TOOLING_REPOSITORY: ThreeMonth03/DSW_Translation_tool
+  TOOLING_REF: master
+  TRACKING_BRANCH: master
+  TRANSLATION_CONFIG: translation-config.yml
+
+jobs:
+  report-alignment:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout translation repository
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.TRACKING_BRANCH }}
+          path: translation-repo
+
+      - name: Checkout KM translation tooling
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ env.TOOLING_REPOSITORY }}
+          ref: ${{ env.TOOLING_REF }}
+          path: tooling-repo
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install tooling dependencies
+        working-directory: tooling-repo
+        run: make install-dev BOOTSTRAP_PYTHON=python
+
+      - name: Generate alignment report
+        run: >-
+          tooling-repo/.venv/bin/python tooling-repo/src/report_alignment_status.py
+          --repo-root "$GITHUB_WORKSPACE/translation-repo"
+          --config "${{ env.TRANSLATION_CONFIG }}"
+          --json-out "$GITHUB_WORKSPACE/translation-repo/reviews/localize_alignment_report.json"
+          --details-out "$GITHUB_WORKSPACE/translation-repo/reviews/localize_alignment_report.md"
+          --summary "$GITHUB_STEP_SUMMARY"
+          --artifact-dir "$GITHUB_WORKSPACE/translation-repo/reviews/localize_alignment_artifacts"
+          --fail-on-mismatch
+
+      - name: Upload alignment report artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: localize-alignment-report
+          path: |
+            translation-repo/reviews/localize_alignment_report.json
+            translation-repo/reviews/localize_alignment_report.md
+            translation-repo/reviews/localize_alignment_artifacts/

@@ -11,6 +11,9 @@ command reference; durable design and operating procedures live here.
 | Understand which module owns a behavior | [Architecture](architecture.md) |
 | Change code safely | [Development Guidelines](development-guidelines.md) |
 | Operate Localize/Weblate-to-Git sync | [Localize Sync Runbook](localize-sync-runbook.md) |
+| Check repository/Weblate build alignment | [Localize Sync Runbook](localize-sync-runbook.md) |
+| Configure workflow permissions and secrets | [Security and Permissions](security-and-permissions.md) |
+| Prepare a future KM version update | [KM Update Runbook](km-update-runbook.md) |
 | Find a Make target or CLI command | [Command Reference](command-reference.md) |
 | Prepare a one-shot repository-to-Weblate migration | [Localize Sync Runbook](localize-sync-runbook.md) and [Command Reference](command-reference.md) |
 
@@ -26,3 +29,6 @@ command reference; durable design and operating procedures live here.
   helper.
 - Do not add scheduled Git-to-Weblate uploads. Repository-to-Weblate upload is
   an explicit migration or repair operation only.
+- Do not rewrite public `master` history to clean up intermediate automation
+  commits. Use forward fixes unless maintainers explicitly coordinate a history
+  rewrite.

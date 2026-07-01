@@ -40,7 +40,7 @@ Scheduled runs commit directly to `master` when repository policy allows it.
 Pull request runs write only to same-repository branches. Fork pull requests
 skip writer commits.
 
-## Read-Only Status Report
+## Read-Only Status and Alignment Reports
 
 Use the status report workflow to inspect Weblate PO health without changing
 Git or Weblate. It:
@@ -60,6 +60,21 @@ entries.
 
 It requires only `contents: read` and does not use `LOCALIZE_API_TOKEN`.
 
+Use the alignment report workflow to verify artifact consistency without
+changing Git or Weblate. It:
+
+1. Downloads the latest Weblate PO into a temporary file.
+2. Compares it with `sources/localize/zh_Hant/latest.po`.
+3. Rebuilds `builds/final_translated.po` from `tree/`.
+4. Rebuilds `builds/final_translated.km` from the final PO and configured KM
+   metadata.
+5. Uploads JSON, Markdown, and generated comparison artifacts.
+
+The alignment report is allowed to fail when drift is detected. That failure
+means a pull sync, tree rebuild, or KM rebuild should run before maintainers
+trust the repository artifacts. It also requires only `contents: read` and does
+not use `LOCALIZE_API_TOKEN`.
+
 ## Merge Gate Behavior
 
 Before a same-repository branch reaches `master`, the pull request writer pulls
@@ -70,6 +85,10 @@ If branch protection blocks direct writer pushes, keep the same policy but
 switch the workflow to open or update an auto-merged sync pull request. The
 user-facing result should still be that Git mirrors Weblate without manual
 translation review in Git.
+
+Do not rewrite public `master` to compress earlier automation commits. Once
+published, sync and workflow corrections should be forward-only commits unless
+repository maintainers explicitly coordinate a history rewrite.
 
 ## Conflict Policy
 
@@ -123,15 +142,9 @@ manually. Weblate becomes authoritative again immediately after migration.
 
 ## KM Updates
 
-The current production policy is latest-only. When the DSW Registry publishes a
-new Common DSW KM:
-
-1. Download the published KM bundle into `sources/knowledge-models/`.
-2. Update `translation-config.yml` to point at the new bundle and supported
-   version.
-3. Run config validation.
-4. Run Localize pull sync against a disposable branch first.
-5. Review source mismatch or missing-entry reports before merging.
+The current production policy is latest-only. Use
+[KM Update Runbook](km-update-runbook.md) when the DSW Registry publishes a new
+Common DSW KM.
 
 Do not add unpublished versions such as draft `2.8.0` bundles.
 

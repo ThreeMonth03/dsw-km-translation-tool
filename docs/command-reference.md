@@ -77,6 +77,18 @@ Generate a read-only Localize/Weblate PO status report:
   --known-fuzzy-references "$TRANSLATION_REPO_DIR/config/localize_known_fuzzy_references.txt"
 ```
 
+Generate a read-only end-to-end alignment report:
+
+```shell
+"$TOOL_REPO_DIR/.venv/bin/python" "$TOOL_REPO_DIR/src/report_alignment_status.py" \
+  --repo-root "$TRANSLATION_REPO_DIR" \
+  --config translation-config.yml \
+  --json-out "$TRANSLATION_REPO_DIR/reviews/localize_alignment_report.json" \
+  --details-out "$TRANSLATION_REPO_DIR/reviews/localize_alignment_report.md" \
+  --artifact-dir "$TRANSLATION_REPO_DIR/reviews/localize_alignment_artifacts" \
+  --fail-on-mismatch
+```
+
 Run the full Localize/Weblate-to-Git writer:
 
 ```shell
