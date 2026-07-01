@@ -1,3 +1,21 @@
+## DSW Translation Tool
+
+This repository contains the Python tooling used to convert DSW Knowledge Model
+PO/KM files into a reviewable translation tree, regenerate translated PO/KM
+artifacts, and mirror Localize/Weblate translations into Git.
+
+For zh-Hant production work, the latest translation state is governed by
+Localize/Weblate. This repository is the automation and visualization tooling
+around that workflow.
+
+Maintainer documentation is split by responsibility:
+
+- [Documentation Index](docs/README.md)
+- [Architecture](docs/architecture.md)
+- [Development Guidelines](docs/development-guidelines.md)
+- [Localize Sync Runbook](docs/localize-sync-runbook.md)
+- [Command Reference](docs/command-reference.md)
+
 ## Usage
 
 ### For Translators
