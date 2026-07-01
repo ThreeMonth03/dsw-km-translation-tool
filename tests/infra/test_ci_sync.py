@@ -238,6 +238,8 @@ def test_ci_sync_commit_uses_repo_root_layout_for_external_translation_repo(
     translation_test_env = runner.calls[2]["env"]
     assert translation_test_env is not None
     assert translation_test_env["DSW_COLLAB_OUTPUT_ROOT"] == str(config.host_repo_dir)
+    assert translation_test_env["DSW_SOURCE_PO_PATH"] == str(config.original_po_path)
+    assert translation_test_env["DSW_SOURCE_KM_PATH"] == str(config.original_model_path)
 
 
 def test_ci_sync_commit_can_use_host_repo_source_snapshots(workspace) -> None:

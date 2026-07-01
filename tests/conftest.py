@@ -18,6 +18,8 @@ if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
 COLLAB_OUTPUT_ROOT_ENV = "DSW_COLLAB_OUTPUT_ROOT"
+SOURCE_PO_PATH_ENV = "DSW_SOURCE_PO_PATH"
+SOURCE_KM_PATH_ENV = "DSW_SOURCE_KM_PATH"
 
 
 def sanitize_test_name(name: str) -> str:
@@ -56,6 +58,10 @@ def po_path(repo_root: Path) -> Path:
         Absolute PO file path used by tests.
     """
 
+    configured_path = os.environ.get(SOURCE_PO_PATH_ENV)
+    if configured_path:
+        return _resolve_fixture_path(repo_root=repo_root, configured_path=configured_path)
+
     return repo_root / "files" / "knowledge-models-common-dsw-knowledge-model-zh_Hant.po"
 
 
@@ -69,6 +75,10 @@ def model_path(repo_root: Path) -> Path:
     Returns:
         Absolute KM file path used by tests.
     """
+
+    configured_path = os.environ.get(SOURCE_KM_PATH_ENV)
+    if configured_path:
+        return _resolve_fixture_path(repo_root=repo_root, configured_path=configured_path)
 
     return repo_root / "files" / "dsw_root_2.7.0.km"
 
@@ -95,6 +105,15 @@ def collaboration_output_root(repo_root: Path) -> Path:
         return output_root
 
     return repo_root / DEFAULT_LAYOUT.output_root
+
+
+def _resolve_fixture_path(repo_root: Path, configured_path: str) -> Path:
+    """Resolve an optional test fixture path from the environment."""
+
+    output_path = Path(configured_path)
+    if output_path.is_absolute():
+        return output_path.resolve()
+    return (repo_root / output_path).resolve()
 
 
 @pytest.fixture(scope="session")
