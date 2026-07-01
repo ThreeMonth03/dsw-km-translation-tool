@@ -1,0 +1,62 @@
+name: Localize Translation Status Report
+
+on:
+  schedule:
+    - cron: "30 1,13 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  TOOLING_REPOSITORY: ThreeMonth03/DSW_Translation_tool
+  TOOLING_REF: master
+  TRACKING_BRANCH: master
+  TARGET_LANG: zh_Hant
+  TRANSLATION_CONFIG: translation-config.yml
+
+jobs:
+  report-status:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout translation repository
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.TRACKING_BRANCH }}
+          path: translation-repo
+
+      - name: Checkout KM translation tooling
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ env.TOOLING_REPOSITORY }}
+          ref: ${{ env.TOOLING_REF }}
+          path: tooling-repo
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install tooling dependencies
+        working-directory: tooling-repo
+        run: make install-dev BOOTSTRAP_PYTHON=python
+
+      - name: Pull latest Localize PO snapshot
+        run: >-
+          tooling-repo/.venv/bin/python tooling-repo/src/pull_localize_po.py
+          --repo-root "$GITHUB_WORKSPACE/translation-repo"
+          --config "${{ env.TRANSLATION_CONFIG }}"
+
+      - name: Generate Localize status report
+        run: >-
+          tooling-repo/.venv/bin/python tooling-repo/src/report_localize_status.py
+          --po "$GITHUB_WORKSPACE/translation-repo/sources/localize/${{ env.TARGET_LANG }}/latest.po"
+          --json-out "$GITHUB_WORKSPACE/translation-repo/reviews/localize_status_report.json"
+          --summary "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload status report artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: localize-status-report
+          path: translation-repo/reviews/localize_status_report.json

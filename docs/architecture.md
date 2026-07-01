@@ -57,6 +57,8 @@ These modules connect the translation repository to the Weblate website:
 - `translation_repository_config.py`: loads `translation-config.yml` and
   computes repository paths.
 - `localize_sync.py`: downloads the current Weblate PO snapshot.
+- `localize_status.py`: reports PO completion, empty strings, and fuzzy /
+  needs-editing counts without modifying translations.
 - `localize_tree_sync.py`: force-refreshes `tree/` from the latest Weblate PO.
 - `localize_merge.py`: contains PO merge decisions.
 - `localize_migration.py`: prepares one-shot repository-to-Weblate migration
@@ -82,6 +84,8 @@ The reverse direction is intentionally manual.
   writer for `translation/zh_Hant`.
 - `examples/github-actions/translation_external_auto_sync_template.yml` is the
   copy-ready workflow for dedicated translation repositories.
+- `examples/github-actions/localize_status_report_template.yml` is the
+  read-only status workflow for scheduled Localize/Weblate health reports.
 - `examples/github-actions/localize_reviewed_migration_template.yml` is the
   manual repository-to-Weblate migration workflow.
 

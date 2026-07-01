@@ -104,3 +104,30 @@ def test_localize_reviewed_migration_template_is_manual_and_guarded(
     assert "--fill-localize-blanks-from-repo" in workflow_text
     assert 'if [ "${{ github.event.inputs.apply }}" = "true" ]' in workflow_text
     assert "translation-repo/reviews/localize_migration_report.json" in workflow_text
+
+
+def test_localize_status_report_template_is_read_only(repo_root: Path) -> None:
+    """Verify the status report template cannot write translations."""
+
+    workflow_path = (
+        repo_root / "examples" / "github-actions" / "localize_status_report_template.yml"
+    )
+    workflow = load_workflow_yaml(workflow_path)
+    workflow_text = workflow_path.read_text(encoding="utf-8")
+
+    assert workflow["on"]["schedule"][0]["cron"] == "30 1,13 * * *"
+    assert "workflow_dispatch" in workflow["on"]
+    assert workflow["permissions"]["contents"] == "read"
+    assert workflow["env"]["TOOLING_REPOSITORY"] == "ThreeMonth03/DSW_Translation_tool"
+    assert workflow["env"]["TOOLING_REF"] == "master"
+    assert workflow["env"]["TRACKING_BRANCH"] == "master"
+    assert workflow["env"]["TARGET_LANG"] == "zh_Hant"
+    assert workflow["env"]["TRANSLATION_CONFIG"] == "translation-config.yml"
+    assert "tooling-repo/src/pull_localize_po.py" in workflow_text
+    assert "tooling-repo/src/report_localize_status.py" in workflow_text
+    assert "translation-repo/reviews/localize_status_report.json" in workflow_text
+    assert "actions/upload-artifact@v7" in workflow_text
+    assert "sync_from_localize.py" not in workflow_text
+    assert "migrate_reviewed_to_localize.py" not in workflow_text
+    assert "secrets.LOCALIZE_API_TOKEN" not in workflow_text
+    assert "contents: write" not in workflow_text

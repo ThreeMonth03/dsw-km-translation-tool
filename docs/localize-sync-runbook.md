@@ -40,6 +40,19 @@ Scheduled runs commit directly to `master` when repository policy allows it.
 Pull request runs write only to same-repository branches. Fork pull requests
 skip writer commits.
 
+## Read-Only Status Report
+
+Use the status report workflow to inspect Weblate PO health without changing
+Git or Weblate. It:
+
+1. Checks out the translation repository.
+2. Pulls the latest Weblate PO into the ephemeral workflow checkout.
+3. Runs `src/report_localize_status.py`.
+4. Writes a GitHub step summary and uploads
+   `reviews/localize_status_report.json` as an artifact.
+
+It requires only `contents: read` and does not use `LOCALIZE_API_TOKEN`.
+
 ## Merge Gate Behavior
 
 Before a same-repository branch reaches `master`, the pull request writer pulls

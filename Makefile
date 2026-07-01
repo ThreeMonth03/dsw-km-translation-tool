@@ -21,8 +21,10 @@ REVIEW_FLAGS ?=
 PO_TO_KM_FLAGS ?=
 STATUS_LIMIT ?= 5
 SYNC_GROUP ?= shared-block
+LOCALIZE_PO ?= sources/localize/zh_Hant/latest.po
+LOCALIZE_STATUS_JSON ?= reviews/localize_status_report.json
 
-.PHONY: help venv install-dev install-hooks compile format format-check lint test test-infra test-translation export-tree export-tree-force status sync sync-watch tree-to-po po-to-km review-po validate workflow
+.PHONY: help venv install-dev install-hooks compile format format-check lint test test-infra test-translation export-tree export-tree-force status localize-status sync sync-watch tree-to-po po-to-km review-po validate workflow
 
 venv: $(VENV_PYTHON)
 
@@ -45,6 +47,7 @@ help:
 	'  export-tree       Export PO + model into $(TREE_DIR) and refresh $(OUTLINE_MD) + $(TREE_DIR)/shared_blocks/' \
 	'  export-tree-force Force rebuild $(TREE_DIR) after confirmation' \
 	'  status            Show untranslated fields from $(TREE_DIR)' \
+	'  localize-status   Report Localize/Weblate PO status from $(LOCALIZE_PO)' \
 	'  sync              Sync shared strings and refresh $(FINAL_PO) + $(REVIEW_DIFF) + $(OUTLINE_MD) + $(TREE_DIR)/shared_blocks/ + $(SHARED_BLOCKS_OUTLINE_MD)' \
 	'  sync-watch        Watch editable inputs with watchdog' \
 	'  tree-to-po        Build $(FINAL_PO) from $(TREE_DIR)' \
@@ -105,6 +108,11 @@ status: venv
 		--source-lang $(SOURCE_LANG) \
 		--target-lang $(TARGET_LANG) \
 		-k $(STATUS_LIMIT)
+
+localize-status: venv
+	$(PYTHON) src/report_localize_status.py \
+		--po $(LOCALIZE_PO) \
+		--json-out $(LOCALIZE_STATUS_JSON)
 
 sync: venv
 	$(PYTHON) src/sync_shared_strings.py \
