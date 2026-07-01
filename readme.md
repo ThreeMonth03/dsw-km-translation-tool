@@ -173,7 +173,7 @@ If the tests pass, open a pull request with your translation changes.
 If the tests do not pass, please notify the developer or project maintainer
 and report the problem instead of trying to work around it manually.
 
-#### 8. Upload The Final PO (Optional)
+#### 8. Upload The Final PO (Optional Legacy Path)
 
 After the translation pull request has been merged, you can optionally upload
 `translation/zh_Hant/builds/final_translated.po` manually to:
@@ -182,6 +182,10 @@ After the translation pull request has been merged, you can optionally upload
 
 If needed, ask the developer or project maintainer to run final validation
 before upload.
+
+For the zh-Hant migration workflow, prefer the reviewed-chapter migration
+command described below. It produces a focused PO and report instead of
+uploading the whole generated PO by hand.
 
 ### For Developers
 
@@ -253,6 +257,68 @@ This runs the pytest suite for:
 
 - infrastructure and CLI behavior
 - translation tree and PO consistency
+
+#### One-Shot Reviewed Translation Migration To Localize
+
+Use this only when repository translations are ahead of Localize/Weblate and
+need to be migrated to the website. It is not meant to be a permanent
+bidirectional sync path.
+
+First refresh the Localize PO and rebuild the repository PO from the tree:
+
+```shell
+.venv/bin/python src/pull_localize_po.py \
+  --repo-root /path/to/translation-repo \
+  --config translation-config.yml
+
+.venv/bin/python src/tree_to_po.py \
+  --tree-dir /path/to/translation-repo/tree \
+  --original-po /path/to/translation-repo/sources/localize/zh_Hant/latest.po \
+  --out-po /path/to/translation-repo/builds/final_translated.po
+```
+
+Then prepare a dry-run migration report for the reviewed chapters:
+
+```shell
+.venv/bin/python src/migrate_reviewed_to_localize.py \
+  --repo-root /path/to/translation-repo \
+  --config translation-config.yml \
+  --chapters 0004 0005 0006
+```
+
+If the translation repository has not received `translation-config.yml` yet,
+run the dry-run with explicit paths:
+
+```shell
+.venv/bin/python src/migrate_reviewed_to_localize.py \
+  --repo-root /path/to/translation-repo \
+  --chapters 0004 0005 0006 \
+  --localize-po sources/localize/zh_Hant/latest.po \
+  --repo-po builds/final_translated.po \
+  --tree-dir tree
+```
+
+This writes:
+
+- `reviews/localize_migration_upload.po`
+- `reviews/localize_migration_report.json`
+
+Review the report before uploading. To apply the migration, set
+`LOCALIZE_API_TOKEN` and pass `--apply`:
+
+```shell
+LOCALIZE_API_TOKEN=... \
+.venv/bin/python src/migrate_reviewed_to_localize.py \
+  --repo-root /path/to/translation-repo \
+  --config translation-config.yml \
+  --chapters 0004 0005 0006 \
+  --apply
+```
+
+The upload uses Weblate's `translate` method, so the migration PO contributes
+the included reviewed translations without replacing the whole component.
+After the migration is complete, Localize/Weblate should be treated as the
+translation source of truth and the repository should pull from it.
 
 #### Run Infrastructure Unit Tests
 

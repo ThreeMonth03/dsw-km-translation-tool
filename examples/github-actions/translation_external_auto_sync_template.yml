@@ -4,7 +4,7 @@ on:
   schedule:
     - cron: "0 1,13 * * *"
   pull_request:
-    branches: [translation/latest]
+    branches: [master]
 
 permissions:
   contents: write
@@ -12,13 +12,13 @@ permissions:
 concurrency:
   group: >-
     external-translation-auto-sync-${{ github.event_name == 'pull_request' &&
-    github.event.pull_request.head.ref || 'translation/latest' }}
+    github.event.pull_request.head.ref || 'master' }}
   cancel-in-progress: false
 
 env:
   TOOLING_REPOSITORY: ThreeMonth03/DSW_Translation_tool
   TOOLING_REF: master
-  TRACKING_BRANCH: translation/latest
+  TRACKING_BRANCH: master
   TRANSLATION_CONFIG: translation-config.yml
   TRANSLATION_ROOT: .
 
