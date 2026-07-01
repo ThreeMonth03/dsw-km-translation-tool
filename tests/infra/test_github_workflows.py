@@ -100,5 +100,6 @@ def test_localize_reviewed_migration_template_is_manual_and_guarded(
     assert workflow["on"]["workflow_dispatch"]["inputs"]["apply"]["default"] == "false"
     assert "secrets.LOCALIZE_API_TOKEN" in workflow_text
     assert "src/migrate_reviewed_to_localize.py" in workflow_text
+    assert "--fill-localize-blanks-from-repo" in workflow_text
     assert 'if [ "${{ github.event.inputs.apply }}" = "true" ]' in workflow_text
     assert "translation-repo/reviews/localize_migration_report.json" in workflow_text

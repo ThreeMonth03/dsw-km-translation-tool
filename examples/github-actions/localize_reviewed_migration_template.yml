@@ -73,6 +73,7 @@ jobs:
             --repo-root "$GITHUB_WORKSPACE/translation-repo"
             --config "${{ env.TRANSLATION_CONFIG }}"
             --chapters ${{ github.event.inputs.chapters }}
+            --fill-localize-blanks-from-repo
           )
           if [ "${{ github.event.inputs.apply }}" = "true" ]; then
             args+=(--apply)

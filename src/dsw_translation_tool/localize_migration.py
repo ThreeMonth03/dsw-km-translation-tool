@@ -117,6 +117,7 @@ def prepare_reviewed_localize_migration(
         writer.rewrite_translations(
             original_po_path=str(localize_po),
             translations_by_key=translations_to_upload,
+            clear_fuzzy_for_keys=frozenset(translations_to_upload),
         ),
         encoding="utf-8",
     )
@@ -127,6 +128,90 @@ def prepare_reviewed_localize_migration(
         chapters=normalized_chapters,
         decisions=tuple(decisions),
         upload=None,
+    )
+    write_migration_report(result)
+    return result
+
+
+def prepare_consolidated_localize_migration(
+    *,
+    localize_po_path: str | Path,
+    repo_po_path: str | Path,
+    tree_dir: str | Path,
+    chapters: tuple[str, ...],
+    out_po_path: str | Path,
+    report_path: str | Path,
+    po_writer: PoCatalogWriter | None = None,
+) -> LocalizeMigrationResult:
+    """Build a PO using repo translations for reviewed chapters and blank fills.
+
+    Policy:
+    - reviewed chapters use the repository translation when source text matches
+      and the repository translation is non-empty;
+    - other chapters keep every non-empty Localize/Weblate translation;
+    - other chapters use the repository translation only to fill an empty
+      Localize/Weblate translation.
+    """
+
+    normalized_chapters = tuple(chapters)
+    if not normalized_chapters:
+        raise LocalizeMigrationError("At least one reviewed chapter must be provided")
+
+    localize_po = Path(localize_po_path)
+    repo_po = Path(repo_po_path)
+    localize_entries = parse_po_entry_states(localize_po)
+    repo_entries = parse_po_entry_states(repo_po)
+    reviewed_keys = collect_protected_po_keys(
+        tree_dir=Path(tree_dir),
+        protected_chapters=normalized_chapters,
+        repo_keys=frozenset(repo_entries),
+    )
+
+    translations_to_upload: dict[PoKey, str] = {}
+    decisions: list[LocalizeMigrationDecision] = []
+    for key in sorted(reviewed_keys):
+        repo_state = repo_entries[key]
+        localize_state = localize_entries.get(key)
+        decision = decide_migration_entry(
+            key=key,
+            repo_state=repo_state,
+            localize_state=localize_state,
+        )
+        decisions.append(decision)
+        if decision.included:
+            translations_to_upload[key] = repo_state.msgstr
+
+    for key in sorted(set(localize_entries) - reviewed_keys):
+        localize_state = localize_entries[key]
+        repo_state = repo_entries.get(key)
+        decision = decide_localize_first_entry(
+            key=key,
+            repo_state=repo_state,
+            localize_state=localize_state,
+        )
+        decisions.append(decision)
+        if decision.included and repo_state is not None:
+            translations_to_upload[key] = repo_state.msgstr
+
+    writer = po_writer or PoCatalogWriter()
+    out_po = Path(out_po_path)
+    out_po.parent.mkdir(parents=True, exist_ok=True)
+    out_po.write_text(
+        writer.rewrite_translations(
+            original_po_path=str(localize_po),
+            translations_by_key=translations_to_upload,
+            clear_fuzzy_for_keys=frozenset(translations_to_upload),
+        ),
+        encoding="utf-8",
+    )
+
+    result = build_migration_result(
+        migration_po_path=out_po,
+        report_path=Path(report_path),
+        chapters=normalized_chapters,
+        decisions=tuple(decisions),
+        upload=None,
+        total_reviewed_keys=len(reviewed_keys),
     )
     write_migration_report(result)
     return result
@@ -182,6 +267,60 @@ def decide_migration_entry(
         field=field,
         decision="include",
         msgid=repo_state.msgid,
+        localize=localize_state.msgstr,
+        repo=repo_state.msgstr,
+        included=True,
+    )
+
+
+def decide_localize_first_entry(
+    *,
+    key: PoKey,
+    repo_state: PoEntryState | None,
+    localize_state: PoEntryState,
+) -> LocalizeMigrationDecision:
+    """Decide whether one non-reviewed entry should fill a Localize blank."""
+
+    if localize_state.msgstr:
+        return make_decision(
+            key=key,
+            decision="keep-localize",
+            msgid=localize_state.msgid,
+            localize=localize_state.msgstr,
+            repo=repo_state.msgstr if repo_state is not None else "",
+            included=False,
+        )
+    if repo_state is None:
+        return make_decision(
+            key=key,
+            decision="empty-localize-missing-repo",
+            msgid=localize_state.msgid,
+            localize=localize_state.msgstr,
+            repo="",
+            included=False,
+        )
+    if repo_state.msgid != localize_state.msgid:
+        return make_decision(
+            key=key,
+            decision="source-mismatch",
+            msgid=localize_state.msgid,
+            localize=localize_state.msgstr,
+            repo=repo_state.msgstr,
+            included=False,
+        )
+    if not repo_state.msgstr:
+        return make_decision(
+            key=key,
+            decision="empty-both",
+            msgid=localize_state.msgid,
+            localize=localize_state.msgstr,
+            repo=repo_state.msgstr,
+            included=False,
+        )
+    return make_decision(
+        key=key,
+        decision="fill-localize-blank",
+        msgid=localize_state.msgid,
         localize=localize_state.msgstr,
         repo=repo_state.msgstr,
         included=True,
@@ -289,6 +428,7 @@ def build_migration_result(
     chapters: tuple[str, ...],
     decisions: tuple[LocalizeMigrationDecision, ...],
     upload: LocalizeUploadResult | None,
+    total_reviewed_keys: int | None = None,
 ) -> LocalizeMigrationResult:
     """Build a migration result and derived counters."""
 
@@ -299,8 +439,10 @@ def build_migration_result(
         migration_po_path=migration_po_path,
         report_path=report_path,
         chapters=chapters,
-        total_reviewed_keys=len(decisions),
-        included_entries=counts.get("include", 0),
+        total_reviewed_keys=total_reviewed_keys
+        if total_reviewed_keys is not None
+        else len(decisions),
+        included_entries=sum(1 for decision in decisions if decision.included),
         already_current=counts.get("already-current", 0),
         skipped_empty_repo=counts.get("empty-repo", 0),
         source_mismatches=counts.get("source-mismatch", 0),

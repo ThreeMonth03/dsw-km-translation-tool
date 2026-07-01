@@ -9,6 +9,7 @@ from dsw_translation_tool.localize_merge import parse_po_entry_states
 from dsw_translation_tool.localize_migration import (
     build_multipart_body,
     derive_upload_url,
+    prepare_consolidated_localize_migration,
     prepare_reviewed_localize_migration,
 )
 from migrate_reviewed_to_localize import main as migrate_reviewed_to_localize_main
@@ -114,6 +115,82 @@ def test_prepare_reviewed_migration_includes_only_safe_reviewed_changes(
     assert decisions[UUID_MISSING] == "missing-localize-entry"
 
 
+def test_prepare_consolidated_migration_keeps_localize_and_fills_blanks(
+    workspace: Path,
+) -> None:
+    """Verify full migration policy keeps Localize except reviewed and blank fills."""
+
+    localize_po = workspace / "localize.po"
+    repo_po = workspace / "repo.po"
+    out_po = workspace / "migration.po"
+    report_path = workspace / "report.json"
+    tree_dir = workspace / "tree"
+    for chapter, uuid_value in [
+        ("0004", UUID_A),
+        ("0001", UUID_B),
+        ("0002", UUID_C),
+        ("0003", UUID_D),
+    ]:
+        write_uuid(tree_dir, chapter, uuid_value)
+
+    write_po(
+        localize_po,
+        [
+            (UUID_A, "text", "A", "網站舊"),
+            (UUID_B, "text", "B", "網站保留"),
+            (UUID_C, "text", "C", ""),
+            (UUID_D, "text", "D", ""),
+        ],
+    )
+    localize_po.write_text(
+        localize_po.read_text(encoding="utf-8")
+        .replace(
+            f'#: question:{UUID_A}:text\nmsgid "A"',
+            f'#: question:{UUID_A}:text\n#, fuzzy\nmsgid "A"',
+        )
+        .replace(
+            f'#: question:{UUID_B}:text\nmsgid "B"',
+            f'#: question:{UUID_B}:text\n#, fuzzy\nmsgid "B"',
+        ),
+        encoding="utf-8",
+    )
+    write_po(
+        repo_po,
+        [
+            (UUID_A, "text", "A", "repo reviewed"),
+            (UUID_B, "text", "B", "repo should not overwrite"),
+            (UUID_C, "text", "C", "repo fills blank"),
+            (UUID_D, "text", "D", ""),
+        ],
+    )
+
+    result = prepare_consolidated_localize_migration(
+        localize_po_path=localize_po,
+        repo_po_path=repo_po,
+        tree_dir=tree_dir,
+        chapters=("0004",),
+        out_po_path=out_po,
+        report_path=report_path,
+    )
+
+    output_states = parse_po_entry_states(out_po)
+    assert output_states[(UUID_A, "text")].msgstr == "repo reviewed"
+    assert output_states[(UUID_B, "text")].msgstr == "網站保留"
+    assert output_states[(UUID_C, "text")].msgstr == "repo fills blank"
+    assert output_states[(UUID_D, "text")].msgstr == ""
+    output_text = out_po.read_text(encoding="utf-8")
+    assert f'#: question:{UUID_A}:text\n#, fuzzy\nmsgid "A"' not in output_text
+    assert f'#: question:{UUID_B}:text\n#, fuzzy\nmsgid "B"' in output_text
+    assert result.total_reviewed_keys == 1
+    assert result.included_entries == 2
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    decisions = {item["uuid"]: item["decision"] for item in report["decisions"]}
+    assert decisions[UUID_A] == "include"
+    assert decisions[UUID_B] == "keep-localize"
+    assert decisions[UUID_C] == "fill-localize-blank"
+    assert decisions[UUID_D] == "empty-both"
+
+
 def test_derive_upload_url_from_localize_download_url() -> None:
     """Verify Localize download URLs map to Weblate upload API URLs."""
 
@@ -133,7 +210,7 @@ def test_build_multipart_body_contains_method_and_file(workspace: Path) -> None:
     po_path.write_text('msgid ""\nmsgstr ""\n', encoding="utf-8")
 
     body, content_type = build_multipart_body(
-        fields={"method": "translate"},
+        fields={"method": "translate", "conflicts": "replace-translated"},
         file_field="file",
         file_path=po_path,
     )
@@ -141,6 +218,8 @@ def test_build_multipart_body_contains_method_and_file(workspace: Path) -> None:
     assert content_type.startswith("multipart/form-data; boundary=")
     assert b'name="method"' in body
     assert b"translate" in body
+    assert b'name="conflicts"' in body
+    assert b"replace-translated" in body
     assert b'name="file"; filename="migration.po"' in body
     assert b'msgid ""' in body
 

@@ -283,7 +283,8 @@ Then prepare a dry-run migration report for the reviewed chapters:
 .venv/bin/python src/migrate_reviewed_to_localize.py \
   --repo-root /path/to/translation-repo \
   --config translation-config.yml \
-  --chapters 0004 0005 0006
+  --chapters 0004 0005 0006 \
+  --fill-localize-blanks-from-repo
 ```
 
 If the translation repository has not received `translation-config.yml` yet,
@@ -295,7 +296,8 @@ run the dry-run with explicit paths:
   --chapters 0004 0005 0006 \
   --localize-po sources/localize/zh_Hant/latest.po \
   --repo-po builds/final_translated.po \
-  --tree-dir tree
+  --tree-dir tree \
+  --fill-localize-blanks-from-repo
 ```
 
 This writes:
@@ -312,13 +314,23 @@ LOCALIZE_API_TOKEN=... \
   --repo-root /path/to/translation-repo \
   --config translation-config.yml \
   --chapters 0004 0005 0006 \
+  --fill-localize-blanks-from-repo \
   --apply
 ```
 
-The upload uses Weblate's `translate` method, so the migration PO contributes
-the included reviewed translations without replacing the whole component.
+The upload uses Weblate's `translate` method with
+`conflicts=replace-translated`, so the migration PO updates existing
+translations that are not approved while keeping the upload scoped to the
+merged PO. If approved strings also need to be replaced, rerun with
+`--conflicts replace-approved` using an account that has permission to do so.
 After the migration is complete, Localize/Weblate should be treated as the
 translation source of truth and the repository should pull from it.
+
+For Localize/Weblate PO exports without UUID-aware context, repeated identical
+source strings share one translation. If a reviewed chapter and another
+chapter need different translations for the same source string, Localize can
+only keep one of them; prefer the reviewed chapter translation for the migration
+and document the affected source strings.
 
 #### Run Infrastructure Unit Tests
 

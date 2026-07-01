@@ -9,8 +9,10 @@ from pathlib import Path
 
 from dsw_translation_tool.localize_migration import (
     LocalizeMigrationError,
+    LocalizeMigrationResult,
     build_migration_result,
     derive_upload_url,
+    prepare_consolidated_localize_migration,
     prepare_reviewed_localize_migration,
     upload_migration_po,
     write_migration_report,
@@ -87,9 +89,23 @@ def build_argument_parser() -> argparse.ArgumentParser:
         help="Weblate upload method. Keep the default for migration uploads.",
     )
     parser.add_argument(
+        "--conflicts",
+        default="replace-translated",
+        choices=("ignore", "replace-translated", "replace-approved"),
+        help=("Weblate conflict handling for uploaded strings that already have translations."),
+    )
+    parser.add_argument(
         "--apply",
         action="store_true",
         help="Upload the prepared PO to Localize/Weblate.",
+    )
+    parser.add_argument(
+        "--fill-localize-blanks-from-repo",
+        action="store_true",
+        help=(
+            "Keep non-empty Localize translations outside reviewed chapters and use "
+            "repository translations only to fill Localize blanks."
+        ),
     )
     return parser
 
@@ -139,7 +155,12 @@ def main() -> None:
     )
 
     try:
-        result = prepare_reviewed_localize_migration(
+        prepare = (
+            prepare_consolidated_localize_migration
+            if args.fill_localize_blanks_from_repo
+            else prepare_reviewed_localize_migration
+        )
+        result = prepare(
             localize_po_path=localize_po,
             repo_po_path=repo_po,
             tree_dir=tree_dir,
@@ -158,6 +179,7 @@ def main() -> None:
                     po_path=result.migration_po_path,
                     method=args.method,
                     auth_scheme=args.auth_scheme,
+                    extra_fields={"conflicts": args.conflicts},
                 )
                 result = build_migration_result(
                     migration_po_path=result.migration_po_path,
@@ -165,6 +187,7 @@ def main() -> None:
                     chapters=result.chapters,
                     decisions=result.decisions,
                     upload=upload,
+                    total_reviewed_keys=result.total_reviewed_keys,
                 )
                 write_migration_report(result)
     except LocalizeMigrationError as error:
@@ -180,6 +203,11 @@ def main() -> None:
     print(f"  Empty repo skips : {result.skipped_empty_repo}")
     print(f"  Source mismatches: {result.source_mismatches}")
     print(f"  Missing Localize : {result.missing_localize_entries}")
+    if args.fill_localize_blanks_from_repo:
+        counts = _decision_counts(result)
+        print(f"  Kept Localize    : {counts.get('keep-localize', 0)}")
+        print(f"  Blank fills      : {counts.get('fill-localize-blank', 0)}")
+        print(f"  Empty both       : {counts.get('empty-both', 0)}")
     if result.upload:
         print(f"  Uploaded         : HTTP {result.upload.status_code}")
     else:
@@ -213,6 +241,15 @@ def _configured_upload_url(config: TranslationRepositoryConfig | None) -> str:
             "Uploading without translation-config.yml requires --upload-url"
         )
     return derive_upload_url(config.localize.download_url)
+
+
+def _decision_counts(result: LocalizeMigrationResult) -> dict[str, int]:
+    """Return decision counts from a migration result."""
+
+    counts: dict[str, int] = {}
+    for decision in result.decisions:
+        counts[decision.decision] = counts.get(decision.decision, 0) + 1
+    return counts
 
 
 if __name__ == "__main__":
