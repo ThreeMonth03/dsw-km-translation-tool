@@ -68,7 +68,7 @@ def test_refresh_tree_from_localize_overwrites_repo_tree_text(
     model_path: Path,
     workspace: Path,
 ) -> None:
-    """Verify Localize refresh treats Weblate as source of truth over Git text."""
+    """Verify Localize refresh treats the latest Weblate text as authoritative."""
 
     host_repo = workspace / "translation-repo"
     host_repo.mkdir()

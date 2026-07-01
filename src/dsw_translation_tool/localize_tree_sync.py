@@ -33,9 +33,10 @@ def refresh_tree_from_localize(
 ) -> LocalizeTreeRefreshResult:
     """Rebuild the translation tree from the latest Localize/Weblate PO.
 
-    Localize/Weblate is the source of truth for routine syncs. Re-exporting the
-    tree with ``preserve_existing_translations=False`` makes Git a mirror of the
-    website translations before downstream artifacts are rebuilt and tested.
+    The latest translation state is governed by Localize/Weblate for routine
+    syncs. Re-exporting the tree with ``preserve_existing_translations=False``
+    makes Git a mirror of the website translations before downstream artifacts
+    are rebuilt and tested.
 
     Args:
         config: CI sync configuration with resolved source PO/KM and output

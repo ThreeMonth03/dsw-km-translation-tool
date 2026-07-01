@@ -90,7 +90,7 @@ class CiSyncCommitConfig:
         protected_chapters: Chapter numeric prefixes that should keep repo
             translations during Localize merges.
         localize_conflict_policy: Conflict policy passed to the Localize merge.
-            Use ``latest-wins`` when Weblate is the source of truth.
+            Use ``latest-wins`` when the latest Weblate state is authoritative.
     """
 
     host_repo_path: Path

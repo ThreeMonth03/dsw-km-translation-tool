@@ -34,7 +34,7 @@ def build_argument_parser() -> argparse.ArgumentParser:
         default="conservative",
         help=(
             "How to handle entries changed in both the repository and Weblate. "
-            "Use latest-wins when Weblate is the source of truth."
+            "Use latest-wins when the latest Weblate state is authoritative."
         ),
     )
     return parser

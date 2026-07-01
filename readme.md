@@ -5,9 +5,10 @@
 This section is for people who only need to translate content.
 You do not need to understand the Python code in this repository.
 
-For zh-Hant production work, Localize/Weblate is now the primary editing
-surface. Use the translation tree below only for legacy local edits, emergency
-repairs, or one-shot migration work requested by maintainers.
+For zh-Hant production work, the latest translation state is governed by
+Localize/Weblate. The translation tree below is an automation and visualization
+workspace for legacy local edits, emergency repairs, generated artifacts, or
+one-shot migration work requested by maintainers.
 
 #### 1. Install The Tooling Once
 
@@ -328,8 +329,8 @@ The upload uses Weblate's `translate` method with
 translations that are not approved while keeping the upload scoped to the
 merged PO. If approved strings also need to be replaced, rerun with
 `--conflicts replace-approved` using an account that has permission to do so.
-After the migration is complete, Localize/Weblate should be treated as the
-translation source of truth and the repository should pull from it.
+After the migration is complete, the latest translation state should be
+governed by Localize/Weblate and the repository should pull from it.
 
 For Localize/Weblate PO exports without UUID-aware context, repeated identical
 source strings share one translation. If a reviewed chapter and another
@@ -339,9 +340,10 @@ and document the affected source strings.
 
 #### Localize/Weblate To Git Sync
 
-After the migration is complete, Localize/Weblate is the translation source of
-truth. The translation repository mirrors it and provides reviewable history,
-generated tree artifacts, and the final translated KM.
+After the migration is complete, the latest translation state is governed by
+Localize/Weblate. The translation repository mirrors it and provides
+automation, visualization, reviewable history, generated tree artifacts, and
+the final translated KM.
 
 Use the high-level sync entry point for normal automation:
 
@@ -394,8 +396,8 @@ copy-ready external template:
   repository. It intentionally lives outside `.github/workflows/` so it does
   not run inside this tooling repository.
 
-The external translation workflow treats Localize/Weblate as the source of
-truth. Its policy is:
+The external translation workflow treats the latest Localize/Weblate state as
+authoritative. Its policy is:
 
 - they run on `schedule` at Asia/Taipei `09:00` and `21:00`
 - they also run on `pull_request` targeting `master`
