@@ -14,7 +14,6 @@ env:
   TRACKING_BRANCH: master
   TARGET_LANG: zh_Hant
   TRANSLATION_CONFIG: translation-config.yml
-  KNOWN_FUZZY_REFERENCES: config/localize_known_fuzzy_references.txt
 
 jobs:
   report-status:
@@ -50,19 +49,12 @@ jobs:
           --config "${{ env.TRANSLATION_CONFIG }}"
 
       - name: Generate Localize status report
-        run: |
-          set -euo pipefail
-          args=(
-            --po "$GITHUB_WORKSPACE/translation-repo/sources/localize/${{ env.TARGET_LANG }}/latest.po"
-            --json-out "$GITHUB_WORKSPACE/translation-repo/reviews/localize_status_report.json"
-            --details-out "$GITHUB_WORKSPACE/translation-repo/reviews/localize_status_report.md"
-            --summary "$GITHUB_STEP_SUMMARY"
-          )
-          known_fuzzy_path="$GITHUB_WORKSPACE/translation-repo/${{ env.KNOWN_FUZZY_REFERENCES }}"
-          if [ -f "$known_fuzzy_path" ]; then
-            args+=(--known-fuzzy-references "$known_fuzzy_path")
-          fi
-          tooling-repo/.venv/bin/python tooling-repo/src/report_localize_status.py "${args[@]}"
+        run: >-
+          tooling-repo/.venv/bin/python tooling-repo/src/report_localize_status.py
+          --po "$GITHUB_WORKSPACE/translation-repo/sources/localize/${{ env.TARGET_LANG }}/latest.po"
+          --json-out "$GITHUB_WORKSPACE/translation-repo/reviews/localize_status_report.json"
+          --details-out "$GITHUB_WORKSPACE/translation-repo/reviews/localize_status_report.md"
+          --summary "$GITHUB_STEP_SUMMARY"
 
       - name: Generate Weblate checks report
         run: >-

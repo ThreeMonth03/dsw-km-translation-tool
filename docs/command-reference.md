@@ -73,8 +73,7 @@ Generate a read-only Localize/Weblate PO status report:
 "$TOOL_REPO_DIR/.venv/bin/python" "$TOOL_REPO_DIR/src/report_localize_status.py" \
   --po "$TRANSLATION_REPO_DIR/sources/localize/zh_Hant/latest.po" \
   --json-out "$TRANSLATION_REPO_DIR/reviews/localize_status_report.json" \
-  --details-out "$TRANSLATION_REPO_DIR/reviews/localize_status_report.md" \
-  --known-fuzzy-references "$TRANSLATION_REPO_DIR/config/localize_known_fuzzy_references.txt"
+  --details-out "$TRANSLATION_REPO_DIR/reviews/localize_status_report.md"
 ```
 
 Generate a read-only Weblate quality-check report:

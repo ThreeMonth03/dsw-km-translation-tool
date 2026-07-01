@@ -123,9 +123,7 @@ def test_localize_status_report_template_is_read_only(repo_root: Path) -> None:
     assert workflow["env"]["TRACKING_BRANCH"] == "master"
     assert workflow["env"]["TARGET_LANG"] == "zh_Hant"
     assert workflow["env"]["TRANSLATION_CONFIG"] == "translation-config.yml"
-    assert workflow["env"]["KNOWN_FUZZY_REFERENCES"] == (
-        "config/localize_known_fuzzy_references.txt"
-    )
+    assert "KNOWN_FUZZY_REFERENCES" not in workflow["env"]
     assert "tooling-repo/src/pull_localize_po.py" in workflow_text
     assert "tooling-repo/src/report_localize_status.py" in workflow_text
     assert "tooling-repo/src/report_weblate_checks.py" in workflow_text
@@ -134,7 +132,7 @@ def test_localize_status_report_template_is_read_only(repo_root: Path) -> None:
     assert "translation-repo/reviews/weblate_checks_report.json" in workflow_text
     assert "translation-repo/reviews/weblate_checks_report.md" in workflow_text
     assert "--details-out" in workflow_text
-    assert "--known-fuzzy-references" in workflow_text
+    assert "--known-" not in workflow_text
     assert "--allow-api-failure" in workflow_text
     assert "actions/upload-artifact@v7" in workflow_text
     assert "sync_from_localize.py" not in workflow_text

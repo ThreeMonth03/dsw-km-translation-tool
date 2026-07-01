@@ -9,7 +9,6 @@ from pathlib import Path
 
 from dsw_translation_tool.localize_status import (
     build_localize_po_status_report,
-    load_known_fuzzy_references,
     render_localize_po_status_markdown,
     write_localize_po_status_json,
     write_localize_po_status_markdown,
@@ -69,57 +68,6 @@ def test_localize_po_status_counts_blocks_and_references(workspace: Path) -> Non
     )
     assert report.fuzzy_issues[0].msgid == "Review me"
     assert report.fuzzy_issues[0].msgstr == "需要檢查"
-    assert report.known_fuzzy_blocks == 0
-    assert report.known_fuzzy_references == 0
-    assert report.new_fuzzy_blocks == 1
-    assert report.new_fuzzy_references == 1
-    assert [issue.block_number for issue in report.new_fuzzy_issues] == [3]
-    assert report.known_fuzzy_issues == ()
-
-
-def test_localize_po_status_separates_known_fuzzy_baseline(workspace: Path) -> None:
-    """Verify acknowledged fuzzy references are not reported as new fuzzy."""
-
-    po_path = workspace / "latest.po"
-    write_status_fixture_po(po_path)
-
-    report = build_localize_po_status_report(
-        po_path,
-        known_fuzzy_references={
-            "choices:44444444-4444-4444-4444-444444444444:label",
-        },
-    )
-
-    assert report.fuzzy_blocks == 1
-    assert report.known_fuzzy_blocks == 1
-    assert report.known_fuzzy_references == 1
-    assert report.new_fuzzy_blocks == 0
-    assert report.new_fuzzy_references == 0
-    assert [issue.block_number for issue in report.known_fuzzy_issues] == [3]
-    assert report.new_fuzzy_issues == ()
-
-
-def test_load_known_fuzzy_references_ignores_blank_and_comment_lines(
-    workspace: Path,
-) -> None:
-    """Verify known-fuzzy baseline files are easy to maintain by hand."""
-
-    baseline_path = workspace / "known-fuzzy.txt"
-    baseline_path.write_text(
-        "\n".join(
-            [
-                "# Intentional fuzzy entries",
-                "",
-                "choices:44444444-4444-4444-4444-444444444444:label",
-                "",
-            ]
-        ),
-        encoding="utf-8",
-    )
-
-    assert load_known_fuzzy_references(baseline_path) == {
-        "choices:44444444-4444-4444-4444-444444444444:label",
-    }
 
 
 def test_localize_po_status_renders_markdown(workspace: Path) -> None:
@@ -134,11 +82,9 @@ def test_localize_po_status_renders_markdown(workspace: Path) -> None:
     assert "| Filled msgstr | 2 | 2 |" in markdown
     assert "| Empty msgstr | 1 | 2 |" in markdown
     assert "| Fuzzy / needs editing | 1 | 1 |" in markdown
-    assert "| New fuzzy / needs editing | 1 | 1 |" in markdown
     assert "| Filled and not fuzzy blocks | 33.33% |" in markdown
-    assert "### New Fuzzy / Needs Editing Entries" in markdown
+    assert "### Fuzzy / Needs Editing Entries" in markdown
     assert "choices:44444444-4444-4444-4444-444444444444:label" in markdown
-    assert "### Known Fuzzy / Needs Editing Entries" in markdown
     assert "### Empty Translation Entries" in markdown
     assert "questions:22222222-2222-2222-2222-222222222222:title" in markdown
 
@@ -160,8 +106,6 @@ def test_localize_po_status_writes_json(workspace: Path) -> None:
     assert data["acceptedPercent"] == 33.33
     assert data["empty_issues"][0]["block_number"] == 2
     assert data["fuzzy_issues"][0]["references"][0]["field"] == "label"
-    assert data["known_fuzzy_blocks"] == 0
-    assert data["new_fuzzy_blocks"] == 1
 
 
 def test_localize_po_status_writes_full_markdown_details(workspace: Path) -> None:
@@ -178,7 +122,7 @@ def test_localize_po_status_writes_full_markdown_details(workspace: Path) -> Non
     )
 
     details = details_path.read_text(encoding="utf-8")
-    assert "### New Fuzzy / Needs Editing Entries" in details
+    assert "### Fuzzy / Needs Editing Entries" in details
     assert "Review me" in details
     assert "... and" not in details
 
@@ -193,12 +137,7 @@ def test_report_localize_status_cli_writes_outputs(
     json_path = workspace / "status.json"
     summary_path = workspace / "summary.md"
     details_path = workspace / "details.md"
-    baseline_path = workspace / "known-fuzzy.txt"
     write_status_fixture_po(po_path)
-    baseline_path.write_text(
-        "choices:44444444-4444-4444-4444-444444444444:label\n",
-        encoding="utf-8",
-    )
 
     result = subprocess.run(
         [
@@ -212,8 +151,6 @@ def test_report_localize_status_cli_writes_outputs(
             str(summary_path),
             "--details-out",
             str(details_path),
-            "--known-fuzzy-references",
-            str(baseline_path),
             "--issue-limit",
             "1",
         ],
@@ -228,5 +165,4 @@ def test_report_localize_status_cli_writes_outputs(
     assert details_path.exists()
     assert "Markdown details written to" in result.stdout
     data = json.loads(json_path.read_text(encoding="utf-8"))
-    assert data["known_fuzzy_blocks"] == 1
-    assert data["new_fuzzy_blocks"] == 0
+    assert data["fuzzy_blocks"] == 1

@@ -52,11 +52,9 @@ Git or Weblate. It:
    `reviews/localize_status_report.json` and
    `reviews/localize_status_report.md` as artifacts.
 
-The optional known-fuzzy baseline file, such as
-`config/localize_known_fuzzy_references.txt`, separates intentionally retained
-fuzzy entries from newly introduced fuzzy entries. It does not change the PO
-file and does not prevent future Weblate edits from replacing or clearing those
-entries.
+Weblate exports entries that need editing through the PO `fuzzy` flag. The
+status report lists all fuzzy entries as current review items; it does not keep
+a separate exception baseline.
 
 The same workflow can also run `src/report_weblate_checks.py` with the Weblate
 query `has:check`. That catches website-side quality-check warnings that are

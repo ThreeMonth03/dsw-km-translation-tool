@@ -5,8 +5,6 @@ from __future__ import annotations
 import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Iterable
-
 from .data_models import PoBlock
 from .po import PoCatalogParser
 
@@ -56,12 +54,6 @@ class LocalizePoStatusReport:
         accepted_references: Number of KM references covered by accepted blocks.
         empty_issues: Empty PO blocks that need translation.
         fuzzy_issues: Fuzzy PO blocks that need review.
-        known_fuzzy_blocks: Number of fuzzy blocks acknowledged as baseline.
-        known_fuzzy_references: Number of KM references covered by known fuzzy blocks.
-        new_fuzzy_blocks: Number of fuzzy blocks not acknowledged as baseline.
-        new_fuzzy_references: Number of KM references covered by new fuzzy blocks.
-        known_fuzzy_issues: Fuzzy PO blocks acknowledged as baseline.
-        new_fuzzy_issues: Fuzzy PO blocks not acknowledged as baseline.
     """
 
     po_path: str
@@ -77,12 +69,6 @@ class LocalizePoStatusReport:
     accepted_references: int
     empty_issues: tuple[LocalizePoIssue, ...]
     fuzzy_issues: tuple[LocalizePoIssue, ...]
-    known_fuzzy_blocks: int
-    known_fuzzy_references: int
-    new_fuzzy_blocks: int
-    new_fuzzy_references: int
-    known_fuzzy_issues: tuple[LocalizePoIssue, ...]
-    new_fuzzy_issues: tuple[LocalizePoIssue, ...]
 
     @property
     def filled_percent(self) -> float:
@@ -123,24 +109,17 @@ class LocalizePoStatusReport:
         return data
 
 
-def build_localize_po_status_report(
-    po_path: Path | str,
-    known_fuzzy_references: Iterable[str] | None = None,
-) -> LocalizePoStatusReport:
+def build_localize_po_status_report(po_path: Path | str) -> LocalizePoStatusReport:
     """Build status metrics from one Localize/Weblate PO snapshot.
 
     Args:
         po_path: Path to the PO file to inspect.
-        known_fuzzy_references: PO reference tokens for fuzzy entries that are
-            expected and should be reported as known baseline.
-
     Returns:
         Aggregated status report.
     """
 
     resolved_po_path = Path(po_path).resolve()
     blocks = PoCatalogParser(str(resolved_po_path)).parse_blocks()
-    known_fuzzy_reference_set = frozenset(known_fuzzy_references or ())
 
     filled_blocks = 0
     empty_blocks = 0
@@ -152,8 +131,6 @@ def build_localize_po_status_report(
     accepted_references = 0
     empty_issues: list[LocalizePoIssue] = []
     fuzzy_issues: list[LocalizePoIssue] = []
-    known_fuzzy_issues: list[LocalizePoIssue] = []
-    new_fuzzy_issues: list[LocalizePoIssue] = []
 
     for block_number, block in enumerate(blocks, start=1):
         reference_count = len(block.references)
@@ -171,10 +148,6 @@ def build_localize_po_status_report(
             fuzzy_blocks += 1
             fuzzy_references += reference_count
             fuzzy_issues.append(issue)
-            if _issue_is_known(issue, known_fuzzy_reference_set):
-                known_fuzzy_issues.append(issue)
-            else:
-                new_fuzzy_issues.append(issue)
         elif has_translation:
             accepted_blocks += 1
             accepted_references += reference_count
@@ -193,37 +166,7 @@ def build_localize_po_status_report(
         accepted_references=accepted_references,
         empty_issues=tuple(empty_issues),
         fuzzy_issues=tuple(fuzzy_issues),
-        known_fuzzy_blocks=len(known_fuzzy_issues),
-        known_fuzzy_references=sum(len(issue.references) for issue in known_fuzzy_issues),
-        new_fuzzy_blocks=len(new_fuzzy_issues),
-        new_fuzzy_references=sum(len(issue.references) for issue in new_fuzzy_issues),
-        known_fuzzy_issues=tuple(known_fuzzy_issues),
-        new_fuzzy_issues=tuple(new_fuzzy_issues),
     )
-
-
-def load_known_fuzzy_references(path: Path | str | None) -> frozenset[str]:
-    """Load acknowledged fuzzy PO reference tokens from a simple text file.
-
-    Args:
-        path: Optional path to a text file. Blank lines and lines beginning
-            with `#` are ignored.
-
-    Returns:
-        A set of PO reference tokens.
-    """
-
-    if path is None:
-        return frozenset()
-
-    reference_path = Path(path)
-    references: set[str] = set()
-    for line in reference_path.read_text(encoding="utf-8").splitlines():
-        stripped = line.strip()
-        if not stripped or stripped.startswith("#"):
-            continue
-        references.add(stripped)
-    return frozenset(references)
 
 
 def render_localize_po_status_markdown(
@@ -243,12 +186,6 @@ def render_localize_po_status_markdown(
         ("Filled msgstr", report.filled_blocks, report.filled_references),
         ("Empty msgstr", report.empty_blocks, report.empty_references),
         ("Fuzzy / needs editing", report.fuzzy_blocks, report.fuzzy_references),
-        (
-            "Known fuzzy / needs editing",
-            report.known_fuzzy_blocks,
-            report.known_fuzzy_references,
-        ),
-        ("New fuzzy / needs editing", report.new_fuzzy_blocks, report.new_fuzzy_references),
         ("Filled and not fuzzy", report.accepted_blocks, report.accepted_references),
     ]
     lines = [
@@ -276,22 +213,14 @@ def render_localize_po_status_markdown(
             (
                 "Note: Weblate exports entries that need editing through the PO "
                 "`fuzzy` flag, so this report treats fuzzy entries as requiring "
-                "human review. Known fuzzy entries are acknowledged baseline "
-                "items; new fuzzy entries are not in the baseline file."
+                "human review."
             ),
         ]
     )
     lines.extend(
         _render_issue_section(
-            "New Fuzzy / Needs Editing Entries",
-            report.new_fuzzy_issues,
-            issue_limit,
-        )
-    )
-    lines.extend(
-        _render_issue_section(
-            "Known Fuzzy / Needs Editing Entries",
-            report.known_fuzzy_issues,
+            "Fuzzy / Needs Editing Entries",
+            report.fuzzy_issues,
             issue_limit,
         )
     )
@@ -344,17 +273,6 @@ def _build_issue(block_number: int, block: PoBlock) -> LocalizePoIssue:
             for reference in block.references
         ),
     )
-
-
-def _issue_is_known(
-    issue: LocalizePoIssue,
-    known_fuzzy_references: frozenset[str],
-) -> bool:
-    """Return whether all issue references are acknowledged as known fuzzy."""
-
-    if not known_fuzzy_references:
-        return False
-    return all(reference.comment in known_fuzzy_references for reference in issue.references)
 
 
 def _render_issue_section(
