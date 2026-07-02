@@ -10,6 +10,23 @@ TOOL_REPO_DIR=/path/to/DSW_Translation_tool
 TRANSLATION_REPO_DIR=/path/to/dsw-root-locales-zh_Hant
 ```
 
+## Command Safety
+
+Prefer the read-only commands while learning the repository. Writer commands
+are intended for reviewed local runs or GitHub Actions workflows.
+
+| Command | Safety | Main Use |
+| --- | --- | --- |
+| `validate_translation_config.py` | Read-only | Validate `translation-config.yml` |
+| `report_localize_status.py` | Read-only | Inspect a checked-out Weblate PO |
+| `report_weblate_checks.py` | Read-only | Query Weblate quality checks |
+| `report_alignment_status.py` | Read-only | Compare Weblate, tree, PO, and KM artifacts |
+| `discover_km_versions.py` without `--fail-on-new-version` | Read-only | Inspect Registry/configured KM versions |
+| `pull_localize_po.py` | Writes files | Refresh `sources/localize/` in the checkout |
+| `pull_km_bundle.py` | Writes files | Refresh `sources/knowledge-models/` in the checkout |
+| `sync_from_localize.py` | Git writer | Rebuild artifacts and commit/push when changed |
+| `sync_latest_km.py` | Guarded Git writer | Update to a newer published KM after validation |
+
 ## Setup and Checks
 
 ```shell
@@ -62,7 +79,7 @@ Translation round-trip tests use the checked-in fixture under
 `tests/fixtures/translation_tree/zh_Hant/`. Override `DSW_TRANSLATION_OUTPUT_ROOT` when
 you intentionally want to test another workspace.
 
-## External Translation Repository Validation
+## External Translation Repository Commands
 
 Validate a dedicated translation repository config:
 

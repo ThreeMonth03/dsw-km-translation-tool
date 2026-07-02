@@ -11,8 +11,8 @@ when deciding where a change belongs.
 - `src/*.py` contains command-line entry points used by Make targets and
   GitHub Actions. Keep these files thin.
 - `src/dsw_translation_tool/` contains reusable package code.
-- `examples/` contains copy-ready workflow and config templates for dedicated
-  translation repositories.
+- `examples/` contains copy-ready workflow templates and an example
+  translation repository config.
 - `files/` contains small default source PO/KM inputs for local use and tests.
 - `docs/sphinx/` contains Sphinx source for developer API documentation.
 - `tests/fixtures/translation_tree/` contains the checked-in tree, final PO, and

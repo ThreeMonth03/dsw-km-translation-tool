@@ -38,29 +38,19 @@ This creates `.venv` and installs the Python dependencies listed in
 
 ## Common Commands
 
+Run local checks:
+
+```shell
+make test
+make docs
+make lint
+```
+
 Validate a translation repository config:
 
 ```shell
 .venv/bin/python src/validate_translation_config.py \
   --config /path/to/translation-repo/translation-config.yml
-```
-
-Run Weblate-to-Git sync for a translation repository:
-
-```shell
-.venv/bin/python src/sync_from_localize.py \
-  --host-repo /path/to/translation-repo \
-  --tooling-repo /path/to/DSW_Translation_tool \
-  --config translation-config.yml \
-  --translation-root . \
-  --target-ref master \
-  --mode schedule
-```
-
-Run the test suite:
-
-```shell
-make test
 ```
 
 Format and lint Python code:
@@ -75,6 +65,9 @@ Check Python syntax:
 ```shell
 make compile
 ```
+
+Read [Command Reference](docs/command-reference.md) before running commands
+that rebuild translation artifacts or write Git commits.
 
 ## Local Translation Tree Tools
 

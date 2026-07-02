@@ -39,6 +39,9 @@ translation config and generated translation artifacts.
 
 ## Safe vs. Writing Commands
 
+Use read-only commands while getting oriented. They are enough to validate a
+checkout, inspect Weblate status, and confirm artifact alignment.
+
 Read-only report commands inspect state and write only report files in the
 current checkout. They do not upload to Weblate and do not push Git commits
 unless a workflow explicitly does so.
@@ -46,6 +49,9 @@ unless a workflow explicitly does so.
 Writer commands rebuild translation artifacts and may commit/push when run by
 the configured GitHub Actions workflow. Before changing a writer, read its
 runbook and its tests.
+
+The [Command Reference](command-reference.md) marks common external-repository
+commands by safety level.
 
 ## Where Changes Usually Belong
 

@@ -1,5 +1,9 @@
 schema_version: 1
 
+# Example only. Before copying this file into a production translation
+# repository, update the KM bundle path, supported version list, tooling
+# repository/ref, and Localize metadata for that repository.
+
 knowledge_model:
   organization_id: dsw
   km_id: root
