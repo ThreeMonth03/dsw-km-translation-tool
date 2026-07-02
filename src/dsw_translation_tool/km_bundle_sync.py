@@ -9,6 +9,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
+from .http_auth import bearer_authorization_header
 from .km_registry import KmRegistryError
 from .translation_repository_config import (
     format_package_id,
@@ -115,7 +116,7 @@ def _download_bundle(url: str, token: str) -> bytes:
     request = urllib.request.Request(
         url,
         headers={
-            "Authorization": _authorization_header(token),
+            "Authorization": bearer_authorization_header(token),
         },
     )
     try:
@@ -123,13 +124,6 @@ def _download_bundle(url: str, token: str) -> bytes:
             return response.read()
     except OSError as error:
         raise KmRegistryError(f"Unable to download KM bundle from {url}") from error
-
-
-def _authorization_header(token: str) -> str:
-    stripped = token.strip()
-    if stripped.lower().startswith(("bearer ", "token ")):
-        return stripped
-    return f"Bearer {stripped}"
 
 
 def _sha256(payload: bytes) -> str:

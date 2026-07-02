@@ -5,7 +5,10 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+import urllib.request
 from pathlib import Path
+
+from pytest import MonkeyPatch
 
 from dsw_translation_tool.weblate_checks import (
     build_weblate_checks_error_report,
@@ -134,6 +137,47 @@ def test_weblate_checks_report_follows_pagination(workspace: Path) -> None:
     assert "Matching units: **2**" in markdown
     assert "Source A" in markdown
     assert "Target B" in markdown
+
+
+def test_weblate_checks_report_can_use_api_token(
+    workspace: Path,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """Verify authenticated API calls attach an Authorization header."""
+
+    config_path = workspace / "translation-config.yml"
+    write_config(
+        config_path,
+        "https://localize.ds-wizard.org/download/knowledge-models/"
+        "common-dsw-knowledge-model/zh_Hant/",
+    )
+    requested_headers: list[str | None] = []
+
+    class FakeResponse:
+        def __enter__(self) -> "FakeResponse":
+            return self
+
+        def __exit__(self, *_args: object) -> None:
+            return None
+
+        @staticmethod
+        def read() -> bytes:
+            return json.dumps({"count": 0, "next": None, "results": []}).encode()
+
+    def fake_urlopen(request: object, timeout: int) -> FakeResponse:
+        assert timeout == 60
+        requested_headers.append(getattr(request, "headers", {}).get("Authorization"))
+        return FakeResponse()
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    report = build_weblate_checks_report(
+        repo_root=workspace,
+        config_path=config_path,
+        api_token="secret-token",
+    )
+
+    assert report.ok is True
+    assert requested_headers == ["Bearer secret-token"]
 
 
 def test_weblate_checks_error_report_is_diagnostic(workspace: Path) -> None:

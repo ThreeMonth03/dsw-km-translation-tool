@@ -82,6 +82,7 @@ def test_localize_status_report_template_is_read_only(repo_root: Path) -> None:
     assert "tooling-repo/src/pull_localize_po.py" in workflow_text
     assert "tooling-repo/src/report_localize_status.py" in workflow_text
     assert "tooling-repo/src/report_weblate_checks.py" in workflow_text
+    assert "secrets.LOCALIZE_API_TOKEN" in workflow_text
     assert "translation-repo/reviews/localize_status_report.json" in workflow_text
     assert "translation-repo/reviews/localize_status_report.md" in workflow_text
     assert "translation-repo/reviews/weblate_checks_report.json" in workflow_text

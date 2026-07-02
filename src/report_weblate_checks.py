@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 
 from dsw_translation_tool.weblate_checks import (
@@ -59,6 +60,14 @@ def build_argument_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Write a diagnostic report and exit 0 when Weblate API calls fail.",
     )
+    parser.add_argument(
+        "--api-token-env",
+        default="LOCALIZE_API_TOKEN",
+        help=(
+            "Environment variable containing an optional Weblate API token. "
+            "When unset, the report uses anonymous read-only API access."
+        ),
+    )
     return parser
 
 
@@ -76,6 +85,7 @@ def main() -> None:
             repo_root=repo_root,
             config_path=config_path,
             query=args.query,
+            api_token=os.environ.get(args.api_token_env, ""),
         )
     except Exception as error:
         if not args.allow_api_failure:

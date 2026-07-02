@@ -57,6 +57,8 @@ jobs:
           --summary "$GITHUB_STEP_SUMMARY"
 
       - name: Generate Weblate checks report
+        env:
+          LOCALIZE_API_TOKEN: ${{ secrets.LOCALIZE_API_TOKEN }}
         run: >-
           tooling-repo/.venv/bin/python tooling-repo/src/report_weblate_checks.py
           --repo-root "$GITHUB_WORKSPACE/translation-repo"

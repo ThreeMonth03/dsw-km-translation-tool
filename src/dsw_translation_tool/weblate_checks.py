@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import json
 import urllib.parse
+import urllib.request
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
+from .http_auth import bearer_authorization_header
 from .localize_sync import Downloader, _download_url
 from .translation_repository_config import load_translation_repository_config
 
@@ -54,6 +56,7 @@ def build_weblate_checks_report(
     config_path: Path,
     query: str = "has:check",
     page_size: int = 100,
+    api_token: str = "",
     downloader: Downloader | None = None,
 ) -> WeblateChecksReport:
     """Query Weblate units matching a check expression.
@@ -63,6 +66,7 @@ def build_weblate_checks_report(
         config_path: Path to ``translation-config.yml``.
         query: Weblate unit search expression.
         page_size: API page size.
+        api_token: Optional Weblate API token. Empty values use anonymous API access.
         downloader: Optional injectable downloader used by tests.
 
     Returns:
@@ -75,7 +79,7 @@ def build_weblate_checks_report(
         query=query,
         page_size=page_size,
     )
-    download = downloader or _download_url
+    download = downloader or _authenticated_downloader(api_token) or _download_url
     issues: list[WeblateCheckIssue] = []
     next_url: str | None = api_url
     total_count = 0
@@ -245,6 +249,23 @@ def _download_json(url: str, downloader: Downloader) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise ValueError(f"Expected JSON object from Weblate API: {url}")
     return payload
+
+
+def _authenticated_downloader(token: str) -> Downloader | None:
+    """Build an authenticated downloader when a token is available."""
+
+    if not token.strip():
+        return None
+
+    def download(url: str) -> bytes:
+        request = urllib.request.Request(
+            url,
+            headers={"Authorization": bearer_authorization_header(token)},
+        )
+        with urllib.request.urlopen(request, timeout=60) as response:
+            return response.read()
+
+    return download
 
 
 def _build_issue(unit: dict[str, Any]) -> WeblateCheckIssue:
