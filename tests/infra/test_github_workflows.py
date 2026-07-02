@@ -35,14 +35,18 @@ def test_localize_auto_sync_template_matches_writer_policy(
 
     assert workflow["on"]["schedule"][0]["cron"] == "0 1,13 * * *"
     assert workflow["on"]["pull_request"]["branches"] == ["master"]
+    assert "workflow_dispatch" in workflow["on"]
     assert workflow["permissions"]["contents"] == "write"
     assert workflow["env"]["TOOLING_REPOSITORY"] == "ThreeMonth03/DSW_Translation_tool"
     assert workflow["env"]["TOOLING_REF"] == "master"
     assert workflow["env"]["TRACKING_BRANCH"] == "master"
     assert workflow["env"]["TRANSLATION_CONFIG"] == "translation-config.yml"
     assert workflow["env"]["TRANSLATION_ROOT"] == "."
+    assert "localize-translation-auto-sync" in workflow_text
+    assert "github.event_name != 'pull_request'" in workflow_text
     assert "github.event.pull_request.head.repo.full_name == github.repository" in workflow_text
     assert "github.actor != 'github-actions[bot]'" in workflow_text
+    assert "github.event_name == 'pull_request' && 'pull_request' || 'schedule'" in workflow_text
     assert "tooling-repo/src/sync_from_localize.py" in workflow_text
     assert "tooling-repo/src/discover_km_versions.py" not in workflow_text
     assert "tooling-repo/src/sync_latest_km.py" not in workflow_text

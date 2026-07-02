@@ -1,17 +1,18 @@
-name: Localize Translation Auto Sync Template
+name: Localize Translation Auto Sync
 
 on:
   schedule:
     - cron: "0 1,13 * * *"
   pull_request:
-    branches: [master]
+    branches: ["master"]
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
   group: >-
-    localize-auto-sync-${{ github.event_name == 'pull_request' &&
+    localize-translation-auto-sync-${{ github.event_name == 'pull_request' &&
     github.event.pull_request.head.ref || 'master' }}
   cancel-in-progress: false
 
@@ -26,7 +27,7 @@ jobs:
   sync-writer:
     if: >-
       github.actor != 'github-actions[bot]' &&
-      (github.event_name == 'schedule' ||
+      (github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
 
@@ -46,7 +47,7 @@ jobs:
           git fetch origin
           "${{ env.TRACKING_BRANCH }}:refs/remotes/origin/${{ env.TRACKING_BRANCH }}"
 
-      - name: Checkout tooling repository
+      - name: Checkout KM translation tooling
         uses: actions/checkout@v5
         with:
           repository: ${{ env.TOOLING_REPOSITORY }}
@@ -62,13 +63,9 @@ jobs:
         working-directory: tooling-repo
         run: make install-dev BOOTSTRAP_PYTHON=python
 
-      # This helper may restore malformed translation.md or one split
-      # shared_blocks/<group-id>/context.md file from the tracking branch once,
-      # then rerun sync. That keeps CI unblocked, but can overwrite malformed
-      # PR-branch edits.
       - name: Pull Localize, sync, validate, and auto-commit artifacts
         env:
-          SYNC_MODE: ${{ github.event_name }}
+          SYNC_MODE: ${{ github.event_name == 'pull_request' && 'pull_request' || 'schedule' }}
         run: >-
           tooling-repo/.venv/bin/python tooling-repo/src/sync_from_localize.py
           --host-repo "$GITHUB_WORKSPACE/translation-repo"
