@@ -65,11 +65,13 @@ git diff --check
 ```
 
 For workflow template or config changes, also validate a real translation
-repository config:
+repository config and compare the template with the formal workflow:
 
 ```shell
 .venv/bin/python src/validate_translation_config.py \
   --config /path/to/translation-repo/translation-config.yml
+diff -u examples/github-actions/localize_auto_sync_template.yml \
+  /path/to/translation-repo/.github/workflows/localize_auto_sync.yml
 ```
 
 For Localize/Weblate sync changes, run a dry run against a disposable checkout

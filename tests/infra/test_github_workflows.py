@@ -146,3 +146,26 @@ def test_km_version_auto_update_template_is_guarded_writer(repo_root: Path) -> N
     assert "if-no-files-found: ignore" in workflow_text
     assert "actions/upload-artifact@v7" in workflow_text
     assert "sync_from_localize.py" not in workflow_text
+
+
+def test_validate_translation_config_template_is_read_only(repo_root: Path) -> None:
+    """Verify the config validation template cannot write translations."""
+
+    workflow_path = (
+        repo_root / "examples" / "github-actions" / "validate_translation_config_template.yml"
+    )
+    workflow = load_workflow_yaml(workflow_path)
+    workflow_text = workflow_path.read_text(encoding="utf-8")
+
+    assert workflow["on"]["pull_request"]["branches"] == ["master"]
+    assert workflow["on"]["push"]["branches"] == ["master"]
+    assert "workflow_dispatch" in workflow["on"]
+    assert workflow["permissions"]["contents"] == "read"
+    assert workflow["env"]["TOOLING_REPOSITORY"] == "ThreeMonth03/DSW_Translation_tool"
+    assert workflow["env"]["TOOLING_REF"] == "master"
+    assert "tooling-repo/src/validate_translation_config.py" in workflow_text
+    assert "--summary" in workflow_text
+    assert "sync_from_localize.py" not in workflow_text
+    assert "sync_latest_km.py" not in workflow_text
+    assert "DSW_REGISTRY_TOKEN" not in workflow_text
+    assert "contents: write" not in workflow_text

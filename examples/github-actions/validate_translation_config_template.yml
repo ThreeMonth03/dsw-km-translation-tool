@@ -1,0 +1,50 @@
+name: KM Translation Operations
+
+on:
+  pull_request:
+    branches: ["master"]
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  TOOLING_REPOSITORY: ThreeMonth03/DSW_Translation_tool
+  TOOLING_REF: master
+
+jobs:
+  validate-translation-config:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout translation operations repository
+        uses: actions/checkout@v5
+        with:
+          path: translation-repo
+          fetch-depth: 0
+
+      - name: Checkout KM translation tooling
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ env.TOOLING_REPOSITORY }}
+          ref: ${{ env.TOOLING_REF }}
+          path: tooling-repo
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install tooling dependencies
+        working-directory: tooling-repo
+        run: make install-dev BOOTSTRAP_PYTHON=python
+
+      - name: Validate translation configuration
+        run: >-
+          tooling-repo/.venv/bin/python
+          tooling-repo/src/validate_translation_config.py
+          --config "$GITHUB_WORKSPACE/translation-repo/translation-config.yml"
+          --summary "$GITHUB_STEP_SUMMARY"

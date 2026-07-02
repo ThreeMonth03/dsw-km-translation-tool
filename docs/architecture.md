@@ -93,6 +93,8 @@ Localize/Weblate PO -> tree/ -> builds/final_translated.po -> builds/final_trans
   KM Registry writer. It no-ops when the configured KM is current, and only
   pushes a newer published KM after the bundle pull, Weblate mirror, rebuild,
   config validation, translation tests, and alignment check all pass.
+- `examples/github-actions/validate_translation_config_template.yml` is the
+  read-only config validation workflow for dedicated translation repositories.
 
 Keep GitHub Actions as orchestration. Branch selection, recovery, PO merge, KM
 generation, and commit decisions belong in Python helpers.
@@ -105,4 +107,6 @@ generation, and commit decisions belong in Python helpers.
   it belongs in the PO/KM/tree layer and needs round-trip tests.
 - If a translation repository needs a new workflow behavior, add it to the
   external template first, then copy the reviewed template into the target repo.
+- After changing a workflow template, compare it with the corresponding
+  workflow in the formal translation repository.
 - If a command changes, update [Command Reference](command-reference.md).
