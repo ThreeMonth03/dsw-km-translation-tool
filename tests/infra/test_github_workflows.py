@@ -6,6 +6,9 @@ from pathlib import Path
 
 import yaml
 
+EXPECTED_TOOLING_REPOSITORY = "ThreeMonth03/DSW_Translation_tool"
+EXPECTED_TOOLING_REF = "master"
+
 
 def load_workflow_yaml(path: Path) -> dict[str, object]:
     """Load one workflow file with a YAML loader that preserves `on`.
@@ -18,6 +21,13 @@ def load_workflow_yaml(path: Path) -> dict[str, object]:
     """
 
     return yaml.load(path.read_text(encoding="utf-8"), Loader=yaml.BaseLoader)
+
+
+def assert_tooling_checkout_env(workflow: dict[str, object]) -> None:
+    """Verify a workflow checks out the expected tooling repository ref."""
+
+    assert workflow["env"]["TOOLING_REPOSITORY"] == EXPECTED_TOOLING_REPOSITORY
+    assert workflow["env"]["TOOLING_REF"] == EXPECTED_TOOLING_REF
 
 
 def test_localize_auto_sync_template_matches_writer_policy(
@@ -37,8 +47,7 @@ def test_localize_auto_sync_template_matches_writer_policy(
     assert workflow["on"]["pull_request"]["branches"] == ["master"]
     assert "workflow_dispatch" in workflow["on"]
     assert workflow["permissions"]["contents"] == "write"
-    assert workflow["env"]["TOOLING_REPOSITORY"] == "ThreeMonth03/DSW_Translation_tool"
-    assert workflow["env"]["TOOLING_REF"] == "master"
+    assert_tooling_checkout_env(workflow)
     assert workflow["env"]["TRACKING_BRANCH"] == "master"
     assert workflow["env"]["TRANSLATION_CONFIG"] == "translation-config.yml"
     assert workflow["env"]["TRANSLATION_ROOT"] == "."
@@ -73,8 +82,7 @@ def test_localize_status_report_template_is_read_only(repo_root: Path) -> None:
     assert workflow["on"]["schedule"][0]["cron"] == "30 1,13 * * *"
     assert "workflow_dispatch" in workflow["on"]
     assert workflow["permissions"]["contents"] == "read"
-    assert workflow["env"]["TOOLING_REPOSITORY"] == "ThreeMonth03/DSW_Translation_tool"
-    assert workflow["env"]["TOOLING_REF"] == "master"
+    assert_tooling_checkout_env(workflow)
     assert workflow["env"]["TRACKING_BRANCH"] == "master"
     assert workflow["env"]["TARGET_LANG"] == "zh_Hant"
     assert workflow["env"]["TRANSLATION_CONFIG"] == "translation-config.yml"
@@ -107,8 +115,7 @@ def test_localize_alignment_report_template_is_read_only(repo_root: Path) -> Non
     assert workflow["on"]["schedule"][0]["cron"] == "45 1,13 * * *"
     assert "workflow_dispatch" in workflow["on"]
     assert workflow["permissions"]["contents"] == "read"
-    assert workflow["env"]["TOOLING_REPOSITORY"] == "ThreeMonth03/DSW_Translation_tool"
-    assert workflow["env"]["TOOLING_REF"] == "master"
+    assert_tooling_checkout_env(workflow)
     assert workflow["env"]["TRACKING_BRANCH"] == "master"
     assert workflow["env"]["TRANSLATION_CONFIG"] == "translation-config.yml"
     assert "tooling-repo/src/report_alignment_status.py" in workflow_text
@@ -134,8 +141,7 @@ def test_km_version_auto_update_template_is_guarded_writer(repo_root: Path) -> N
     assert "workflow_dispatch" in workflow["on"]
     assert workflow["permissions"]["contents"] == "write"
     assert "github.actor != 'github-actions[bot]'" in workflow_text
-    assert workflow["env"]["TOOLING_REPOSITORY"] == "ThreeMonth03/DSW_Translation_tool"
-    assert workflow["env"]["TOOLING_REF"] == "master"
+    assert_tooling_checkout_env(workflow)
     assert workflow["env"]["TRACKING_BRANCH"] == "master"
     assert workflow["env"]["TRANSLATION_CONFIG"] == "translation-config.yml"
     assert "tooling-repo/src/sync_latest_km.py" in workflow_text
@@ -162,8 +168,7 @@ def test_validate_translation_config_template_is_read_only(repo_root: Path) -> N
     assert workflow["on"]["push"]["branches"] == ["master"]
     assert "workflow_dispatch" in workflow["on"]
     assert workflow["permissions"]["contents"] == "read"
-    assert workflow["env"]["TOOLING_REPOSITORY"] == "ThreeMonth03/DSW_Translation_tool"
-    assert workflow["env"]["TOOLING_REF"] == "master"
+    assert_tooling_checkout_env(workflow)
     assert "tooling-repo/src/validate_translation_config.py" in workflow_text
     assert "--summary" in workflow_text
     assert "sync_from_localize.py" not in workflow_text

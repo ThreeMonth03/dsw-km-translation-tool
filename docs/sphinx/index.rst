@@ -19,6 +19,7 @@ generated artifact logic.
    maintainer/development-guidelines
    maintainer/localize-sync-runbook
    maintainer/km-update-runbook
+   maintainer/repository-transfer-checklist
    maintainer/security-and-permissions
 
 .. toctree::
