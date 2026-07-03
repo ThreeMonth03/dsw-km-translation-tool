@@ -1,4 +1,4 @@
-"""Sphinx configuration for DSW KM translation tooling developer docs."""
+"""Sphinx configuration for the DSW KM translation tooling docs."""
 
 from __future__ import annotations
 

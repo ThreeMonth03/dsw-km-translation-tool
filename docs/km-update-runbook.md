@@ -103,7 +103,7 @@ Pay special attention to:
 - newly empty translations;
 - newly review-marked translations reported by Weblate.
 
-Merge only after the dry-run branch produces aligned artifacts. After merge,
+Merge only after the dry-run branch produces aligned outputs. After merge,
 trigger the scheduled sync and alignment report once manually to verify the
 production branch.
 

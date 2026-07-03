@@ -70,7 +70,7 @@ help:
 	'  repo-status        Report checked-in Weblate PO health' \
 	'  repo-checks        Query Weblate quality checks' \
 	'  repo-align         Verify Weblate/tree/final PO/final KM alignment' \
-	'  repo-sync          Writer: pull Weblate, rebuild artifacts, commit/push if changed' \
+	'  repo-sync          Writer: pull Weblate, rebuild outputs, commit/push if changed' \
 	'  repo-km-status     Report whether the Registry has a newer KM' \
 	'  repo-km-update     Writer: update to latest KM only after validation passes' \
 	'' \
@@ -96,13 +96,13 @@ help-all:
 	'  test               Run all pytest suites' \
 	'  test-infra         Run infrastructure/CLI pytest suites' \
 	'  test-translation   Run translation consistency pytest suites' \
-	'  docs               Build Sphinx developer API docs into $(DOCS_BUILD)' \
+	'  docs               Build Sphinx docs into $(DOCS_BUILD)' \
 	'  docs-clean         Remove generated Sphinx docs' \
 	'  repo-validate      Validate translation-config.yml in TRANSLATION_REPO_DIR' \
 	'  repo-pull-po       Refresh sources/localize/ in TRANSLATION_REPO_DIR' \
 	'  repo-status        Report checked-in Weblate PO health in TRANSLATION_REPO_DIR' \
 	'  repo-checks        Query Weblate quality checks for TRANSLATION_REPO_DIR' \
-	'  repo-align         Verify artifact alignment in TRANSLATION_REPO_DIR' \
+	'  repo-align         Verify output alignment in TRANSLATION_REPO_DIR' \
 	'  repo-sync          Writer: sync Weblate to Git in TRANSLATION_REPO_DIR' \
 	'  repo-sync-branch   Writer: sync Weblate to TARGET_BRANCH for PR repair' \
 	'  repo-km-status     Discover KM Registry versions for TRANSLATION_REPO_DIR' \

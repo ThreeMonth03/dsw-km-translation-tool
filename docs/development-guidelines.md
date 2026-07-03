@@ -29,7 +29,7 @@ diff. KM bundles are rebuilt by tests and workflows instead of stored in the
 fixture tree.
 
 Dedicated translation repositories may commit generated `tree/`, `builds/`, and
-`reviews/` artifacts because those files are the automation and visualization
+`reviews/` outputs because those files are the automation and visualization
 workspace for translators and maintainers.
 
 ## Code Organization

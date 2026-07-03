@@ -9,7 +9,7 @@ that workflow:
 - mirror Weblate PO exports into a Git translation tree
 - rebuild final PO and KM bundles
 - validate translation repository configuration
-- report Weblate PO health and artifact alignment
+- report Weblate PO health and output alignment
 - update to a newer published source KM after validation passes
 
 ## Documentation
@@ -21,11 +21,14 @@ Start here:
 
 - [First-Time Maintainer Guide](docs/first-time-maintainer.md)
 - [Documentation Index](docs/README.md)
+
+Common references:
+
 - [Architecture](docs/architecture.md)
-- [Development Guidelines](docs/development-guidelines.md)
 - [Localize Sync Runbook](docs/localize-sync-runbook.md)
 - [KM Update Runbook](docs/km-update-runbook.md)
 - [Command Reference](docs/command-reference.md)
+- [Development Guidelines](docs/development-guidelines.md)
 
 ## Setup
 
@@ -49,7 +52,7 @@ lower-level repair helpers. The targets and Make variables are declared in the
 [`Makefile`][makefile].
 
 Read [Command Reference](docs/command-reference.md) before running targets that
-rebuild translation artifacts or write Git commits. Configure workflow secrets
+rebuild translation output files or write Git commits. Configure workflow secrets
 from [Security and Permissions](docs/security-and-permissions.md).
 
 ## Local Translation Tree Tools

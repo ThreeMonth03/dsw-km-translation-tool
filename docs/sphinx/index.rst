@@ -6,7 +6,7 @@ by the KM translation tooling and GitHub Actions workflows.
 
 Start with the first-time maintainer guide when you are new to the codebase.
 Use the package API reference when changing Python modules, automation helpers,
-or generated artifact logic.
+or generated translation output.
 
 .. toctree::
    :maxdepth: 2

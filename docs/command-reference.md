@@ -49,9 +49,9 @@ Set `TRANSLATION_REPO_DIR` before running these targets.
 | `make repo-validate` | Read-only | Validate `translation-config.yml` |
 | `make repo-status` | Report files only | Inspect the checked-in Weblate PO |
 | `make repo-checks` | Report files only | Query Weblate quality checks such as `has:check` |
-| `make repo-align` | Report files only | Compare Weblate, tree, final PO, and final KM artifacts |
+| `make repo-align` | Report files only | Compare Weblate, tree, final PO, and final KM outputs |
 | `make repo-pull-po` | Writes files | Refresh `sources/localize/` in the checkout |
-| `make repo-sync` | Git writer | Pull Weblate, rebuild artifacts, and commit/push when changed |
+| `make repo-sync` | Git writer | Pull Weblate, rebuild outputs, and commit/push when changed |
 | `make repo-km-status` | Report files only | Check whether the Registry has a newer KM |
 | `make repo-km-update` | Guarded Git writer | Update to a newer published KM after validation passes |
 
@@ -76,22 +76,12 @@ workspace. They default to `translation/zh_Hant/`.
 Run `make help-all` if you need lower-level helpers such as `tree-to-po`,
 `po-to-km`, `repo-km-pull`, or `repo-sync-branch`.
 
-## Script Map
+## Direct Script Use
 
-The targets above are thin wrappers around these scripts. Workflows call the
-scripts directly so they can pass explicit paths and GitHub Actions outputs.
-
-| Script | Main Use |
-| --- | --- |
-| [`validate_translation_config.py`][validate-translation-config-py] | Validate translation repository config |
-| [`report_localize_status.py`][report-localize-status-py] | Inspect a checked-out Weblate PO |
-| [`report_weblate_checks.py`][report-weblate-checks-py] | Query Weblate quality checks |
-| [`report_alignment_status.py`][report-alignment-status-py] | Compare Weblate, tree, PO, and KM artifacts |
-| [`pull_localize_po.py`][pull-localize-po-py] | Refresh `sources/localize/` |
-| [`sync_from_localize.py`][sync-from-localize-py] | Run the Weblate-to-Git writer |
-| [`discover_km_versions.py`][discover-km-versions-py] | Discover Registry KM versions |
-| [`sync_latest_km.py`][sync-latest-km-py] | Run the guarded latest-KM writer |
-| [`pull_km_bundle.py`][pull-km-bundle-py] | Refresh `sources/knowledge-models/` manually |
+The targets above are thin wrappers around root scripts in [`src/`][src-root].
+GitHub Actions call those scripts directly so they can pass explicit paths and
+write step outputs. When changing implementation, use
+[Architecture](architecture.md) to find the owning package module and tests.
 
 ## Local Tree Variables
 
@@ -108,14 +98,6 @@ OUTPUT_ROOT=translation/zh_Hant
 Production translation repositories should use `translation-config.yml` and the
 `repo-*` targets instead.
 
-[discover-km-versions-py]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/src/discover_km_versions.py
 [example-translation-config]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/examples/translation-config.yml
 [makefile]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/Makefile
-[pull-km-bundle-py]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/src/pull_km_bundle.py
-[pull-localize-po-py]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/src/pull_localize_po.py
-[report-alignment-status-py]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/src/report_alignment_status.py
-[report-localize-status-py]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/src/report_localize_status.py
-[report-weblate-checks-py]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/src/report_weblate_checks.py
-[sync-from-localize-py]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/src/sync_from_localize.py
-[sync-latest-km-py]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/src/sync_latest_km.py
-[validate-translation-config-py]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/src/validate_translation_config.py
+[src-root]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/src

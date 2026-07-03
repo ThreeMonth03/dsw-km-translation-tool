@@ -5,7 +5,7 @@ when deciding where a change belongs.
 
 ## Top-Level Shape
 
-- [`readme.md`][readme] is the translator-facing entry point and local workflow guide.
+- [`readme.md`][readme] is the quick-start entry point for this tooling repo.
 - [`Makefile`][makefile] wraps local development checks and the in-repository
   translation-tree workflow.
 - [`src/*.py`][src-root] contains command-line entry points used by Make targets and
@@ -14,7 +14,9 @@ when deciding where a change belongs.
 - [`examples/`][examples-dir] contains copy-ready workflow templates and an example
   translation repository config.
 - [`files/`][files-dir] contains small default source PO/KM inputs for local use and tests.
-- [`docs/sphinx/`][sphinx-dir] contains Sphinx source for developer API documentation.
+- [`docs/sphinx/`][sphinx-dir] contains Sphinx source for the published docs site
+  and package API reference. The files under `docs/sphinx/maintainer/` are
+  include wrappers; edit the maintainer Markdown files under `docs/`.
 - [`tests/fixtures/translation_tree/`][translation-fixture-dir] contains the checked-in tree, final PO, and
   review diff used by translation round-trip tests.
 - [`tests/infra/`][tests-infra-dir] covers tooling, CLI, config, and automation behavior.
@@ -86,7 +88,7 @@ belong in [Localize Sync Runbook](localize-sync-runbook.md).
 - [`examples/github-actions/localize_status_report_template.yml`][localize-status-template] is the
   read-only status workflow for scheduled Localize/Weblate health reports.
 - [`examples/github-actions/localize_alignment_report_template.yml`][localize-alignment-template] is the
-  read-only artifact alignment workflow.
+  read-only output alignment workflow.
 - [`examples/github-actions/km_version_auto_update_template.yml`][km-auto-update-template] is the guarded
   KM Registry writer. Its safety checks are documented in
   [KM Update Runbook](km-update-runbook.md).

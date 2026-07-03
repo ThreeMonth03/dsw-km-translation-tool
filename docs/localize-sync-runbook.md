@@ -67,19 +67,19 @@ Git or Weblate. It:
    `reviews/localize_status_report.json` and
    `reviews/localize_status_report.md` as artifacts.
 
-The PO `fuzzy` flag is the review-state signal exported by Weblate. The status
-report includes those entries as part of current translation health.
+The status report includes Weblate review-state counts from the PO export as
+part of current translation health.
 
 The same workflow can also run
 [`src/report_weblate_checks.py`][report-weblate-checks-py] with the Weblate query
 `has:check`. That catches website-side quality-check warnings that are not
-always visible from PO fuzzy flags alone. The check report is diagnostic and
-uses `--allow-api-failure` so Weblate API rate limits are captured in the report
+always visible from PO state alone. The check report is diagnostic and uses
+`--allow-api-failure` so Weblate API rate limits are captured in the report
 while Git sync monitoring continues.
 
 It requires only `contents: read`.
 
-Use the alignment report workflow to verify artifact consistency without
+Use the alignment report workflow to verify output consistency without
 changing Git or Weblate. It:
 
 1. Downloads the latest Weblate PO into a temporary file.
@@ -91,7 +91,7 @@ changing Git or Weblate. It:
 
 The alignment report is allowed to fail when drift is detected. That failure
 means a pull sync, tree rebuild, or KM rebuild should run before maintainers
-trust the repository artifacts. It also requires only `contents: read` and does
+trust the repository outputs. It also requires only `contents: read` and does
 not change translations.
 
 To run the same alignment check from your machine, use:
@@ -126,7 +126,7 @@ Common DSW KM.
 
 ## Troubleshooting
 
-- If sync commits nothing, Weblate and Git artifacts are already aligned.
+- If sync commits nothing, Weblate and Git outputs are already aligned.
 - If `translation-config.yml` fails validation, fix config before running sync.
 - If tree parsing fails in CI, the writer may restore malformed files from the
   tracking branch once and retry.
