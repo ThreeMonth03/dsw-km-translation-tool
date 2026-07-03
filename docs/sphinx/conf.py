@@ -24,6 +24,9 @@ html_theme = "furo"
 html_title = "DSW KM Translation Tooling"
 
 autodoc_class_signature = "separated"
+autodoc_default_options = {
+    "exclude-members": "__init__",
+}
 autodoc_member_order = "bysource"
 autodoc_typehints = "description"
 autodoc_typehints_format = "short"

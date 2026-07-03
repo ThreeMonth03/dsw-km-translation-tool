@@ -8,9 +8,12 @@ renderer, storage, and other support-module implementation details.
 Workflow Service
 ----------------
 
+Only the primary workflow operations are listed here. Thinner helper methods
+exist for CLI wiring and tests; use the internal change guide before changing
+those lower-level paths.
+
 .. autoclass:: dsw_km_translation_tool.workflow.TranslationWorkflowService
-   :members:
-   :exclude-members: __init__
+   :members: export_tree, validate_po_against_model, build_po_from_tree, build_km_from_po, collect_status, sync_shared_strings, review_po_changes
    :show-inheritance:
 
 Tree Repository
@@ -24,9 +27,12 @@ Tree Repository
 Knowledge Model Service
 -----------------------
 
+This service keeps DSW KM parsing and validation behind one boundary. The
+tree-building and display-name internals are implementation details covered by
+the internal change guide.
+
 .. autoclass:: dsw_km_translation_tool.knowledge_model_service.KnowledgeModelService
-   :members:
-   :exclude-members: __init__
+   :members: load_model, annotate_tree_nodes, validate_po_entries
    :show-inheritance:
 
 PO Facade
