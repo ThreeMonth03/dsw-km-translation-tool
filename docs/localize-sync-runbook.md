@@ -25,7 +25,7 @@ The external translation workflow should run:
 The workflow runs `src/sync_from_localize.py`. That command:
 
 1. Downloads the current Weblate PO to `sources/localize/zh_Hant/latest.po`.
-2. Writes the previous checked-in `latest.po` to a temporary merge base.
+2. Writes the previous checked-in `latest.po` to a temporary comparison file.
 3. Force-refreshes `tree/` from the latest Weblate PO.
 4. Rebuilds `builds/final_translated.po`.
 5. Rebuilds `builds/final_translated.km`.

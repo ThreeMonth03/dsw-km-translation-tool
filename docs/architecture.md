@@ -59,7 +59,7 @@ These modules connect the translation repository to the Weblate website:
 - `translation_repository_config.py`: loads `translation-config.yml` and
   computes repository paths.
 - `localize_sync.py`: downloads the current Weblate PO snapshot and can expose
-  the previous checked-in snapshot as a temporary merge base.
+  the previous checked-in snapshot as a temporary comparison file for sync.
 - `localize_status.py`: reports PO completion, empty strings, and Weblate
   review-state counts without modifying translations.
 - `weblate_checks.py`: reports Weblate units matching quality-check queries
