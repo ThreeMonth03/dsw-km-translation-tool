@@ -13,6 +13,9 @@ changing translation text or uploading anything to Weblate.
    make repo-align TRANSLATION_REPO_DIR="$TRANSLATION_REPO_DIR"
    ```
 
+   Set `TRANSLATION_REPO_DIR` as described in the
+   [Command Reference](command-reference.md).
+
 3. Record the target tooling repository owner/name and branch policy.
 
 ## Update Tooling References
@@ -20,10 +23,10 @@ changing translation text or uploading anything to Weblate.
 After the tooling repository is transferred, update every translation repository
 that checks out the tooling:
 
-- `translation-config.yml`
+- [`translation-config.yml`][example-translation-config]
   - `tooling.repository`
   - `tooling.ref`, if the branch or tag policy changed
-- `.github/workflows/*.yml`
+- [`.github/workflows/*.yml`][github-actions-templates]
   - `TOOLING_REPOSITORY`
   - `TOOLING_REF`, if the branch or tag policy changed
 

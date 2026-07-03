@@ -37,6 +37,10 @@ For a local maintainer run, use:
 make repo-km-update TRANSLATION_REPO_DIR=/path/to/dsw-root-locales-zh_Hant
 ```
 
+Set `TRANSLATION_REPO_DIR`, `TARGET_BRANCH`, and related Make variables as
+described in the [Command Reference](command-reference.md). The targets are
+declared in the [`Makefile`][makefile].
+
 ## Dry-Run First
 
 Work in a disposable branch or local clone first.
@@ -104,3 +108,4 @@ trigger the scheduled sync and alignment report once manually to verify the
 production branch.
 
 [sync-latest-km-py]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/src/sync_latest_km.py
+[makefile]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/Makefile

@@ -51,6 +51,10 @@ For a local maintainer run against a checked-out translation repository, use:
 make repo-sync TRANSLATION_REPO_DIR=/path/to/dsw-root-locales-zh_Hant
 ```
 
+Set `TRANSLATION_REPO_DIR` as described in the
+[Command Reference](command-reference.md). The target is
+declared in the [`Makefile`][makefile].
+
 ## Read-Only Status and Alignment Reports
 
 Use the status report workflow to inspect Weblate PO health without changing
@@ -132,3 +136,4 @@ Common DSW KM.
 [report-localize-status-py]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/src/report_localize_status.py
 [report-weblate-checks-py]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/src/report_weblate_checks.py
 [sync-from-localize-py]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/src/sync_from_localize.py
+[makefile]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/Makefile

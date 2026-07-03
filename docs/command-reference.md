@@ -6,6 +6,7 @@ Actions command exactly.
 
 ## Required Variables
 
+These are Make variables declared in the repository [`Makefile`][makefile].
 Commands that operate on a production-style translation repository need:
 
 ```shell
@@ -23,6 +24,10 @@ Workflow secrets are configured in the production translation repository. Local
 commands read `LOCALIZE_API_TOKEN` and `DSW_REGISTRY_TOKEN` from the shell
 environment when a target needs them. See
 [Security and Permissions](security-and-permissions.md).
+
+Translation repository behavior is configured in `translation-config.yml`; see
+[`examples/translation-config.yml`][example-translation-config] for the expected
+shape.
 
 ## Local Tooling
 
@@ -90,7 +95,8 @@ scripts directly so they can pass explicit paths and GitHub Actions outputs.
 
 ## Local Tree Variables
 
-The local tree targets accept these overrides:
+The local tree targets accept these Make variable overrides from
+[`Makefile`][makefile]:
 
 ```shell
 PO=files/knowledge-models-common-dsw-knowledge-model-zh_Hant.po
@@ -103,6 +109,8 @@ Production translation repositories should use `translation-config.yml` and the
 `repo-*` targets instead.
 
 [discover-km-versions-py]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/src/discover_km_versions.py
+[example-translation-config]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/examples/translation-config.yml
+[makefile]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/Makefile
 [pull-km-bundle-py]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/src/pull_km_bundle.py
 [pull-localize-po-py]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/src/pull_localize_po.py
 [report-alignment-status-py]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/src/report_alignment_status.py

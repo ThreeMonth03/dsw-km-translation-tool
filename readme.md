@@ -45,7 +45,8 @@ make check
 ```
 
 Use `make help` for the common maintainer targets and `make help-all` for
-lower-level repair helpers.
+lower-level repair helpers. The targets and Make variables are declared in the
+[`Makefile`][makefile].
 
 Read [Command Reference](docs/command-reference.md) before running targets that
 rebuild translation artifacts or write Git commits. Configure workflow secrets
@@ -56,4 +57,7 @@ from [Security and Permissions](docs/security-and-permissions.md).
 Local tree commands are available for development, inspection, and repair. By
 default they write to the ignored local workspace `translation/zh_Hant/`.
 Production translation repositories use their own `translation-config.yml` and
-repository layout.
+repository layout; see [`examples/translation-config.yml`][example-translation-config].
+
+[example-translation-config]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/examples/translation-config.yml
+[makefile]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/Makefile
