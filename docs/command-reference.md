@@ -6,18 +6,18 @@ Actions command exactly.
 
 ## Required Variables
 
-These are Make variables declared in the repository `Makefile`.
+These are Make variables declared in the repository [`Makefile`][makefile].
 Commands that operate on a production-style translation repository need:
 
 ```shell
-REPO=/path/to/translation-repo
+TRANSLATION_REPO_DIR=/path/to/dsw-root-locales-zh_Hant
 ```
 
 Optional overrides:
 
 ```shell
-CFG=translation-config.yml
-BRANCH=master
+TRANSLATION_CONFIG=translation-config.yml
+TRACKING_BRANCH=master
 ```
 
 Workflow secrets are configured in the production translation repository. Local
@@ -26,7 +26,7 @@ environment when a target needs them. See
 [Security and Permissions](security-and-permissions.md).
 
 Translation repository behavior is configured in `translation-config.yml`; see
-`examples/translation-config.yml` for the expected
+[`examples/translation-config.yml`][example-translation-config] for the expected
 shape.
 
 ## Local Tooling
@@ -42,7 +42,7 @@ shape.
 
 ## Translation Repository
 
-Set `REPO` before running these targets.
+Set `TRANSLATION_REPO_DIR` before running these targets.
 
 | Target | Safety | Use |
 | --- | --- | --- |
@@ -58,7 +58,7 @@ Set `REPO` before running these targets.
 Example:
 
 ```shell
-make repo-align REPO=/path/to/translation-repo
+make repo-align TRANSLATION_REPO_DIR=/path/to/dsw-root-locales-zh_Hant
 ```
 
 ## Local Translation Tree
@@ -78,7 +78,7 @@ Run `make help-all` if you need lower-level helpers such as `tree-to-po`,
 
 ## Direct Script Use
 
-The targets above are thin wrappers around root scripts in `src/`.
+The targets above are thin wrappers around root scripts in [`src/`][src-root].
 GitHub Actions call those scripts directly so they can pass explicit paths and
 write step outputs. When changing implementation, use
 [Architecture](architecture.md) to find the owning package module and tests.
@@ -86,7 +86,7 @@ write step outputs. When changing implementation, use
 ## Local Tree Variables
 
 The local tree targets accept these Make variable overrides from
-`Makefile`:
+[`Makefile`][makefile]:
 
 ```shell
 PO=files/knowledge-models-common-dsw-knowledge-model-zh_Hant.po
@@ -98,6 +98,6 @@ OUTPUT_ROOT=translation/zh_Hant
 Production translation repositories should use `translation-config.yml` and the
 `repo-*` targets instead.
 
-[example-translation-config]: ../examples/translation-config.yml
-[makefile]: ../Makefile
-[src-root]: ../src
+[example-translation-config]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/examples/translation-config.yml
+[makefile]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/Makefile
+[src-root]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/src

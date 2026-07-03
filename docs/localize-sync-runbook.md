@@ -30,7 +30,7 @@ The external translation workflow should run:
 - on pull requests targeting `master`
 - on manual `workflow_dispatch`
 
-The workflow runs `src/sync_from_localize.py`. That
+The workflow runs [`src/sync_from_localize.py`][sync-from-localize-py]. That
 command:
 
 1. Downloads the current Weblate PO to `sources/localize/zh_Hant/latest.po`.
@@ -48,12 +48,12 @@ skip writer commits.
 For a local maintainer run against a checked-out translation repository, use:
 
 ```shell
-make repo-sync REPO=/path/to/translation-repo
+make repo-sync TRANSLATION_REPO_DIR=/path/to/dsw-root-locales-zh_Hant
 ```
 
-Set `REPO` as described in the
+Set `TRANSLATION_REPO_DIR` as described in the
 [Command Reference](command-reference.md). The target is
-declared in the `Makefile`.
+declared in the [`Makefile`][makefile].
 
 ## Read-Only Status and Alignment Reports
 
@@ -62,7 +62,7 @@ Git or Weblate. It:
 
 1. Checks out the translation repository.
 2. Pulls the latest Weblate PO into the ephemeral workflow checkout.
-3. Runs `src/report_localize_status.py`.
+3. Runs [`src/report_localize_status.py`][report-localize-status-py].
 4. Writes a GitHub step summary and uploads
    `reviews/localize_status_report.json` and
    `reviews/localize_status_report.md` as artifacts.
@@ -71,7 +71,7 @@ The status report includes Weblate review-state counts from the PO export as
 part of current translation health.
 
 The same workflow can also run
-`src/report_weblate_checks.py` with the Weblate query
+[`src/report_weblate_checks.py`][report-weblate-checks-py] with the Weblate query
 `has:check`. That catches website-side quality-check warnings that are not
 always visible from PO state alone. The check report is diagnostic and uses
 `--allow-api-failure` so Weblate API rate limits are captured in the report
@@ -97,7 +97,7 @@ not change translations.
 To run the same alignment check from your machine, use:
 
 ```shell
-make repo-align REPO=/path/to/translation-repo
+make repo-align TRANSLATION_REPO_DIR=/path/to/dsw-root-locales-zh_Hant
 ```
 
 ## Merge Gate Behavior
@@ -133,7 +133,7 @@ Common DSW KM.
 - If Weblate has untranslated strings after sync, check whether they are empty,
   marked for review, or missing from the current KM source.
 
-[report-localize-status-py]: ../src/report_localize_status.py
-[report-weblate-checks-py]: ../src/report_weblate_checks.py
-[sync-from-localize-py]: ../src/sync_from_localize.py
-[makefile]: ../Makefile
+[report-localize-status-py]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/src/report_localize_status.py
+[report-weblate-checks-py]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/src/report_weblate_checks.py
+[sync-from-localize-py]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/src/sync_from_localize.py
+[makefile]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/Makefile

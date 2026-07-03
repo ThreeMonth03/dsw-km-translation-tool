@@ -26,5 +26,4 @@ output/
 translation/
 translation/**/backups/
 translation/**/reports/
-workspace/
 tests/fixtures/translation_tree/**/backups/

@@ -33,8 +33,8 @@ translation config and generated translation output files.
    make check
    ```
 
-5. When changing behavior, find the thin CLI script in `src/*.py`,
-   then follow it into `src/dsw_km_translation_tool/` for the
+5. When changing behavior, find the thin CLI script in [`src/*.py`][src-root],
+   then follow it into [`src/dsw_km_translation_tool/`][package-dir] for the
    reusable implementation.
 
 ## Safe vs. Writing Commands
@@ -60,17 +60,17 @@ full ownership map.
 
 | Change | Start With | Tests |
 | --- | --- | --- |
-| Translation tree, final PO, or final KM output | [Architecture](architecture.md) | `tests/translation/` |
-| Shared strings | [Architecture](architecture.md) | shared-string tests under `tests/translation/` |
-| Weblate download, merge, or sync commits | [Architecture](architecture.md) | Localize and CI tests under `tests/infra/` |
-| Translation repository config | [Architecture](architecture.md) | config tests under `tests/infra/` |
-| KM Registry discovery or guarded KM updates | [Architecture](architecture.md) | KM tests under `tests/infra/` |
-| GitHub workflow wiring | [Architecture](architecture.md) | workflow tests under `tests/infra/` |
+| Translation tree, final PO, or final KM output | [Architecture](architecture.md) | [`tests/translation/`][tests-translation] |
+| Shared strings | [Architecture](architecture.md) | shared-string tests under [`tests/translation/`][tests-translation] |
+| Weblate download, merge, or sync commits | [Architecture](architecture.md) | Localize and CI tests under [`tests/infra/`][tests-infra] |
+| Translation repository config | [Architecture](architecture.md) | config tests under [`tests/infra/`][tests-infra] |
+| KM Registry discovery or guarded KM updates | [Architecture](architecture.md) | KM tests under [`tests/infra/`][tests-infra] |
+| GitHub workflow wiring | [Architecture](architecture.md) | workflow tests under [`tests/infra/`][tests-infra] |
 
 If the right place is unclear, add or adjust a small test that describes the
 behavior you expect. The module ownership usually becomes obvious from there.
 
-[package-dir]: ../src/dsw_km_translation_tool
-[src-root]: ../src
-[tests-infra]: ../tests/infra
-[tests-translation]: ../tests/translation
+[package-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/src/dsw_km_translation_tool
+[src-root]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/src
+[tests-infra]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/tests/infra
+[tests-translation]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/tests/translation

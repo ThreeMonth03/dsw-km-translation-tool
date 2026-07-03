@@ -7,13 +7,13 @@ translation-tree behavior evolve.
 
 Commit source and durable examples:
 
-- `src/`
-- `tests/`
-- `config/`
-- `examples/`
-- `docs/`
-- small fixture inputs under `files/`
-- durable translation round-trip fixtures under `tests/fixtures/`
+- [`src/`][src-dir]
+- [`tests/`][tests-dir]
+- [`config/`][config-dir]
+- [`examples/`][examples-dir]
+- [`docs/`][docs-dir]
+- small fixture inputs under [`files/`][files-dir]
+- durable translation round-trip fixtures under [`tests/fixtures/`][tests-fixtures-dir]
 
 Local generated state stays out of normal tooling commits:
 
@@ -34,13 +34,13 @@ workspace for translators and maintainers.
 
 ## Code Organization
 
-- Keep root `src/*.py` files as command-line shims.
-- Put reusable logic in `src/dsw_km_translation_tool/`.
+- Keep root [`src/*.py`][src-dir] files as command-line shims.
+- Put reusable logic in [`src/dsw_km_translation_tool/`][package-dir].
 - Keep GitHub Actions YAML thin. YAML should describe checkout, setup, and the
   one helper command it runs.
-- Add or update tests under `tests/infra/` when a helper makes a Git, Weblate,
+- Add or update tests under [`tests/infra/`][tests-infra-dir] when a helper makes a Git, Weblate,
   config, or merge decision.
-- Add or update tests under `tests/translation/` when a change affects
+- Add or update tests under [`tests/translation/`][tests-translation-dir] when a change affects
   translator-facing tree files or PO/KM output.
 - Update docs in the same commit as behavior changes.
 - Update Sphinx pages or docstrings when stable package APIs change.
@@ -72,13 +72,13 @@ together, then let the normal repository CI validate both sides. For production
 sync behavior changes, test against a disposable translation checkout before
 touching the formal public repository.
 
-[config-dir]: ../config
-[docs-dir]: ../docs
-[examples-dir]: ../examples
-[files-dir]: ../files
-[package-dir]: ../src/dsw_km_translation_tool
-[src-dir]: ../src
-[tests-dir]: ../tests
-[tests-fixtures-dir]: ../tests/fixtures
-[tests-infra-dir]: ../tests/infra
-[tests-translation-dir]: ../tests/translation
+[config-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/config
+[docs-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/docs
+[examples-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/examples
+[files-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/files
+[package-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/src/dsw_km_translation_tool
+[src-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/src
+[tests-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/tests
+[tests-fixtures-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/tests/fixtures
+[tests-infra-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/tests/infra
+[tests-translation-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/tests/translation

@@ -13,12 +13,12 @@ Scheduled automation pulls from Weblate into Git and uses download-only access.
 
 ## Required Workflow Permissions
 
-| Workflow template | GitHub permission | Secrets | Writes translations? |
+| Workflow | GitHub permission | Secrets | Writes translations? |
 | --- | --- | --- | --- |
-| `examples/github-actions/localize_auto_sync_template.yml` | `contents: write` | none | Writes Git only |
-| `examples/github-actions/localize_status_report_template.yml` | `contents: read` | optional `LOCALIZE_API_TOKEN` | No |
-| `examples/github-actions/localize_alignment_report_template.yml` | `contents: read` | none | No |
-| `examples/github-actions/km_version_auto_update_template.yml` | `contents: write` | `DSW_REGISTRY_TOKEN` only when a newer KM exists | Writes Git only after validation |
+| [Localize auto sync][localize-auto-sync-template] | `contents: write` | none | Writes Git only |
+| [Localize status report][localize-status-template] | `contents: read` | optional `LOCALIZE_API_TOKEN` | No |
+| [Localize alignment report][localize-alignment-template] | `contents: read` | none | No |
+| [KM version auto update][km-auto-update-template] | `contents: write` | `DSW_REGISTRY_TOKEN` only when a newer KM exists | Writes Git only after validation |
 
 ## Secret Placement
 
@@ -32,7 +32,7 @@ The tooling repository does not need these secrets for documentation builds or
 unit tests. Local maintainer runs read the same names from shell environment
 variables.
 
-The workflow templates in `examples/github-actions/`
+The workflow templates in [`examples/github-actions/`][github-actions-templates]
 show where GitHub Actions injects these secrets.
 
 The normal sync and alignment workflows use download-only Weblate access.
@@ -55,3 +55,9 @@ bundle. It is not used for Weblate access.
 
 Use forward commits for workflow, build output, report, or documentation fixes
 on public branches.
+
+[km-auto-update-template]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/examples/github-actions/km_version_auto_update_template.yml
+[github-actions-templates]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/examples/github-actions
+[localize-alignment-template]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/examples/github-actions/localize_alignment_report_template.yml
+[localize-auto-sync-template]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/examples/github-actions/localize_auto_sync_template.yml
+[localize-status-template]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/examples/github-actions/localize_status_report_template.yml

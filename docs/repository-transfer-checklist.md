@@ -10,10 +10,10 @@ changing translation text or uploading anything to Weblate.
 2. Confirm the formal translation repository is aligned with Weblate:
 
    ```shell
-   make repo-align REPO="$REPO"
+   make repo-align TRANSLATION_REPO_DIR="$TRANSLATION_REPO_DIR"
    ```
 
-   Set `REPO` as described in the
+   Set `TRANSLATION_REPO_DIR` as described in the
    [Command Reference](command-reference.md).
 
 3. Record the target tooling repository owner/name and branch policy.
@@ -23,20 +23,20 @@ changing translation text or uploading anything to Weblate.
 After the tooling repository is transferred, update every translation repository
 that checks out the tooling:
 
-- `translation-config.yml`
+- [`translation-config.yml`][example-translation-config]
   - `tooling.repository`
   - `tooling.ref`, if the branch or tag policy changed
-- `.github/workflows/*.yml`
+- [`.github/workflows/*.yml`][github-actions-templates]
   - `TOOLING_REPOSITORY`
   - `TOOLING_REF`, if the branch or tag policy changed
 
 In this tooling repository, update:
 
-- `examples/translation-config.yml`
-- `examples/github-actions/*_template.yml`
-- `tests/infra/test_github_workflows.py`
+- [`examples/translation-config.yml`][example-translation-config]
+- [`examples/github-actions/*_template.yml`][github-actions-templates]
+- [`tests/infra/test_github_workflows.py`][test-github-workflows]
 - Source links in maintainer docs, starting with
-  `docs/first-time-maintainer.md`, if GitHub redirects
+  [`docs/first-time-maintainer.md`][first-time-maintainer], if GitHub redirects
   will not cover the new location.
 
 ## GitHub Settings
@@ -61,15 +61,15 @@ Run these checks after updating references:
 ```shell
 make install-dev
 make check
-make repo-validate REPO="$REPO"
-make repo-align REPO="$REPO"
+make repo-validate TRANSLATION_REPO_DIR="$TRANSLATION_REPO_DIR"
+make repo-align TRANSLATION_REPO_DIR="$TRANSLATION_REPO_DIR"
 ```
 
 Then trigger the read-only status and alignment workflows manually in the formal
 translation repository. Trigger writer workflows only after read-only checks are
 green.
 
-[example-translation-config]: ../examples/translation-config.yml
-[first-time-maintainer]: ../docs/first-time-maintainer.md
-[github-actions-templates]: ../examples/github-actions
-[test-github-workflows]: ../tests/infra/test_github_workflows.py
+[example-translation-config]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/examples/translation-config.yml
+[first-time-maintainer]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/docs/first-time-maintainer.md
+[github-actions-templates]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/examples/github-actions
+[test-github-workflows]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/tests/infra/test_github_workflows.py
