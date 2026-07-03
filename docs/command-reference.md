@@ -17,15 +17,15 @@ are intended for reviewed local runs or GitHub Actions workflows.
 
 | Command | Safety | Main Use |
 | --- | --- | --- |
-| `validate_translation_config.py` | Read-only | Validate `translation-config.yml` |
-| `report_localize_status.py` | Read-only | Inspect a checked-out Weblate PO |
-| `report_weblate_checks.py` | Read-only | Query Weblate quality checks |
-| `report_alignment_status.py` | Read-only | Compare Weblate, tree, PO, and KM artifacts |
-| `discover_km_versions.py` without `--fail-on-new-version` | Read-only | Inspect Registry/configured KM versions |
-| `pull_localize_po.py` | Writes files | Refresh `sources/localize/` in the checkout |
-| `pull_km_bundle.py` | Writes files | Refresh `sources/knowledge-models/` in the checkout |
-| `sync_from_localize.py` | Git writer | Rebuild artifacts and commit/push when changed |
-| `sync_latest_km.py` | Guarded Git writer | Update to a newer published KM after validation |
+| [`validate_translation_config.py`][validate-translation-config-py] | Read-only | Validate `translation-config.yml` |
+| [`report_localize_status.py`][report-localize-status-py] | Read-only | Inspect a checked-out Weblate PO |
+| [`report_weblate_checks.py`][report-weblate-checks-py] | Read-only | Query Weblate quality checks |
+| [`report_alignment_status.py`][report-alignment-status-py] | Read-only | Compare Weblate, tree, PO, and KM artifacts |
+| [`discover_km_versions.py`][discover-km-versions-py] without `--fail-on-new-version` | Read-only | Inspect Registry/configured KM versions |
+| [`pull_localize_po.py`][pull-localize-po-py] | Writes files | Refresh `sources/localize/` in the checkout |
+| [`pull_km_bundle.py`][pull-km-bundle-py] | Writes files | Refresh `sources/knowledge-models/` in the checkout |
+| [`sync_from_localize.py`][sync-from-localize-py] | Git writer | Rebuild artifacts and commit/push when changed |
+| [`sync_latest_km.py`][sync-latest-km-py] | Guarded Git writer | Update to a newer published KM after validation |
 
 ## Setup and Checks
 
@@ -76,8 +76,9 @@ the external-repository commands below instead of hard-coding a local `MODEL`
 path.
 
 Translation round-trip tests use the checked-in fixture under
-`tests/fixtures/translation_tree/zh_Hant/`. Override `DSW_TRANSLATION_OUTPUT_ROOT` when
-you intentionally want to test another workspace.
+[`tests/fixtures/translation_tree/zh_Hant/`][translation-fixture-dir]. Override
+`DSW_TRANSLATION_OUTPUT_ROOT` when you intentionally want to test another
+workspace.
 
 ## External Translation Repository Commands
 
@@ -197,3 +198,14 @@ Pull the latest configured KM bundle when repository policy allows it:
   --repo-root "$TRANSLATION_REPO_DIR" \
   --config translation-config.yml
 ```
+
+[discover-km-versions-py]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/src/discover_km_versions.py
+[pull-km-bundle-py]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/src/pull_km_bundle.py
+[pull-localize-po-py]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/src/pull_localize_po.py
+[report-alignment-status-py]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/src/report_alignment_status.py
+[report-localize-status-py]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/src/report_localize_status.py
+[report-weblate-checks-py]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/src/report_weblate_checks.py
+[sync-from-localize-py]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/src/sync_from_localize.py
+[sync-latest-km-py]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/src/sync_latest_km.py
+[translation-fixture-dir]: https://github.com/ThreeMonth03/DSW_Translation_tool/tree/master/tests/fixtures/translation_tree/zh_Hant
+[validate-translation-config-py]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/src/validate_translation_config.py

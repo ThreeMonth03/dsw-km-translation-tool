@@ -15,10 +15,10 @@ Scheduled automation pulls from Weblate into Git and uses download-only access.
 
 | Workflow | GitHub permission | Secrets | Writes translations? |
 | --- | --- | --- | --- |
-| Localize auto sync | `contents: write` | none | Writes Git only |
-| Localize status report | `contents: read` | optional `LOCALIZE_API_TOKEN` | No |
-| Localize alignment report | `contents: read` | none | No |
-| KM version auto update | `contents: write` | `DSW_REGISTRY_TOKEN` only when a newer KM exists | Writes Git only after validation |
+| [Localize auto sync][localize-auto-sync-template] | `contents: write` | none | Writes Git only |
+| [Localize status report][localize-status-template] | `contents: read` | optional `LOCALIZE_API_TOKEN` | No |
+| [Localize alignment report][localize-alignment-template] | `contents: read` | none | No |
+| [KM version auto update][km-auto-update-template] | `contents: write` | `DSW_REGISTRY_TOKEN` only when a newer KM exists | Writes Git only after validation |
 
 ## Secret Placement
 
@@ -42,3 +42,8 @@ a newly published source KM bundle. It is not used for Weblate access.
 
 Use forward commits for workflow, build output, report, or documentation fixes
 on public branches.
+
+[km-auto-update-template]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/examples/github-actions/km_version_auto_update_template.yml
+[localize-alignment-template]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/examples/github-actions/localize_alignment_report_template.yml
+[localize-auto-sync-template]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/examples/github-actions/localize_auto_sync_template.yml
+[localize-status-template]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/examples/github-actions/localize_status_report_template.yml

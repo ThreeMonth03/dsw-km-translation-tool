@@ -32,9 +32,12 @@ that checks out the tooling:
 
 In this tooling repository, update:
 
-- `examples/translation-config.yml`
-- `examples/github-actions/*_template.yml`
-- `tests/infra/test_github_workflows.py`
+- [`examples/translation-config.yml`][example-translation-config]
+- [`examples/github-actions/*_template.yml`][github-actions-templates]
+- [`tests/infra/test_github_workflows.py`][test-github-workflows]
+- Source links in maintainer docs, starting with
+  [`docs/first-time-maintainer.md`][first-time-maintainer], if GitHub redirects
+  will not cover the new location.
 
 ## GitHub Settings
 
@@ -68,3 +71,8 @@ make docs
 Then trigger the read-only status and alignment workflows manually in the formal
 translation repository. Trigger writer workflows only after read-only checks are
 green.
+
+[example-translation-config]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/examples/translation-config.yml
+[first-time-maintainer]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/docs/first-time-maintainer.md
+[github-actions-templates]: https://github.com/ThreeMonth03/DSW_Translation_tool/tree/master/examples/github-actions
+[test-github-workflows]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/tests/infra/test_github_workflows.py

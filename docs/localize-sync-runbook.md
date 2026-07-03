@@ -22,7 +22,8 @@ The external translation workflow should run:
 - on pull requests targeting `master`
 - on manual `workflow_dispatch`
 
-The workflow runs `src/sync_from_localize.py`. That command:
+The workflow runs [`src/sync_from_localize.py`][sync-from-localize-py]. That
+command:
 
 1. Downloads the current Weblate PO to `sources/localize/zh_Hant/latest.po`.
 2. Writes the previous checked-in `latest.po` to a temporary comparison file.
@@ -43,7 +44,7 @@ Git or Weblate. It:
 
 1. Checks out the translation repository.
 2. Pulls the latest Weblate PO into the ephemeral workflow checkout.
-3. Runs `src/report_localize_status.py`.
+3. Runs [`src/report_localize_status.py`][report-localize-status-py].
 4. Writes a GitHub step summary and uploads
    `reviews/localize_status_report.json` and
    `reviews/localize_status_report.md` as artifacts.
@@ -51,11 +52,12 @@ Git or Weblate. It:
 The PO `fuzzy` flag is the review-state signal exported by Weblate. The status
 report includes those entries as part of current translation health.
 
-The same workflow can also run `src/report_weblate_checks.py` with the Weblate
-query `has:check`. That catches website-side quality-check warnings that are
-not always visible from PO fuzzy flags alone. The check report is diagnostic and
-uses `--allow-api-failure` so Weblate API rate limits are captured in the
-report while Git sync monitoring continues. Configure `LOCALIZE_API_TOKEN` if
+The same workflow can also run
+[`src/report_weblate_checks.py`][report-weblate-checks-py] with the Weblate query
+`has:check`. That catches website-side quality-check warnings that are not
+always visible from PO fuzzy flags alone. The check report is diagnostic and
+uses `--allow-api-failure` so Weblate API rate limits are captured in the report
+while Git sync monitoring continues. Configure `LOCALIZE_API_TOKEN` if
 authenticated read-only Weblate API access is available.
 
 It requires only `contents: read`.
@@ -107,3 +109,7 @@ Common DSW KM.
   tracking branch once and retry.
 - If Weblate has untranslated strings after sync, check whether they are empty,
   marked for review, or missing from the current KM source.
+
+[report-localize-status-py]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/src/report_localize_status.py
+[report-weblate-checks-py]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/src/report_weblate_checks.py
+[sync-from-localize-py]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/src/sync_from_localize.py

@@ -9,9 +9,9 @@ Start after the KM version is published and available from the DSW Registry or
 another official upstream source.
 
 The scheduled KM version auto-update workflow is the normal update mechanism.
-It runs `sync_latest_km.py`, no-ops when the configured KM is current, and only
-pushes to Git when every safety check passes. When the Registry has a newer
-published KM, the workflow:
+It runs [`sync_latest_km.py`][sync-latest-km-py], no-ops when the configured KM
+is current, and only pushes to Git when every safety check passes. When the
+Registry has a newer published KM, the workflow:
 
 - downloads the new KM bundle using `DSW_REGISTRY_TOKEN`;
 - updates `translation-config.yml` and the conventional source KM path;
@@ -102,3 +102,5 @@ Pay special attention to:
 Merge only after the dry-run branch produces aligned artifacts. After merge,
 trigger the scheduled sync and alignment report once manually to verify the
 production branch.
+
+[sync-latest-km-py]: https://github.com/ThreeMonth03/DSW_Translation_tool/blob/master/src/sync_latest_km.py
