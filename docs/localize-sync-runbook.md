@@ -90,7 +90,7 @@ means a pull sync, tree rebuild, or KM rebuild should run before maintainers
 trust the repository artifacts. It also requires only `contents: read` and does
 not change translations.
 
-For a local alignment check, use:
+To run the same alignment check from your machine, use:
 
 ```shell
 make repo-align TRANSLATION_REPO_DIR=/path/to/dsw-root-locales-zh_Hant
