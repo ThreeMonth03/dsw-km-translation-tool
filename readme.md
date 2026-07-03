@@ -41,9 +41,7 @@ This creates `.venv` and installs the Python dependencies listed in
 Run local checks:
 
 ```shell
-make test
-make docs
-make lint
+make check
 ```
 
 Validate a translation repository config:

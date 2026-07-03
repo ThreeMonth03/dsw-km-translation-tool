@@ -63,11 +63,7 @@ reviewed.
 Before pushing tooling changes:
 
 ```shell
-make format-check
-make lint
-make test
-make docs
-git diff --check
+make check
 ```
 
 For workflow template or config changes, also validate a real translation

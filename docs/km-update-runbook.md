@@ -24,6 +24,12 @@ Registry has a newer published KM, the workflow:
 If the token is missing or any validation step fails, no Git commit is pushed.
 The next scheduled run will retry.
 
+For a local maintainer run, use:
+
+```shell
+make repo-km-update TRANSLATION_REPO_DIR=/path/to/dsw-root-locales-zh_Hant
+```
+
 ## Dry-Run First
 
 Work in a disposable branch or local clone first.
@@ -31,8 +37,7 @@ Work in a disposable branch or local clone first.
 1. Discover available versions:
 
    ```shell
-   "$TOOL_REPO_DIR/.venv/bin/python" "$TOOL_REPO_DIR/src/discover_km_versions.py" \
-     --config "$TRANSLATION_REPO_DIR/translation-config.yml"
+   make repo-km-status TRANSLATION_REPO_DIR=/path/to/dsw-root-locales-zh_Hant
    ```
 
 2. Pull the published KM bundle:

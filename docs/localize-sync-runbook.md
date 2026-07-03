@@ -37,6 +37,12 @@ Scheduled runs commit directly to `master` when repository policy allows it.
 Pull request runs write only to same-repository branches. Fork pull requests
 skip writer commits.
 
+For a local maintainer run against a checked-out translation repository, use:
+
+```shell
+make repo-sync TRANSLATION_REPO_DIR=/path/to/dsw-root-locales-zh_Hant
+```
+
 ## Read-Only Status and Alignment Reports
 
 Use the status report workflow to inspect Weblate PO health without changing
@@ -76,6 +82,12 @@ The alignment report is allowed to fail when drift is detected. That failure
 means a pull sync, tree rebuild, or KM rebuild should run before maintainers
 trust the repository artifacts. It also requires only `contents: read` and does
 not change translations.
+
+For a local alignment check, use:
+
+```shell
+make repo-align TRANSLATION_REPO_DIR=/path/to/dsw-root-locales-zh_Hant
+```
 
 ## Merge Gate Behavior
 

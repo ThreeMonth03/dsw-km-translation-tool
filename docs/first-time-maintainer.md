@@ -30,8 +30,7 @@ translation config and generated translation artifacts.
 
    ```shell
    make install-dev
-   make test
-   make docs
+   make check
    ```
 
 5. When changing behavior, find the thin CLI script in [`src/*.py`][src-root],
