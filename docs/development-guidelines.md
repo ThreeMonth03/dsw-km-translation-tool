@@ -35,7 +35,6 @@ workspace for translators and maintainers.
 
 ## Code Organization
 
-- Keep root [`src/*.py`][src-dir] files as compatibility command-line shims.
 - Put packaged CLI behavior under
   [`src/dsw_km_translation_tool/cli/`][cli-dir] and expose user-facing commands
   through [`pyproject.toml`][pyproject].

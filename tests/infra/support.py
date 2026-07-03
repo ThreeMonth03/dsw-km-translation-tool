@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from dsw_km_translation_tool.workflow import TranslationWorkflowService
-from tests.helpers import run_cli_script
+from tests.helpers import run_cli_command
 
 
 @dataclass(frozen=True)
@@ -152,7 +152,7 @@ def run_export_tree_cli(
         args.extend(["--outline-out", str(outline_path)])
     if shared_blocks_dir_path is not None:
         args.extend(["--shared-blocks-dir-out", str(shared_blocks_dir_path)])
-    return run_cli_script(repo_root, "src/po_json_tree.py", *args)
+    return run_cli_command(repo_root, "dsw-km-export-tree", *args)
 
 
 def run_tree_to_po_cli(
@@ -173,9 +173,9 @@ def run_tree_to_po_cli(
         Completed subprocess result.
     """
 
-    return run_cli_script(
+    return run_cli_command(
         repo_root,
-        "src/tree_to_po.py",
+        "dsw-km-tree-to-po",
         "--tree-dir",
         str(tree_dir),
         "--original-po",
@@ -203,9 +203,9 @@ def run_po_to_km_cli(
         Completed subprocess result.
     """
 
-    return run_cli_script(
+    return run_cli_command(
         repo_root,
-        "src/po_to_km.py",
+        "dsw-km-po-to-km",
         "--translated-po",
         str(translated_po_path),
         "--original-km",
@@ -261,7 +261,7 @@ def run_sync_cli(
         args.extend(["--shared-blocks-outline-out", str(shared_blocks_outline_path)])
     if group_by is not None:
         args.extend(["--group-by", group_by])
-    return run_cli_script(repo_root, "src/sync_shared_strings.py", *args)
+    return run_cli_command(repo_root, "dsw-km-sync-shared-strings", *args)
 
 
 def run_review_po_cli(
@@ -284,9 +284,9 @@ def run_review_po_cli(
         Completed subprocess result.
     """
 
-    return run_cli_script(
+    return run_cli_command(
         repo_root,
-        "src/review_po_changes.py",
+        "dsw-km-review-po",
         "--original-po",
         str(original_po_path),
         "--generated-po",

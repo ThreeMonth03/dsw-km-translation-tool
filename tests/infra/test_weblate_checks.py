@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import json
-import subprocess
-import sys
 import urllib.request
 from pathlib import Path
 
@@ -17,6 +15,7 @@ from dsw_km_translation_tool.weblate_checks import (
     resolve_weblate_units_api_url,
     write_weblate_checks_json,
 )
+from tests.helpers import run_cli_command
 
 
 def write_config(path: Path, download_url: str) -> None:
@@ -239,25 +238,21 @@ def test_report_weblate_checks_cli_allows_api_failure(
         "file:///download/knowledge-models/common-dsw-knowledge-model/zh_Hant/",
     )
 
-    result = subprocess.run(
-        [
-            sys.executable,
-            str(repo_root / "src" / "report_weblate_checks.py"),
-            "--repo-root",
-            str(workspace),
-            "--config",
-            str(config_path),
-            "--json-out",
-            str(json_path),
-            "--details-out",
-            str(details_path),
-            "--allow-api-failure",
-        ],
-        check=True,
-        capture_output=True,
-        text=True,
+    result = run_cli_command(
+        repo_root,
+        "dsw-km-report-weblate-checks",
+        "--repo-root",
+        str(workspace),
+        "--config",
+        str(config_path),
+        "--json-out",
+        str(json_path),
+        "--details-out",
+        str(details_path),
+        "--allow-api-failure",
     )
 
+    assert result.returncode == 0, result.stderr or result.stdout
     assert "## Weblate Check Status" in result.stdout
     assert "Status: **unavailable**" in result.stdout
     assert json.loads(json_path.read_text(encoding="utf-8"))["ok"] is False

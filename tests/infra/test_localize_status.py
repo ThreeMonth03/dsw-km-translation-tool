@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import json
-import subprocess
-import sys
 from pathlib import Path
 
 from dsw_km_translation_tool.localize_status import (
@@ -13,6 +11,7 @@ from dsw_km_translation_tool.localize_status import (
     write_localize_po_status_json,
     write_localize_po_status_markdown,
 )
+from tests.helpers import run_cli_command
 
 
 def write_status_fixture_po(path: Path) -> None:
@@ -139,26 +138,22 @@ def test_report_localize_status_cli_writes_outputs(
     details_path = workspace / "details.md"
     write_status_fixture_po(po_path)
 
-    result = subprocess.run(
-        [
-            sys.executable,
-            str(repo_root / "src" / "report_localize_status.py"),
-            "--po",
-            str(po_path),
-            "--json-out",
-            str(json_path),
-            "--summary",
-            str(summary_path),
-            "--details-out",
-            str(details_path),
-            "--issue-limit",
-            "1",
-        ],
-        check=True,
-        capture_output=True,
-        text=True,
+    result = run_cli_command(
+        repo_root,
+        "dsw-km-report-localize-status",
+        "--po",
+        str(po_path),
+        "--json-out",
+        str(json_path),
+        "--summary",
+        str(summary_path),
+        "--details-out",
+        str(details_path),
+        "--issue-limit",
+        "1",
     )
 
+    assert result.returncode == 0, result.stderr or result.stdout
     assert "## Localize/Weblate PO Status" in result.stdout
     assert json_path.exists()
     assert "## Localize/Weblate PO Status" in summary_path.read_text(encoding="utf-8")

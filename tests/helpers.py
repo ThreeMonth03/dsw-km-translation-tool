@@ -6,7 +6,6 @@ import json
 import os
 import re
 import subprocess
-import sys
 import time
 from collections import defaultdict
 from pathlib import Path
@@ -603,22 +602,26 @@ def future_timestamp(offset_seconds: float = 1.0) -> float:
     return time.time() + offset_seconds
 
 
-def run_cli_script(
-    repo_root: Path, script_path: str, *args: str
+def run_cli_command(
+    repo_root: Path,
+    command_name: str,
+    *args: str,
 ) -> subprocess.CompletedProcess[str]:
-    """Run one CLI script under the current Python interpreter.
+    """Run one installed CLI command from the repository virtualenv.
 
     Args:
         repo_root: Repository root directory used as the process cwd.
-        script_path: Repository-relative path to the Python CLI script.
+        command_name: Console script command name, for example
+            ``dsw-km-export-tree``.
         *args: Additional CLI arguments.
 
     Returns:
         Completed process result with captured stdout and stderr.
     """
 
+    command_path = repo_root / ".venv" / "bin" / command_name
     return subprocess.run(
-        [sys.executable, script_path, *args],
+        [str(command_path), *args],
         cwd=repo_root,
         check=False,
         capture_output=True,

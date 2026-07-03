@@ -10,8 +10,6 @@ when deciding where a change belongs.
   `dsw-km-*` command-line tools.
 - [`Makefile`][makefile] wraps local development checks and the in-repository
   translation-tree workflow.
-- [`src/*.py`][src-root] contains compatibility wrappers for older direct-script
-  usage.
 - [`src/dsw_km_translation_tool/cli/`][cli-dir] contains packaged command-line
   entry points used by Make targets and GitHub Actions.
 - [`src/dsw_km_translation_tool/`][package-dir] contains reusable package code.
@@ -145,7 +143,6 @@ in translation repositories.
 [shared-blocks-py]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/src/dsw_km_translation_tool/shared_blocks.py
 [sphinx-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/docs/sphinx
 [cli-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/src/dsw_km_translation_tool/cli
-[src-root]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/src
 [sync-py]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/src/dsw_km_translation_tool/sync.py
 [tests-infra-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/tests/infra
 [tests-translation-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/tests/translation

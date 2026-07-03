@@ -74,6 +74,5 @@ behavior you expect. The module ownership usually becomes obvious from there.
 
 [package-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/src/dsw_km_translation_tool
 [cli-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/src/dsw_km_translation_tool/cli
-[src-root]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/src
 [tests-infra]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/tests/infra
 [tests-translation]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/tests/translation

@@ -80,8 +80,7 @@ Run `make help-all` if you need lower-level helpers such as `tree-to-po`,
 
 The targets above are thin wrappers around console scripts installed into
 `.venv/bin/`. Those commands are declared in [`pyproject.toml`][pyproject] and
-implemented under [`src/dsw_km_translation_tool/cli/`][cli-dir]. Root scripts in
-[`src/`][src-root] are compatibility wrappers for older direct-script use.
+implemented under [`src/dsw_km_translation_tool/cli/`][cli-dir].
 
 When changing implementation, use [Architecture](architecture.md) to find the
 owning package module and tests.
@@ -105,4 +104,3 @@ Production translation repositories should use `translation-config.yml` and the
 [cli-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/src/dsw_km_translation_tool/cli
 [makefile]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/Makefile
 [pyproject]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/pyproject.toml
-[src-root]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/src

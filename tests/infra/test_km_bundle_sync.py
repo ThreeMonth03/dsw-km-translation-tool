@@ -8,7 +8,7 @@ import pytest
 
 from dsw_km_translation_tool.km_bundle_sync import pull_km_bundle
 from dsw_km_translation_tool.km_registry import KmRegistryError
-from tests.helpers import run_cli_script
+from tests.helpers import run_cli_command
 from tests.infra.test_translation_repository_config import write_config
 
 
@@ -107,9 +107,9 @@ def test_pull_km_bundle_cli_can_skip_without_token(repo_root: Path, workspace: P
     config_path = workspace / "translation-config.yml"
     write_config(config_path)
 
-    result = run_cli_script(
+    result = run_cli_command(
         repo_root,
-        "src/pull_km_bundle.py",
+        "dsw-km-pull-bundle",
         "--repo-root",
         str(workspace),
         "--config",

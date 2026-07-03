@@ -25,7 +25,6 @@ the support code.
 
 ## Editing Rules
 
-- Keep root `src/*.py` files as compatibility command-line shims.
 - Keep packaged CLI behavior under
   [`src/dsw_km_translation_tool/cli/`][cli-dir] and expose user-facing commands
   through [`pyproject.toml`][pyproject].

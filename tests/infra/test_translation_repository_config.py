@@ -11,7 +11,7 @@ from dsw_km_translation_tool.translation_repository_config import (
     tracking_branch,
     version_paths,
 )
-from tests.helpers import run_cli_script
+from tests.helpers import run_cli_command
 
 
 def write_config(path: Path, *, supported_versions: list[str] | None = None) -> None:
@@ -117,9 +117,9 @@ def test_validate_translation_config_cli_reports_summary(
     summary_path = workspace / "summary.md"
     write_config(config_path)
 
-    result = run_cli_script(
+    result = run_cli_command(
         repo_root,
-        "src/validate_translation_config.py",
+        "dsw-km-validate-config",
         "--config",
         str(config_path),
         "--summary",

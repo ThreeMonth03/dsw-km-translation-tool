@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import json
-import subprocess
-import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from threading import Thread
@@ -15,6 +13,7 @@ from dsw_km_translation_tool.km_registry import (
     write_km_version_discovery_markdown,
     write_km_version_discovery_report,
 )
+from tests.helpers import run_cli_command
 from tests.infra.test_translation_repository_config import write_config
 
 
@@ -200,30 +199,26 @@ def test_discover_km_versions_cli_writes_markdown_outputs(
         encoding="utf-8",
     )
     try:
-        result = subprocess.run(
-            [
-                sys.executable,
-                str(repo_root / "src" / "discover_km_versions.py"),
-                "--repo-root",
-                str(workspace),
-                "--config",
-                str(config_path),
-                "--report",
-                str(report_path),
-                "--details-out",
-                str(details_path),
-                "--summary",
-                str(summary_path),
-            ],
-            check=True,
-            capture_output=True,
-            text=True,
+        result = run_cli_command(
+            repo_root,
+            "dsw-km-discover-versions",
+            "--repo-root",
+            str(workspace),
+            "--config",
+            str(config_path),
+            "--report",
+            str(report_path),
+            "--details-out",
+            str(details_path),
+            "--summary",
+            str(summary_path),
         )
     finally:
         registry_server.shutdown()
         registry_server.server_close()
         registry_thread.join(timeout=5)
 
+    assert result.returncode == 0, result.stderr or result.stdout
     assert registry_requests == ["/knowledge-model-packages?organizationId=dsw&kmId=root"]
     assert "## KM Version Monitor" in result.stdout
     assert json.loads(report_path.read_text(encoding="utf-8"))["new_versions"] == []

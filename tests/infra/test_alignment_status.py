@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import json
 import shutil
-import subprocess
-import sys
 from collections.abc import Callable
 from pathlib import Path
 
@@ -14,6 +12,7 @@ from dsw_km_translation_tool.alignment_status import (
     render_alignment_status_markdown,
     write_alignment_status_json,
 )
+from tests.helpers import run_cli_command
 
 
 def prepare_translation_repo_fixture(
@@ -210,29 +209,25 @@ def test_report_alignment_status_cli_writes_outputs(
     details_path = workspace / "details.md"
     artifact_dir = workspace / "alignment-artifacts"
 
-    result = subprocess.run(
-        [
-            sys.executable,
-            str(repo_root / "src" / "report_alignment_status.py"),
-            "--repo-root",
-            str(translation_repo),
-            "--config",
-            str(translation_repo / "translation-config.yml"),
-            "--json-out",
-            str(json_path),
-            "--summary",
-            str(summary_path),
-            "--details-out",
-            str(details_path),
-            "--artifact-dir",
-            str(artifact_dir),
-            "--fail-on-mismatch",
-        ],
-        check=True,
-        capture_output=True,
-        text=True,
+    result = run_cli_command(
+        repo_root,
+        "dsw-km-report-alignment",
+        "--repo-root",
+        str(translation_repo),
+        "--config",
+        str(translation_repo / "translation-config.yml"),
+        "--json-out",
+        str(json_path),
+        "--summary",
+        str(summary_path),
+        "--details-out",
+        str(details_path),
+        "--artifact-dir",
+        str(artifact_dir),
+        "--fail-on-mismatch",
     )
 
+    assert result.returncode == 0, result.stderr or result.stdout
     assert "## Localize/Repository Alignment" in result.stdout
     assert "Status: **aligned**" in result.stdout
     assert json.loads(json_path.read_text(encoding="utf-8"))["aligned"] is True
