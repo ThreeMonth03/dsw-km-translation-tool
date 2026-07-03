@@ -70,7 +70,7 @@ make check
 For workflow template changes, update the template and the production workflow
 together, then let the normal repository CI validate both sides. For production
 sync behavior changes, test against a disposable translation checkout before
-touching the formal public repository.
+touching the production translation repository.
 
 [config-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/config
 [docs-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/docs

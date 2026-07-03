@@ -56,7 +56,8 @@ commands by safety level.
 ## Where Changes Usually Belong
 
 Use this as the quick route, then read [Architecture](architecture.md) for the
-full ownership map.
+full ownership map. If the change goes into support packages, use
+[Internal Change Guide](internal-change-guide.md).
 
 | Change | Start With | Tests |
 | --- | --- | --- |

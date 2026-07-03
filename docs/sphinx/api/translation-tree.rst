@@ -1,56 +1,67 @@
-Translation Tree API
-====================
+Translation Tree Reference
+==========================
 
-These package modules cover the local PO, KM, translation tree, review, and
-shared-string round trip. They are code references, not production operation
-notes; use the maintainer runbooks for repository operations.
+Maintainer-facing services for local PO, KM, translation tree, review, and
+shared-string workflows. This is not a public SDK; internal parser, renderer,
+and storage helpers are covered by the internal change guide and tests.
 
 Workflow Service
 ----------------
 
-.. automodule:: dsw_km_translation_tool.workflow
+.. autoclass:: dsw_km_translation_tool.workflow.TranslationWorkflowService
    :members:
-   :undoc-members:
    :show-inheritance:
 
 Tree Repository
 ---------------
 
-.. automodule:: dsw_km_translation_tool.tree
+.. autoclass:: dsw_km_translation_tool.tree.TranslationTreeRepository
    :members:
-   :undoc-members:
    :show-inheritance:
 
 Knowledge Model Service
 -----------------------
 
-.. automodule:: dsw_km_translation_tool.knowledge_model_service
+.. autoclass:: dsw_km_translation_tool.knowledge_model_service.KnowledgeModelService
    :members:
-   :undoc-members:
    :show-inheritance:
 
 PO Facade
 ---------
 
-.. automodule:: dsw_km_translation_tool.po
-   :members:
-   :undoc-members:
-   :show-inheritance:
+The PO facade exports the parser, writer, and string codec used by workflow
+services. Their parser/render internals are intentionally not expanded here;
+use the internal change guide before changing PO support behavior.
+
+.. autoclass:: dsw_km_translation_tool.po.PoCatalogParser
+
+.. autoclass:: dsw_km_translation_tool.po.PoCatalogWriter
+
+.. autoclass:: dsw_km_translation_tool.po.PoStringCodec
 
 Review and Shared Strings
 -------------------------
 
-.. automodule:: dsw_km_translation_tool.review
+.. autoclass:: dsw_km_translation_tool.review.PoDiffReviewer
    :members:
-   :undoc-members:
    :show-inheritance:
 
-.. automodule:: dsw_km_translation_tool.shared_blocks
+.. autoclass:: dsw_km_translation_tool.shared_blocks.SharedBlockContext
    :members:
-   :undoc-members:
    :show-inheritance:
 
-.. automodule:: dsw_km_translation_tool.sync
+.. autoclass:: dsw_km_translation_tool.shared_blocks.SharedBlockRecord
    :members:
-   :undoc-members:
+   :show-inheritance:
+
+.. autoclass:: dsw_km_translation_tool.shared_blocks.SharedBlocksCatalogParser
+   :members:
+   :show-inheritance:
+
+.. autoclass:: dsw_km_translation_tool.shared_blocks.SharedBlocksCatalogBuilder
+   :members:
+   :show-inheritance:
+
+.. autoclass:: dsw_km_translation_tool.sync.SharedStringSynchronizer
+   :members:
    :show-inheritance:

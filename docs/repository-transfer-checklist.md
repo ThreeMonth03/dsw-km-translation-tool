@@ -7,7 +7,7 @@ changing translation text or uploading anything to Weblate.
 ## Before Transfer
 
 1. Confirm the current default branch is green in GitHub Actions.
-2. Confirm the formal translation repository is aligned with Weblate:
+2. Confirm the production translation repository is aligned with Weblate:
 
    ```shell
    make repo-align TRANSLATION_REPO_DIR="$TRANSLATION_REPO_DIR"
@@ -65,9 +65,9 @@ make repo-validate TRANSLATION_REPO_DIR="$TRANSLATION_REPO_DIR"
 make repo-align TRANSLATION_REPO_DIR="$TRANSLATION_REPO_DIR"
 ```
 
-Then trigger the read-only status and alignment workflows manually in the formal
-translation repository. Trigger writer workflows only after read-only checks are
-green.
+Then trigger the read-only status and alignment workflows manually in the
+production translation repository. Trigger writer workflows only after read-only
+checks are green.
 
 [example-translation-config]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/examples/translation-config.yml
 [first-time-maintainer]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/docs/first-time-maintainer.md

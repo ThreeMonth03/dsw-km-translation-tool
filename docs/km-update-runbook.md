@@ -37,13 +37,15 @@ For a local maintainer run, use:
 make repo-km-update TRANSLATION_REPO_DIR=/path/to/dsw-root-locales-zh_Hant
 ```
 
-Set `TRANSLATION_REPO_DIR`, `TARGET_BRANCH`, and related Make variables as
-described in the [Command Reference](command-reference.md). The targets are
-declared in the [`Makefile`][makefile].
+Set `TRANSLATION_REPO_DIR` as described in the
+[Command Reference](command-reference.md). Override `TRACKING_BRANCH` only when
+the production repository does not use `master`. The targets are declared in
+the [`Makefile`][makefile].
 
-## Dry-Run First
+## Manual Test or Repair Path
 
-Work in a disposable branch or local clone first.
+Use this path only when the scheduled update fails, or when you want to test a
+new KM update in a disposable branch or local clone.
 
 1. Discover available versions:
 
@@ -83,7 +85,7 @@ Work in a disposable branch or local clone first.
    make repo-align TRANSLATION_REPO_DIR="$TRANSLATION_REPO_DIR"
    ```
 
-## Review Before Merge
+## Review Manual Branch Outputs
 
 Review these generated files before merging:
 
@@ -103,7 +105,7 @@ Pay special attention to:
 - newly empty translations;
 - newly review-marked translations reported by Weblate.
 
-Merge only after the dry-run branch produces aligned outputs. After merge,
+Merge a manual branch only after it produces aligned outputs. After merge,
 trigger the scheduled sync and alignment report once manually to verify the
 production branch.
 

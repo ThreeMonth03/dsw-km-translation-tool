@@ -15,7 +15,7 @@ when deciding where a change belongs.
   translation repository config.
 - [`files/`][files-dir] contains small default source PO/KM inputs for local use and tests.
 - [`docs/sphinx/`][sphinx-dir] contains Sphinx source for the published docs site
-  and package API reference. The files under `docs/sphinx/maintainer/` are
+  and package reference. The files under `docs/sphinx/maintainer/` are
   include wrappers; edit the maintainer Markdown files under `docs/`.
 - [`tests/fixtures/translation_tree/`][translation-fixture-dir] contains the checked-in tree, final PO, and
   review diff used by translation round-trip tests.
@@ -109,7 +109,7 @@ in translation repositories.
 - If a translation repository needs a new workflow behavior, add it to the
   external template first, then copy the reviewed template into the target repo.
 - After changing a workflow template, compare it with the corresponding
-  workflow in the formal translation repository.
+  workflow in the production translation repository.
 - If a command changes, update [Command Reference](command-reference.md).
 
 [alignment-status-py]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/src/dsw_km_translation_tool/alignment_status.py
