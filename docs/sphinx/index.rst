@@ -54,16 +54,15 @@ For implementation helpers below these facades, use the
    :hidden:
 
    maintainer/first-time-maintainer
-   maintainer/docs-index
    maintainer/architecture
-   maintainer/internal-change-guide
-   maintainer/command-reference
    maintainer/development-guidelines
-   maintainer/workflow-templates
+   maintainer/command-reference
    maintainer/localize-sync-runbook
    maintainer/km-update-runbook
-   maintainer/repository-transfer-checklist
+   maintainer/workflow-templates
    maintainer/security-and-permissions
+   maintainer/internal-change-guide
+   maintainer/repository-transfer-checklist
 
 .. toctree::
    :maxdepth: 2

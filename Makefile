@@ -186,6 +186,7 @@ test-translation: venv
 	$(PYTHON) -m pytest tests/translation
 
 docs: venv
+	rm -rf $(DOCS_BUILD)
 	$(SPHINXBUILD) $(SPHINXOPTS) -b html $(DOCS_SOURCE) $(DOCS_BUILD)
 
 docs-clean:
