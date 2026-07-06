@@ -50,6 +50,14 @@ Trigger KM auto-update immediately:
 gh workflow run km_version_auto_update.yml --ref master
 ```
 
+## KM and Config Updates
+
+Normal Weblate sync does not refresh `translation-config.yml`. The KM
+auto-update workflow may update only the active KM version and bundle path after
+the newer KM bundle, Weblate mirror, rebuild, validation, and alignment checks
+all pass. Other settings, such as branch names, Weblate URLs, and tooling refs,
+are maintained manually.
+
 ## Local Checks
 
 Use the tooling repository for local checks:
