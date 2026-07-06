@@ -11,37 +11,28 @@ updates.
 Start Here
 ----------
 
-New to the repository
-~~~~~~~~~~~~~~~~~~~~~
+Choose the path closest to what you are doing:
 
-Read the :doc:`First-Time Maintainer Guide <maintainer/first-time-maintainer>`
-first. It explains the mental model, safe commands, and where common changes
-belong.
+- **New to the repository**: read the
+  :doc:`First-Time Maintainer Guide <maintainer/first-time-maintainer>` first.
+  It explains the mental model, safe commands, and where common changes belong.
 
-Operating production sync
-~~~~~~~~~~~~~~~~~~~~~~~~~
+- **Operating production sync**: use the
+  :doc:`Localize Sync Runbook <maintainer/localize-sync-runbook>` for
+  Weblate-to-Git sync, status reports, and alignment checks.
 
-Use the :doc:`Localize Sync Runbook <maintainer/localize-sync-runbook>` for
-Weblate-to-Git sync, status reports, and alignment checks.
+- **Updating to a newer KM**: use the
+  :doc:`KM Update Runbook <maintainer/km-update-runbook>` for the guarded
+  auto-update workflow and manual repair path.
 
-Updating to a newer KM
-~~~~~~~~~~~~~~~~~~~~~~
+- **Changing the tooling**: start with
+  :doc:`Architecture <maintainer/architecture>`, then use the
+  :doc:`Internal Change Guide <maintainer/internal-change-guide>` when editing
+  lower-level helpers.
 
-Use the :doc:`KM Update Runbook <maintainer/km-update-runbook>` for the guarded
-auto-update workflow and manual repair path.
-
-Changing the tooling
-~~~~~~~~~~~~~~~~~~~~
-
-Start with :doc:`Architecture <maintainer/architecture>` and then use the
-:doc:`Internal Change Guide <maintainer/internal-change-guide>` when editing
-lower-level helpers.
-
-Finding commands
-~~~~~~~~~~~~~~~~
-
-Use the :doc:`Command Reference <maintainer/command-reference>` for Make
-targets, required variables, and writer commands.
+- **Finding commands**: use the
+  :doc:`Command Reference <maintainer/command-reference>` for Make targets,
+  required variables, and writer commands.
 
 Package Reference
 -----------------
