@@ -29,6 +29,7 @@ dev = [
 [project.scripts]
 dsw-km-discover-versions = "dsw_km_translation_tool.cli.discover_km_versions:main"
 dsw-km-export-tree = "dsw_km_translation_tool.cli.po_json_tree:main"
+dsw-km-init-translation-repo = "dsw_km_translation_tool.cli.init_translation_repository:main"
 dsw-km-merge-localize-po = "dsw_km_translation_tool.cli.merge_localize_po:main"
 dsw-km-po-to-km = "dsw_km_translation_tool.cli.po_to_km:main"
 dsw-km-pull-bundle = "dsw_km_translation_tool.cli.pull_km_bundle:main"

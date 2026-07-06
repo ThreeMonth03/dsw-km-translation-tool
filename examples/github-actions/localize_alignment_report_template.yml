@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 env:
-  TOOLING_REPOSITORY: ThreeMonth03/DSW-KM-translation-tool
+  TOOLING_REPOSITORY: ThreeMonth03/dsw-km-translation-tool
   TOOLING_REF: master
   TRACKING_BRANCH: master
   TRANSLATION_CONFIG: translation-config.yml

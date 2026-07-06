@@ -6,7 +6,7 @@ from pathlib import Path
 
 import yaml
 
-EXPECTED_TOOLING_REPOSITORY = "ThreeMonth03/DSW-KM-translation-tool"
+EXPECTED_TOOLING_REPOSITORY = "ThreeMonth03/dsw-km-translation-tool"
 EXPECTED_TOOLING_REF = "master"
 
 

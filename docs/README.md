@@ -1,4 +1,4 @@
-# Documentation Index
+# Maintainer Docs
 
 Use this directory as the maintenance manual for the DSW KM translation tooling.
 The root [`readme.md`][root-readme] stays as the quick-start entry point;
@@ -13,6 +13,7 @@ durable design and operating procedures live here.
 | Change internal helper behavior | [Internal Change Guide](internal-change-guide.md) |
 | Change code safely | [Development Guidelines](development-guidelines.md) |
 | Operate Localize/Weblate-to-Git sync | [Localize Sync Runbook](localize-sync-runbook.md) |
+| Create a new translation repository | [Translation Repository Bootstrap](translation-repository-bootstrap.md) |
 | Copy or update translation repository workflows | [Workflow Templates](workflow-templates.md) |
 | Check repository/Weblate build alignment | [Localize Sync Runbook](localize-sync-runbook.md) |
 | Check current upstream KM/Weblate compatibility | [Command Reference](command-reference.md) |
@@ -30,6 +31,8 @@ durable design and operating procedures live here.
 - Use [Internal Change Guide](internal-change-guide.md) for support-module
   changes that sit below the maintainer-facing facades.
 - Use runbooks for operating production workflows.
+- Use [Translation Repository Bootstrap](translation-repository-bootstrap.md)
+  when creating a new translation repository from templates and upstream inputs.
 - Use [Workflow Templates](workflow-templates.md) when copying or changing
   GitHub Actions templates for translation repositories.
 - Use [Security and Permissions](security-and-permissions.md) for secrets and
@@ -41,4 +44,4 @@ durable design and operating procedures live here.
 - The files under `docs/sphinx/maintainer/` only include these Markdown pages
   in the published Sphinx site. Edit the pages in this directory.
 
-[root-readme]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/readme.md
+[root-readme]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/readme.md

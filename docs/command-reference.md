@@ -51,6 +51,7 @@ Set `TRANSLATION_REPO_DIR` before running these targets.
 | `make repo-status` | Report files only | Inspect the checked-in Weblate PO |
 | `make repo-checks` | Report files only | Query Weblate quality checks such as `has:check` |
 | `make repo-align` | Report files only | Compare Weblate, tree, final PO, and final KM outputs |
+| `make repo-init` | Writes files | Initialize a new translation repository from templates and upstream inputs |
 | `make repo-pull-po` | Writes files | Refresh `sources/localize/` in the checkout |
 | `make repo-sync` | Git writer | Pull Weblate, rebuild outputs, and commit/push when changed |
 | `make repo-km-status` | Report files only | Check whether the Registry has a newer KM |
@@ -61,6 +62,16 @@ Example:
 ```shell
 make repo-align TRANSLATION_REPO_DIR=/path/to/dsw-root-locales-zh_Hant
 ```
+
+To create a new translation repository, set `NEW_TRANSLATION_REPO_DIR`:
+
+```shell
+export DSW_REGISTRY_TOKEN=...
+make repo-init NEW_TRANSLATION_REPO_DIR=/path/to/new-translation-repo
+```
+
+See [Translation Repository Bootstrap](translation-repository-bootstrap.md) for
+the full initialization flow.
 
 ## Local Translation Tree
 
@@ -101,7 +112,7 @@ OUTPUT_ROOT=translation/zh_Hant
 Production translation repositories should use `translation-config.yml` and the
 `repo-*` targets instead.
 
-[example-translation-config]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/examples/translation-config.yml
-[cli-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/src/dsw_km_translation_tool/cli
-[makefile]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/Makefile
-[pyproject]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/pyproject.toml
+[example-translation-config]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/examples/translation-config.yml
+[cli-dir]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/src/dsw_km_translation_tool/cli
+[makefile]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/Makefile
+[pyproject]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/pyproject.toml

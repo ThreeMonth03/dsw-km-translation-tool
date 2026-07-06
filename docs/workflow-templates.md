@@ -1,7 +1,9 @@
 # Workflow Templates
 
-Use this page when copying or updating GitHub Actions workflows in a dedicated
-translation repository. The templates live in
+Use this page when reviewing or manually updating GitHub Actions workflows in a
+dedicated translation repository. New repositories should usually be created
+with [Translation Repository Bootstrap](translation-repository-bootstrap.md)
+instead of copying each file by hand. The templates live in
 [`examples/github-actions/`][github-actions-templates].
 
 The tooling repository also has its own
@@ -31,7 +33,7 @@ Each workflow template has a small `env` block. Review these values when copying
 or updating a workflow:
 
 ```yaml
-TOOLING_REPOSITORY: ThreeMonth03/DSW-KM-translation-tool
+TOOLING_REPOSITORY: ThreeMonth03/dsw-km-translation-tool
 TOOLING_REF: master
 TRACKING_BRANCH: master
 TRANSLATION_CONFIG: translation-config.yml
@@ -63,12 +65,12 @@ When a workflow behavior changes:
 4. Run the read-only validation, status, and alignment workflows before relying
    on writer workflows.
 
-[alignment-template]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/examples/github-actions/localize_alignment_report_template.yml
-[auto-sync-template]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/examples/github-actions/localize_auto_sync_template.yml
-[example-translation-config]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/examples/translation-config.yml
-[github-actions-templates]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/examples/github-actions
-[km-update-template]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/examples/github-actions/km_version_auto_update_template.yml
-[status-template]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/examples/github-actions/localize_status_report_template.yml
-[test-github-workflows]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/tests/infra/test_github_workflows.py
-[upstream-smoke-workflow]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/.github/workflows/upstream_smoke.yml
-[validate-template]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/examples/github-actions/validate_translation_config_template.yml
+[alignment-template]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/examples/github-actions/localize_alignment_report_template.yml
+[auto-sync-template]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/examples/github-actions/localize_auto_sync_template.yml
+[example-translation-config]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/examples/translation-config.yml
+[github-actions-templates]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/examples/github-actions
+[km-update-template]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/examples/github-actions/km_version_auto_update_template.yml
+[status-template]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/examples/github-actions/localize_status_report_template.yml
+[test-github-workflows]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/tests/infra/test_github_workflows.py
+[upstream-smoke-workflow]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/.github/workflows/upstream_smoke.yml
+[validate-template]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/examples/github-actions/validate_translation_config_template.yml

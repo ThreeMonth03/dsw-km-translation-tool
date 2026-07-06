@@ -85,15 +85,15 @@ together, then let the normal repository CI validate both sides. For production
 sync behavior changes, test against a disposable translation checkout before
 touching the production translation repository.
 
-[config-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/config
-[cli-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/src/dsw_km_translation_tool/cli
-[docs-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/docs
-[examples-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/examples
-[package-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/src/dsw_km_translation_tool
-[pyproject]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/pyproject.toml
-[source-inputs-fixture-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/tests/fixtures/source_inputs
-[src-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/src
-[tests-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/tests
-[tests-fixtures-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/tests/fixtures
-[tests-infra-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/tests/infra
-[tests-translation-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/tests/translation
+[config-dir]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/config
+[cli-dir]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/src/dsw_km_translation_tool/cli
+[docs-dir]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/docs
+[examples-dir]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/examples
+[package-dir]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/src/dsw_km_translation_tool
+[pyproject]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/pyproject.toml
+[source-inputs-fixture-dir]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/tests/fixtures/source_inputs
+[src-dir]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/src
+[tests-dir]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/tests
+[tests-fixtures-dir]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/tests/fixtures
+[tests-infra-dir]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/tests/infra
+[tests-translation-dir]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/tests/translation

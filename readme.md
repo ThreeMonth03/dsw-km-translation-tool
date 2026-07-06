@@ -20,13 +20,14 @@ reference when GitHub Pages is enabled for the repository.
 Start here:
 
 - [First-Time Maintainer Guide](docs/first-time-maintainer.md)
-- [Documentation Index](docs/README.md)
+- [Maintainer Docs](docs/README.md)
 
 Common references:
 
 - [Architecture](docs/architecture.md)
 - [Localize Sync Runbook](docs/localize-sync-runbook.md)
 - [KM Update Runbook](docs/km-update-runbook.md)
+- [Translation Repository Bootstrap](docs/translation-repository-bootstrap.md)
 - [Command Reference](docs/command-reference.md)
 - [Development Guidelines](docs/development-guidelines.md)
 
@@ -62,5 +63,5 @@ default they write to the ignored local workspace `translation/zh_Hant/`.
 Production translation repositories use their own `translation-config.yml` and
 repository layout; see [`examples/translation-config.yml`][example-translation-config].
 
-[example-translation-config]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/examples/translation-config.yml
-[makefile]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/Makefile
+[example-translation-config]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/examples/translation-config.yml
+[makefile]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/Makefile

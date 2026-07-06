@@ -21,6 +21,10 @@ Choose the path closest to what you are doing:
   :doc:`Localize Sync Runbook <maintainer/localize-sync-runbook>` for
   Weblate-to-Git sync, status reports, and alignment checks.
 
+- **Creating a translation repository**: use
+  :doc:`Translation Repository Bootstrap <maintainer/translation-repository-bootstrap>`
+  to scaffold workflows/docs/config and hydrate upstream KM/PO inputs.
+
 - **Updating to a newer KM**: use the
   :doc:`KM Update Runbook <maintainer/km-update-runbook>` for the guarded
   auto-update workflow and manual repair path.
@@ -59,6 +63,7 @@ For implementation helpers below these facades, use the
    maintainer/command-reference
    maintainer/localize-sync-runbook
    maintainer/km-update-runbook
+   maintainer/translation-repository-bootstrap
    maintainer/workflow-templates
    maintainer/security-and-permissions
    maintainer/internal-change-guide

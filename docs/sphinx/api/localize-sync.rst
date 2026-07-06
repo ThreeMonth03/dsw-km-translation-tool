@@ -57,6 +57,19 @@ Repository Configuration
 
 .. autofunction:: dsw_km_translation_tool.translation_repository_config.format_package_id
 
+Translation Repository Bootstrap
+--------------------------------
+
+.. py:exception:: dsw_km_translation_tool.translation_repository_bootstrap.TranslationRepositoryBootstrapError
+
+   Raised when a translation repository cannot be bootstrapped.
+
+.. autoclass:: dsw_km_translation_tool.translation_repository_bootstrap.TranslationRepositoryBootstrapResult
+   :members:
+   :show-inheritance:
+
+.. autofunction:: dsw_km_translation_tool.translation_repository_bootstrap.bootstrap_translation_repository
+
 Localize Pull and Tree Refresh
 ------------------------------
 

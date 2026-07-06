@@ -72,7 +72,7 @@ full ownership map. If the change goes into support packages, use
 If the right place is unclear, add or adjust a small test that describes the
 behavior you expect. The module ownership usually becomes obvious from there.
 
-[package-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/src/dsw_km_translation_tool
-[cli-dir]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/src/dsw_km_translation_tool/cli
-[tests-infra]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/tests/infra
-[tests-translation]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/tree/master/tests/translation
+[package-dir]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/src/dsw_km_translation_tool
+[cli-dir]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/src/dsw_km_translation_tool/cli
+[tests-infra]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/tests/infra
+[tests-translation]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/tests/translation

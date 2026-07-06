@@ -41,7 +41,7 @@ def write_config(path: Path, download_url: str) -> None:
                 "branches:",
                 "  tracking_branch: master",
                 "tooling:",
-                "  repository: ThreeMonth03/DSW-KM-translation-tool",
+                "  repository: ThreeMonth03/dsw-km-translation-tool",
                 "  ref: master",
                 "localize:",
                 f"  download_url: {download_url}",

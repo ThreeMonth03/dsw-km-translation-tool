@@ -109,4 +109,4 @@ Merge a manual branch only after it produces aligned outputs. After merge,
 trigger the scheduled sync and alignment report once manually to verify the
 production branch.
 
-[makefile]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/Makefile
+[makefile]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/Makefile

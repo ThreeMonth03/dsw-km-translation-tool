@@ -131,4 +131,4 @@ Common DSW KM.
 - If Weblate has untranslated strings after sync, check whether they are empty,
   marked for review, or missing from the current KM source.
 
-[makefile]: https://github.com/ThreeMonth03/DSW-KM-translation-tool/blob/master/Makefile
+[makefile]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/Makefile

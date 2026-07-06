@@ -42,7 +42,7 @@ branches:
   tracking_branch: translation/latest
 
 tooling:
-  repository: ThreeMonth03/DSW-KM-translation-tool
+  repository: ThreeMonth03/dsw-km-translation-tool
   ref: master
 
 localize:
