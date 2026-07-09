@@ -8,18 +8,26 @@ The latest translation state is governed by Localize/Weblate. The Git
 translation repository mirrors that state so maintainers can review generated
 trees, build translated KM bundles, and keep reproducible history.
 
-Normal automation is one-way:
+Normal scheduled automation is one-way:
 
 ```text
 Localize/Weblate -> GitHub translation repository
 ```
 
+GitHub pull requests can also contribute translation edits. That path is
+guarded:
+
+```text
+GitHub PR -> reviewed merge -> Weblate import -> Weblate-to-Git sync
+```
+
 ## Secrets
 
 Scheduled sync and alignment do not need Weblate write access. Configure
-`LOCALIZE_API_TOKEN` in the production translation repository only when the
-read-only status workflow should use authenticated Weblate checks. If it is not
-configured, the check report uses anonymous access. See
+`LOCALIZE_API_TOKEN` in the production translation repository when enabling the
+post-merge GitHub translation import workflow or when the read-only status
+workflow should use authenticated Weblate checks. If it is not configured for
+the status report, the check report uses anonymous access. See
 [Security and Permissions](security-and-permissions.md).
 
 ## Scheduled Pull Sync
@@ -41,8 +49,14 @@ The workflow runs the `dsw-km-sync-localize` command. That command:
 7. Commits and pushes only when tracked files changed.
 
 Scheduled runs commit directly to `master` when repository policy allows it.
-Pull request runs write only to same-repository branches. Fork pull requests
-skip writer commits.
+Pull request runs always produce a read-only GitHub translation report. Writer
+sync runs only for same-repository pull requests that do not edit translation
+text. Fork pull requests never receive writer commits from this workflow.
+
+When a pull request edits `tree/**/translation.md`, the workflow reports those
+GitHub translation changes and skips Weblate-to-Git writer sync for that PR.
+This prevents unmerged GitHub translation work from being replaced by the
+latest Weblate mirror before review.
 
 For a local maintainer run against a checked-out translation repository, use:
 
@@ -101,8 +115,22 @@ make repo-align TRANSLATION_REPO_DIR=/path/to/dsw-root-locales-zh_Hant
 ## Merge Gate Behavior
 
 Before a same-repository branch reaches `master`, the pull request writer pulls
-Weblate again and refreshes the branch. This makes the merge candidate include
-the latest website translation state.
+Weblate again and refreshes the branch when the PR does not edit translation
+text. This makes infra/config/doc PRs include the latest website translation
+state.
+
+For PRs that do edit translation text, the writer is skipped. After the PR is
+merged, the GitHub translation import workflow compares the accepted GitHub
+edits with the latest Weblate PO:
+
+- GitHub changed an entry and Weblate still matches the base: import GitHub to
+  Weblate.
+- GitHub and Weblate already match: no import is needed.
+- GitHub and Weblate changed the same entry differently: fail and write a
+  conflict report.
+
+After a successful import, the workflow runs normal Weblate-to-Git sync so the
+repository returns to being a Weblate mirror.
 
 Use forward commits for sync and workflow corrections on public branches.
 
@@ -115,6 +143,9 @@ Normal sync is Weblate-first:
   force-refresh.
 - Entries marked for review stay in Weblate for translators to resolve on the
   website.
+
+GitHub translation import is not last-write-wins. It imports only entries that
+are safe against the current Weblate state. Conflicts require human review.
 
 ## KM Updates
 

@@ -7,10 +7,12 @@ PIP := $(PYTHON) -m pip
 DSW_KM_DISCOVER_VERSIONS := $(VENV_BIN)/dsw-km-discover-versions
 DSW_KM_EXPORT_TREE := $(VENV_BIN)/dsw-km-export-tree
 DSW_KM_INIT_TRANSLATION_REPO := $(VENV_BIN)/dsw-km-init-translation-repo
+DSW_KM_IMPORT_GITHUB_TRANSLATIONS := $(VENV_BIN)/dsw-km-import-github-translations
 DSW_KM_PO_TO_KM := $(VENV_BIN)/dsw-km-po-to-km
 DSW_KM_PULL_BUNDLE := $(VENV_BIN)/dsw-km-pull-bundle
 DSW_KM_PULL_LOCALIZE_PO := $(VENV_BIN)/dsw-km-pull-localize-po
 DSW_KM_REPORT_ALIGNMENT := $(VENV_BIN)/dsw-km-report-alignment
+DSW_KM_REPORT_GITHUB_TRANSLATIONS := $(VENV_BIN)/dsw-km-report-github-translations
 DSW_KM_REPORT_LOCALIZE_STATUS := $(VENV_BIN)/dsw-km-report-localize-status
 DSW_KM_REPORT_WEBLATE_CHECKS := $(VENV_BIN)/dsw-km-report-weblate-checks
 DSW_KM_REVIEW_PO := $(VENV_BIN)/dsw-km-review-po
@@ -53,6 +55,10 @@ KM_DISCOVERY_JSON ?= reviews/km_version_discovery.json
 KM_DISCOVERY_MD ?= reviews/km_version_discovery.md
 KM_AUTO_UPDATE_JSON ?= reviews/km_auto_update_report.json
 KM_AUTO_UPDATE_MD ?= reviews/km_auto_update_report.md
+GITHUB_TRANSLATIONS_JSON ?= reviews/github_translation_report.json
+GITHUB_TRANSLATIONS_MD ?= reviews/github_translation_report.md
+GITHUB_TRANSLATION_BASE_REF ?= origin/$(TRACKING_BRANCH)
+GITHUB_TRANSLATION_HEAD_REF ?= HEAD
 UPSTREAM_SMOKE_DIR ?= .cache/upstream-smoke
 UPSTREAM_SMOKE_JSON ?= $(UPSTREAM_SMOKE_DIR)/upstream_smoke_report.json
 UPSTREAM_SMOKE_MD ?= $(UPSTREAM_SMOKE_DIR)/upstream_smoke_report.md
@@ -72,6 +78,7 @@ DOCS_BUILD ?= docs/sphinx/_build/html
 .PHONY: venv install-dev install-hooks check compile format format-check lint
 .PHONY: test test-infra test-translation docs docs-clean
 .PHONY: repo-validate repo-pull-po repo-status repo-checks repo-align
+.PHONY: repo-github-translations repo-import-github-translations
 .PHONY: repo-init repo-sync repo-sync-branch repo-km-status repo-km-pull repo-km-update upstream-smoke
 .PHONY: export-tree export-tree-force status localize-status sync sync-watch
 .PHONY: tree-to-po po-to-km review-po validate workflow
@@ -94,8 +101,10 @@ help:
 	'  repo-status        Report checked-in Weblate PO health' \
 	'  repo-checks        Query Weblate quality checks' \
 	'  repo-align         Verify Weblate/tree/final PO/final KM alignment' \
+	'  repo-github-translations Report GitHub translation changes against Weblate' \
 	'  repo-init          Initialize a new translation repo; set NEW_TRANSLATION_REPO_DIR=/path' \
 	'  repo-sync          Writer: pull Weblate, rebuild outputs, commit/push if changed' \
+	'  repo-import-github-translations Writer: import accepted GitHub translations to Weblate' \
 	'  repo-km-status     Report whether the Registry has a newer KM' \
 	'  repo-km-update     Writer: update to latest KM only after validation passes' \
 	'  upstream-smoke     Integration check against current upstream KM and Weblate PO' \
@@ -129,9 +138,11 @@ help-all:
 	'  repo-status        Report checked-in Weblate PO health in TRANSLATION_REPO_DIR' \
 	'  repo-checks        Query Weblate quality checks for TRANSLATION_REPO_DIR' \
 	'  repo-align         Verify output alignment in TRANSLATION_REPO_DIR' \
+	'  repo-github-translations Report GitHub translation changes against Weblate' \
 	'  repo-init          Initialize NEW_TRANSLATION_REPO_DIR from templates and upstream inputs' \
 	'  repo-sync          Writer: sync Weblate to Git in TRANSLATION_REPO_DIR' \
 	'  repo-sync-branch   Writer: sync Weblate to TARGET_BRANCH for PR repair' \
+	'  repo-import-github-translations Writer: import merged GitHub translations to Weblate' \
 	'  repo-km-status     Discover KM Registry versions for TRANSLATION_REPO_DIR' \
 	'  repo-km-pull       Writer: refresh the configured source KM bundle' \
 	'  repo-km-update     Writer: guarded latest-KM update for TRANSLATION_REPO_DIR' \
@@ -235,6 +246,24 @@ repo-align: venv require-translation-repo
 		--details-out "$(TRANSLATION_REPO_DIR)/$(ALIGNMENT_MD)" \
 		--artifact-dir "$(TRANSLATION_REPO_DIR)/$(ALIGNMENT_ARTIFACT_DIR)" \
 		--fail-on-mismatch
+
+repo-github-translations: venv require-translation-repo
+	$(DSW_KM_REPORT_GITHUB_TRANSLATIONS) \
+		--repo-root "$(TRANSLATION_REPO_DIR)" \
+		--config "$(TRANSLATION_CONFIG)" \
+		--base-ref "$(GITHUB_TRANSLATION_BASE_REF)" \
+		--head-ref "$(GITHUB_TRANSLATION_HEAD_REF)" \
+		--json-out "$(TRANSLATION_REPO_DIR)/$(GITHUB_TRANSLATIONS_JSON)" \
+		--details-out "$(TRANSLATION_REPO_DIR)/$(GITHUB_TRANSLATIONS_MD)"
+
+repo-import-github-translations: venv require-translation-repo
+	$(DSW_KM_IMPORT_GITHUB_TRANSLATIONS) \
+		--repo-root "$(TRANSLATION_REPO_DIR)" \
+		--config "$(TRANSLATION_CONFIG)" \
+		--base-ref "$(GITHUB_TRANSLATION_BASE_REF)" \
+		--head-ref "$(GITHUB_TRANSLATION_HEAD_REF)" \
+		--json-out "$(TRANSLATION_REPO_DIR)/$(GITHUB_TRANSLATIONS_JSON)" \
+		--details-out "$(TRANSLATION_REPO_DIR)/$(GITHUB_TRANSLATIONS_MD)"
 
 repo-init: venv require-new-translation-repo
 	$(DSW_KM_INIT_TRANSLATION_REPO) \

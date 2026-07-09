@@ -22,7 +22,8 @@ in that config rather than hard-coding them into workflow steps.
 | Template | Installs In | Writes Git? | Secrets | Use |
 | --- | --- | --- | --- | --- |
 | [`validate_translation_config_template.yml`][validate-template] | Translation repository | No | None | Validate config on pushes, pull requests, or manual runs. |
-| [`localize_auto_sync_template.yml`][auto-sync-template] | Translation repository | Yes | None | Pull Weblate into Git, rebuild outputs, and commit changed files. |
+| [`localize_auto_sync_template.yml`][auto-sync-template] | Translation repository | Yes | None | Pull Weblate into Git, rebuild outputs, and commit changed files. PRs with translation edits get a report instead of writer sync. |
+| [`github_translation_import_template.yml`][github-import-template] | Translation repository | Yes | `LOCALIZE_API_TOKEN` | After merge, import accepted GitHub translation edits to Weblate, then sync Weblate back to Git. |
 | [`localize_status_report_template.yml`][status-template] | Translation repository | No | Optional `LOCALIZE_API_TOKEN` | Report Weblate PO health and website-side checks. |
 | [`localize_alignment_report_template.yml`][alignment-template] | Translation repository | No | None | Verify Weblate, tree, final PO, and final KM outputs still match. |
 | [`km_version_auto_update_template.yml`][km-update-template] | Translation repository | Yes | `DSW_REGISTRY_TOKEN` | Move to a newer published KM only after validation passes. |
@@ -53,6 +54,11 @@ Configure secrets in the translation repository, not in this tooling
 repository. See [Security and Permissions](security-and-permissions.md) for the
 current secret list and placement.
 
+`github_translation_import_template.yml` is the only translation-repository
+workflow that writes Weblate. It runs after reviewed changes reach `master`,
+imports only safe GitHub translation edits, and fails with a report if Weblate
+changed the same entries differently.
+
 ## Update Checklist
 
 When a workflow behavior changes:
@@ -68,6 +74,7 @@ When a workflow behavior changes:
 [alignment-template]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/examples/github-actions/localize_alignment_report_template.yml
 [auto-sync-template]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/examples/github-actions/localize_auto_sync_template.yml
 [example-translation-config]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/examples/translation-config.yml
+[github-import-template]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/examples/github-actions/github_translation_import_template.yml
 [github-actions-templates]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/examples/github-actions
 [km-update-template]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/examples/github-actions/km_version_auto_update_template.yml
 [status-template]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/examples/github-actions/localize_status_report_template.yml

@@ -73,6 +73,9 @@ These modules connect the translation repository to the Weblate website:
   the translation tree, the final PO, and the final KM are mutually aligned.
 - [`localize_tree_sync.py`][localize-tree-sync-py]: force-refreshes `tree/` from the latest Weblate PO.
 - [`localize_merge.py`][localize-merge-py]: contains PO merge decisions.
+- [`github_translation_contributions.py`][github-translation-contributions-py] and
+  [`weblate_upload.py`][weblate-upload-py]: report reviewed GitHub translation
+  edits and upload safe post-merge imports to Weblate.
 - [`ci_sync.py`][ci-sync-py], [`repository_ci_sync.py`][repository-ci-sync-py]: rebuild the translation tree, final PO,
   and final KM, then make Git sync commits.
 - [`translation_repository_bootstrap.py`][translation-repository-bootstrap-py]: scaffolds a new translation
@@ -93,6 +96,9 @@ belong in [Localize Sync Runbook](localize-sync-runbook.md).
   upstream Registry KM and Weblate PO without writing to a translation repo.
 - [`examples/github-actions/localize_auto_sync_template.yml`][localize-auto-sync-template] is the
   copy-ready workflow for dedicated translation repositories.
+- [`examples/github-actions/github_translation_import_template.yml`][github-import-template] is the
+  guarded post-merge workflow for importing reviewed GitHub translation edits
+  to Weblate.
 - [`examples/github-actions/localize_status_report_template.yml`][localize-status-template] is the
   read-only status workflow for scheduled Localize/Weblate health reports.
 - [`examples/github-actions/localize_alignment_report_template.yml`][localize-alignment-template] is the
@@ -127,6 +133,8 @@ in translation repositories.
 [command-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/command.py
 [dsw-models-adapter-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/dsw_models_adapter.py
 [examples-dir]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/examples
+[github-import-template]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/examples/github-actions/github_translation_import_template.yml
+[github-translation-contributions-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/github_translation_contributions.py
 [km-auto-update-template]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/examples/github-actions/km_version_auto_update_template.yml
 [km-bundle-sync-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/km_bundle_sync.py
 [km-latest-sync-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/km_latest_sync.py
@@ -162,4 +170,5 @@ in translation repositories.
 [upstream-smoke-workflow]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/.github/workflows/upstream_smoke.yml
 [validate-config-template]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/examples/github-actions/validate_translation_config_template.yml
 [weblate-checks-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/weblate_checks.py
+[weblate-upload-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/weblate_upload.py
 [workflow-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/workflow.py

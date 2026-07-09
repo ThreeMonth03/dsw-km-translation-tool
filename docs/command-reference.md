@@ -18,6 +18,8 @@ Optional overrides:
 ```shell
 TRANSLATION_CONFIG=translation-config.yml
 TRACKING_BRANCH=master
+GITHUB_TRANSLATION_BASE_REF=origin/master
+GITHUB_TRANSLATION_HEAD_REF=HEAD
 ```
 
 Workflow secrets are configured in the production translation repository. Local
@@ -51,9 +53,11 @@ Set `TRANSLATION_REPO_DIR` before running these targets.
 | `make repo-status` | Report files only | Inspect the checked-in Weblate PO |
 | `make repo-checks` | Report files only | Query Weblate quality checks such as `has:check` |
 | `make repo-align` | Report files only | Compare Weblate, tree, final PO, and final KM outputs |
+| `make repo-github-translations` | Report files only | Compare GitHub translation edits with current Weblate |
 | `make repo-init` | Writes files | Initialize a new translation repository from templates and upstream inputs |
 | `make repo-pull-po` | Writes files | Refresh `sources/localize/` in the checkout |
 | `make repo-sync` | Git writer | Pull Weblate, rebuild outputs, and commit/push when changed |
+| `make repo-import-github-translations` | Weblate writer | Import accepted GitHub translation edits, failing on conflicts |
 | `make repo-km-status` | Report files only | Check whether the Registry has a newer KM |
 | `make repo-km-update` | Guarded Git writer | Update to a newer published KM after validation passes |
 

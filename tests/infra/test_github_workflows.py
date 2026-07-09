@@ -53,9 +53,14 @@ def test_localize_auto_sync_template_matches_writer_policy(
     assert workflow["env"]["TRANSLATION_ROOT"] == "."
     assert "localize-translation-auto-sync" in workflow_text
     assert "github.event_name != 'pull_request'" in workflow_text
-    assert "github.event.pull_request.head.repo.full_name == github.repository" in workflow_text
     assert "github.actor != 'github-actions[bot]'" in workflow_text
     assert "github.event_name == 'pull_request' && 'pull_request' || 'schedule'" in workflow_text
+    assert "repository: ${{ github.event.pull_request.head.repo.full_name }}" in workflow_text
+    assert "ref: ${{ github.event.pull_request.head.sha }}" in workflow_text
+    assert "refs/remotes/base/${{ env.TRACKING_BRANCH }}" in workflow_text
+    assert "tooling-repo/.venv/bin/dsw-km-report-github-translations" in workflow_text
+    assert "steps.github-translations.outputs.has_translation_changes" in workflow_text
+    assert "github-translation-report" in workflow_text
     assert "tooling-repo/.venv/bin/dsw-km-sync-localize" in workflow_text
     assert "tooling-repo/src/" not in workflow_text
     assert "dsw-km-discover-versions" not in workflow_text
@@ -67,8 +72,37 @@ def test_localize_auto_sync_template_matches_writer_policy(
     assert "--skip-without-token" not in workflow_text
     assert "reviews/km_version_discovery.json" not in workflow_text
     assert "--restore-source-ref" in workflow_text
-    assert "origin/${{ env.TRACKING_BRANCH }}" in workflow_text
-    assert "Skipping auto-sync commit for fork pull requests." in workflow_text
+    assert "base/${{ env.TRACKING_BRANCH }}" in workflow_text
+    assert "reports fork PR translation changes but never writes to forks" in workflow_text
+    assert "github.event.pull_request.head.repo.full_name == github.repository &&" in workflow_text
+
+
+def test_github_translation_import_template_is_guarded_writer(repo_root: Path) -> None:
+    """Verify GitHub translation import writes Weblate only after merge."""
+
+    workflow_path = (
+        repo_root / "examples" / "github-actions" / "github_translation_import_template.yml"
+    )
+    workflow = load_workflow_yaml(workflow_path)
+    workflow_text = workflow_path.read_text(encoding="utf-8")
+
+    assert workflow["on"]["push"]["branches"] == ["master"]
+    assert "workflow_dispatch" in workflow["on"]
+    assert workflow["on"]["workflow_dispatch"]["inputs"]["base_ref"]["default"] == "HEAD^"
+    assert workflow["on"]["workflow_dispatch"]["inputs"]["head_ref"]["default"] == "HEAD"
+    assert workflow["permissions"]["contents"] == "write"
+    assert "github.actor != 'github-actions[bot]'" in workflow_text
+    assert_tooling_checkout_env(workflow)
+    assert workflow["env"]["TRACKING_BRANCH"] == "master"
+    assert workflow["env"]["TRANSLATION_CONFIG"] == "translation-config.yml"
+    assert "secrets.LOCALIZE_API_TOKEN" in workflow_text
+    assert "tooling-repo/.venv/bin/dsw-km-import-github-translations" in workflow_text
+    assert "tooling-repo/.venv/bin/dsw-km-sync-localize" in workflow_text
+    assert "steps.import-github-translations.outputs.uploaded == 'true'" in workflow_text
+    assert "github-translation-import" in workflow_text
+    assert "pull_request" not in workflow["on"]
+    assert "DSW_REGISTRY_TOKEN" not in workflow_text
+    assert "tooling-repo/src/" not in workflow_text
 
 
 def test_localize_status_report_template_is_read_only(repo_root: Path) -> None:

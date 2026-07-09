@@ -10,3 +10,12 @@ def bearer_authorization_header(token: str) -> str:
     if stripped.lower().startswith(("bearer ", "token ")):
         return stripped
     return f"Bearer {stripped}"
+
+
+def token_authorization_header(token: str) -> str:
+    """Return a Weblate-style token Authorization header value."""
+
+    stripped = token.strip()
+    if stripped.lower().startswith(("bearer ", "token ")):
+        return stripped
+    return f"Token {stripped}"

@@ -119,3 +119,40 @@ CI Writer
    :show-inheritance:
 
 .. autofunction:: dsw_km_translation_tool.ci_sync.run_ci_sync_commit
+
+GitHub Translation Contributions
+--------------------------------
+
+.. py:exception:: dsw_km_translation_tool.github_translation_contributions.GitHubTranslationContributionError
+
+   Raised when GitHub translation contribution analysis cannot complete.
+
+.. autoclass:: dsw_km_translation_tool.github_translation_contributions.TreeTranslationEntry
+   :members:
+   :show-inheritance:
+
+.. autoclass:: dsw_km_translation_tool.github_translation_contributions.GitHubTranslationDecision
+   :members:
+   :show-inheritance:
+
+.. autoclass:: dsw_km_translation_tool.github_translation_contributions.GitHubTranslationReport
+   :members:
+   :show-inheritance:
+
+.. autofunction:: dsw_km_translation_tool.github_translation_contributions.build_github_translation_report
+
+.. autofunction:: dsw_km_translation_tool.github_translation_contributions.render_github_translation_markdown
+
+.. autofunction:: dsw_km_translation_tool.github_translation_contributions.write_github_translation_json
+
+.. autofunction:: dsw_km_translation_tool.github_translation_contributions.write_github_translation_markdown
+
+.. autofunction:: dsw_km_translation_tool.github_translation_contributions.write_import_po
+
+.. autoclass:: dsw_km_translation_tool.weblate_upload.WeblateUploadResult
+   :members:
+   :show-inheritance:
+
+.. autofunction:: dsw_km_translation_tool.weblate_upload.resolve_weblate_file_api_url
+
+.. autofunction:: dsw_km_translation_tool.weblate_upload.upload_translation_file

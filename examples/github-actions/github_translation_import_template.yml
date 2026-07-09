@@ -1,0 +1,101 @@
+name: GitHub Translation Import
+
+on:
+  push:
+    branches: ["master"]
+  workflow_dispatch:
+    inputs:
+      base_ref:
+        description: "Base ref to compare against"
+        required: false
+        default: "HEAD^"
+      head_ref:
+        description: "Head ref to import"
+        required: false
+        default: "HEAD"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: github-translation-import-master
+  cancel-in-progress: false
+
+env:
+  TOOLING_REPOSITORY: ThreeMonth03/dsw-km-translation-tool
+  TOOLING_REF: master
+  TRACKING_BRANCH: master
+  TRANSLATION_CONFIG: translation-config.yml
+  TRANSLATION_ROOT: .
+
+jobs:
+  import-and-sync:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout translation repository
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.TRACKING_BRANCH }}
+          path: translation-repo
+          fetch-depth: 0
+
+      - name: Checkout DSW KM Translation Tooling
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ env.TOOLING_REPOSITORY }}
+          ref: ${{ env.TOOLING_REF }}
+          path: tooling-repo
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install tooling dependencies
+        working-directory: tooling-repo
+        run: make install-dev BOOTSTRAP_PYTHON=python
+
+      - name: Import accepted GitHub translations to Weblate
+        id: import-github-translations
+        env:
+          LOCALIZE_API_TOKEN: ${{ secrets.LOCALIZE_API_TOKEN }}
+          BASE_REF: >-
+            ${{ github.event_name == 'workflow_dispatch' &&
+            github.event.inputs.base_ref || github.event.before }}
+          HEAD_REF: >-
+            ${{ github.event_name == 'workflow_dispatch' &&
+            github.event.inputs.head_ref || github.sha }}
+        run: >-
+          tooling-repo/.venv/bin/dsw-km-import-github-translations
+          --repo-root "$GITHUB_WORKSPACE/translation-repo"
+          --config "${{ env.TRANSLATION_CONFIG }}"
+          --base-ref "$BASE_REF"
+          --head-ref "$HEAD_REF"
+          --json-out "$RUNNER_TEMP/github_translation_import.json"
+          --details-out "$RUNNER_TEMP/github_translation_import.md"
+          --summary "$GITHUB_STEP_SUMMARY"
+          --github-output "$GITHUB_OUTPUT"
+
+      - name: Sync Weblate back to Git
+        if: steps.import-github-translations.outputs.uploaded == 'true'
+        run: >-
+          tooling-repo/.venv/bin/dsw-km-sync-localize
+          --host-repo "$GITHUB_WORKSPACE/translation-repo"
+          --tooling-repo "$GITHUB_WORKSPACE/tooling-repo"
+          --config "${{ env.TRANSLATION_CONFIG }}"
+          --translation-root "${{ env.TRANSLATION_ROOT }}"
+          --target-ref "${{ env.TRACKING_BRANCH }}"
+          --restore-source-ref "origin/${{ env.TRACKING_BRANCH }}"
+          --mode schedule
+
+      - name: Upload GitHub translation import report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: github-translation-import
+          if-no-files-found: ignore
+          path: |
+            ${{ runner.temp }}/github_translation_import.json
+            ${{ runner.temp }}/github_translation_import.md

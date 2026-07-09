@@ -19,6 +19,7 @@ the support code.
 | KM event merge, tree derivation, validation, or rewrite | [`knowledge_model_service.py`][km-service-py] | [`knowledge_model_support/`][km-support-dir], [`dsw_models_adapter.py`][dsw-models-adapter-py] | [`tests/infra/test_dsw_models_parser.py`][test-dsw-models-py], PO/KM tests under [`tests/translation/`][tests-translation] |
 | Shared-string grouping and sync behavior | [`sync.py`][sync-py], [`shared_blocks.py`][shared-blocks-py] | [`sync_support/`][sync-support-dir] | [`tests/translation/test_shared_string_sync.py`][test-shared-sync-py], sync CLI tests under [`tests/infra/`][tests-infra] |
 | Weblate PO merge policy | [`localize_merge.py`][localize-merge-py] | Merge decision helpers inside the same module | [`tests/infra/test_localize_merge.py`][test-localize-merge-py] |
+| GitHub translation PR/import policy | [`github_translation_contributions.py`][github-translation-contributions-py], [`weblate_upload.py`][weblate-upload-py] | Decision helpers and Weblate file upload client | [`tests/infra/test_github_translation_contributions.py`][test-github-translations-py], [`tests/infra/test_weblate_upload.py`][test-weblate-upload-py] |
 | CI writer commit or recovery behavior | [`ci_sync.py`][ci-sync-py], [`repository_ci_sync.py`][repository-ci-sync-py] | Git command helpers in [`command.py`][command-py] | [`tests/infra/test_ci_sync.py`][test-ci-sync-py] |
 | KM Registry discovery or latest-KM update behavior | [`km_registry.py`][km-registry-py], [`km_latest_sync.py`][km-latest-sync-py] | [`km_bundle_sync.py`][km-bundle-sync-py] and helper functions in the same modules | KM tests under [`tests/infra/`][tests-infra] |
 | New translation repository scaffold or hydration | [`translation_repository_bootstrap.py`][translation-repository-bootstrap-py] | Templates in [`examples/translation-repository/`][translation-repo-template-dir] and [`examples/github-actions/`][github-actions-templates] | [`tests/infra/test_translation_repository_bootstrap.py`][test-bootstrap-py] |
@@ -42,6 +43,7 @@ the support code.
 [command-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/command.py
 [dsw-models-adapter-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/dsw_models_adapter.py
 [github-actions-templates]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/examples/github-actions
+[github-translation-contributions-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/github_translation_contributions.py
 [km-bundle-sync-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/km_bundle_sync.py
 [km-latest-sync-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/km_latest_sync.py
 [km-registry-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/km_registry.py
@@ -62,11 +64,13 @@ the support code.
 [test-ci-sync-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/tests/infra/test_ci_sync.py
 [test-dsw-models-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/tests/infra/test_dsw_models_parser.py
 [test-github-workflows-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/tests/infra/test_github_workflows.py
+[test-github-translations-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/tests/infra/test_github_translation_contributions.py
 [test-bootstrap-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/tests/infra/test_translation_repository_bootstrap.py
 [test-localize-merge-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/tests/infra/test_localize_merge.py
 [test-shared-sync-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/tests/translation/test_shared_string_sync.py
 [test-tree-export-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/tests/translation/test_tree_export.py
 [test-tree-roundtrip-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/tests/translation/test_tree_roundtrip.py
+[test-weblate-upload-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/tests/infra/test_weblate_upload.py
 [tests-infra]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/tests/infra
 [tests-translation]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/tests/translation
 [translation-repo-template-dir]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/examples/translation-repository
@@ -77,4 +81,5 @@ the support code.
 [tree-reporting-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/tree_support/reporting.py
 [tree-snapshot-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/tree_support/snapshot.py
 [tree-storage-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/tree_support/storage.py
+[weblate-upload-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/weblate_upload.py
 [workflow-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/workflow.py
