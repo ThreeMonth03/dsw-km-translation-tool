@@ -45,6 +45,8 @@ fails and writes a conflict report.
 - Pull requests receive a read-only GitHub translation report.
 - Same-repository pull requests that do not edit translation text can receive a
   sync commit before merge.
+- Delayed pull-request runs compare against the pull request base commit and
+  skip writer sync if the head branch no longer exists.
 - `github_translation_import.yml` imports accepted GitHub translation edits to
   Weblate after merge, then syncs Weblate back to Git when an upload occurred.
 - `km_version_auto_update.yml` updates to a newer published KM only after the

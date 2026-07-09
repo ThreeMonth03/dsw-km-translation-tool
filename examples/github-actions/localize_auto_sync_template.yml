@@ -52,6 +52,27 @@ jobs:
           git fetch "https://github.com/${{ github.repository }}.git"
           "${{ env.TRACKING_BRANCH }}:refs/remotes/base/${{ env.TRACKING_BRANCH }}"
 
+      - name: Fetch pull request base commit
+        if: github.event_name == 'pull_request'
+        working-directory: translation-repo
+        run: >-
+          git fetch
+          "https://github.com/${{ github.event.pull_request.base.repo.full_name }}.git"
+          "${{ github.event.pull_request.base.sha }}:refs/remotes/base/pr-base"
+
+      - name: Check pull request head branch
+        id: head-branch
+        if: >-
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        working-directory: translation-repo
+        run: |
+          if git ls-remote --exit-code --heads origin "${{ github.event.pull_request.head.ref }}" >/dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Checkout DSW KM Translation Tooling
         uses: actions/checkout@v5
         with:
@@ -75,7 +96,7 @@ jobs:
           tooling-repo/.venv/bin/dsw-km-report-github-translations
           --repo-root "$GITHUB_WORKSPACE/translation-repo"
           --config "${{ env.TRANSLATION_CONFIG }}"
-          --base-ref "base/${{ env.TRACKING_BRANCH }}"
+          --base-ref "base/pr-base"
           --head-ref "HEAD"
           --json-out "$RUNNER_TEMP/github_translation_report.json"
           --details-out "$RUNNER_TEMP/github_translation_report.md"
@@ -107,10 +128,18 @@ jobs:
           github.event.pull_request.head.repo.full_name != github.repository
         run: echo "This workflow reports fork PR translation changes but never writes to forks."
 
+      - name: Explain deleted PR branch sync skip
+        if: >-
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          steps.head-branch.outputs.exists != 'true'
+        run: echo "The pull request head branch no longer exists. Weblate-to-Git writer sync is skipped."
+
       - name: Pull Localize, sync, validate, and auto-commit artifacts
         if: >-
           github.event_name != 'pull_request' ||
           (github.event.pull_request.head.repo.full_name == github.repository &&
+          steps.head-branch.outputs.exists == 'true' &&
           steps.github-translations.outputs.has_translation_changes != 'true')
         env:
           SYNC_MODE: ${{ github.event_name == 'pull_request' && 'pull_request' || 'schedule' }}

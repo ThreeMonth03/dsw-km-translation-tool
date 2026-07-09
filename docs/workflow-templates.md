@@ -59,6 +59,12 @@ workflow that writes Weblate. It runs after reviewed changes reach `master`,
 imports only safe GitHub translation edits, and fails with a report if Weblate
 changed the same entries differently.
 
+`localize_auto_sync_template.yml` compares pull-request translation reports
+against the pull request's base commit, not whatever `master` contains when a
+runner starts. It also checks that a same-repository pull-request branch still
+exists before attempting writer sync. This keeps delayed PR runs from failing
+after the PR was already merged and its branch deleted.
+
 ## Update Checklist
 
 When a workflow behavior changes:

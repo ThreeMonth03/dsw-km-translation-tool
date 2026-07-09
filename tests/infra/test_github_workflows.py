@@ -58,6 +58,11 @@ def test_localize_auto_sync_template_matches_writer_policy(
     assert "repository: ${{ github.event.pull_request.head.repo.full_name }}" in workflow_text
     assert "ref: ${{ github.event.pull_request.head.sha }}" in workflow_text
     assert "refs/remotes/base/${{ env.TRACKING_BRANCH }}" in workflow_text
+    assert "${{ github.event.pull_request.base.sha }}:refs/remotes/base/pr-base" in workflow_text
+    assert '--base-ref "base/pr-base"' in workflow_text
+    assert "git ls-remote --exit-code --heads origin" in workflow_text
+    assert "steps.head-branch.outputs.exists == 'true'" in workflow_text
+    assert "The pull request head branch no longer exists" in workflow_text
     assert "tooling-repo/.venv/bin/dsw-km-report-github-translations" in workflow_text
     assert "steps.github-translations.outputs.has_translation_changes" in workflow_text
     assert "github-translation-report" in workflow_text
