@@ -12,7 +12,7 @@ from pathlib import Path
 
 from .http_auth import token_authorization_header
 
-Urlopen = Callable[[urllib.request.Request, int], object]
+Urlopen = Callable[..., object]
 
 
 @dataclass(frozen=True)
@@ -80,7 +80,7 @@ def upload_translation_file(
         method="POST",
     )
     opener = urlopen or urllib.request.urlopen
-    with opener(request, 60) as response:
+    with opener(request, timeout=60) as response:
         response_body = response.read().decode("utf-8", errors="replace")
         status = getattr(response, "status", None)
     return WeblateUploadResult(

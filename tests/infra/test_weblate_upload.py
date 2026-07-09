@@ -74,7 +74,11 @@ def test_upload_translation_file_posts_authenticated_request(workspace: Path) ->
         def read() -> bytes:
             return b'{"result": true}'
 
-    def fake_urlopen(request: urllib.request.Request, timeout: int) -> FakeResponse:
+    def fake_urlopen(
+        request: urllib.request.Request,
+        *,
+        timeout: int,
+    ) -> FakeResponse:
         assert timeout == 60
         requests.append(request)
         return FakeResponse()
