@@ -47,41 +47,27 @@ the [`Makefile`][makefile].
 Use this path only when the scheduled update fails, or when you want to test a
 new KM update in a disposable branch or local clone.
 
-1. Discover available versions:
+1. Create and check out a disposable branch in a clean translation repository.
+
+2. Discover available versions:
 
    ```shell
    make repo-km-status TRANSLATION_REPO_DIR=/path/to/dsw-root-locales-zh_Hant
    ```
 
-2. Pull the published KM bundle:
+3. Run the same guarded updater against the disposable branch:
 
    ```shell
-   make repo-km-pull TRANSLATION_REPO_DIR="$TRANSLATION_REPO_DIR"
+   export DSW_REGISTRY_TOKEN=...
+   make repo-km-update \
+     TRANSLATION_REPO_DIR="$TRANSLATION_REPO_DIR" \
+     TRACKING_BRANCH="$BRANCH_NAME"
    ```
 
-3. Update `translation-config.yml`:
-
-   - set `knowledge_model.supported_versions` to the new latest version;
-   - point `knowledge_model.bundle_path` at the new bundle;
-   - keep the tracking branch as `master` unless repository policy changes.
-
-4. Validate config:
+4. Validate config and alignment if you are diagnosing a failed update:
 
    ```shell
    make repo-validate TRANSLATION_REPO_DIR="$TRANSLATION_REPO_DIR"
-   ```
-
-5. Run Localize/Weblate sync on the disposable branch:
-
-   ```shell
-   make repo-sync-branch \
-     TRANSLATION_REPO_DIR="$TRANSLATION_REPO_DIR" \
-     TARGET_BRANCH="$BRANCH_NAME"
-   ```
-
-6. Run the alignment report:
-
-   ```shell
    make repo-align TRANSLATION_REPO_DIR="$TRANSLATION_REPO_DIR"
    ```
 

@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from tempfile import TemporaryDirectory
 
 import yaml
 
@@ -26,7 +25,7 @@ from .translation_repository_config import (
     TranslationRepositoryConfigError,
     format_package_id,
     load_translation_repository_config,
-    sorted_versions,
+    normalize_version,
     tracking_branch,
     version_paths,
 )
@@ -96,25 +95,16 @@ def sync_latest_km_version(
     tooling_root = tooling_repo.resolve()
     resolved_config_path = _resolve_repo_path(host_repo, config_path)
     config = load_translation_repository_config(resolved_config_path)
-    configured_version = config.knowledge_model.supported_versions[-1]
+    configured_version = config.knowledge_model.version
     push_ref = target_ref or tracking_branch(config)
     discovery = discover_km_versions(config_path=resolved_config_path, downloader=downloader)
     registry_version = discovery.latest_registry_version
-    if registry_version is None or registry_version == configured_version:
+    if not discovery.newer_versions:
         return KmLatestSyncResult(
             configured_version=configured_version,
             registry_version=registry_version,
             target_ref=push_ref,
             changed=False,
-            dry_run=dry_run,
-        )
-    if registry_version in config.knowledge_model.supported_versions:
-        return KmLatestSyncResult(
-            configured_version=configured_version,
-            registry_version=registry_version,
-            target_ref=push_ref,
-            changed=False,
-            skipped_reason="configured-version-order-is-not-latest",
             dry_run=dry_run,
         )
     if not registry_token.strip():
@@ -139,54 +129,47 @@ def sync_latest_km_version(
 
     run = runner or default_command_runner
     _ensure_git_repo_is_clean(host_repo, run)
-    update_supported_versions_in_config(resolved_config_path, [registry_version])
+    target_version = discovery.newer_versions[-1]
+    update_knowledge_model_version(resolved_config_path, target_version)
     pull_km_bundle(
         config_path=resolved_config_path,
         repo_root=host_repo,
         token=registry_token,
-        km_version=registry_version,
         downloader=bundle_downloader,
     )
-    with TemporaryDirectory(prefix="dsw-localize-") as temp_dir:
-        pull_result = pull_localize_po(
-            config_path=resolved_config_path,
-            repo_root=host_repo,
-            km_version=registry_version,
-            downloader=localize_downloader,
-            base_snapshot_path=Path(temp_dir) / "base.po",
-        )
-        _run_validate_config(
-            repo_root=host_repo,
-            tooling_repo=tooling_root,
-            config_path=config_path,
-            runner=run,
-        )
-        _run_export_tree(
-            repo_root=host_repo,
-            tooling_repo=tooling_root,
-            config_path=resolved_config_path,
-            version=registry_version,
-            runner=run,
-        )
-        _run_sync_merge_build_and_tests(
-            repo_root=host_repo,
-            tooling_repo=tooling_root,
-            config_path=config_path,
-            version=registry_version,
-            localize_base_po_path=pull_result.base_po_path,
-            runner=run,
-        )
-        _run_alignment_check(
-            repo_root=host_repo,
-            tooling_repo=tooling_root,
-            config_path=config_path,
-            version=registry_version,
-            runner=run,
-        )
+    pull_localize_po(
+        config_path=resolved_config_path,
+        repo_root=host_repo,
+        downloader=localize_downloader,
+    )
+    _run_validate_config(
+        repo_root=host_repo,
+        tooling_repo=tooling_root,
+        config_path=config_path,
+        runner=run,
+    )
+    _run_export_tree(
+        repo_root=host_repo,
+        tooling_repo=tooling_root,
+        config_path=resolved_config_path,
+        runner=run,
+    )
+    _run_sync_build_and_tests(
+        repo_root=host_repo,
+        tooling_repo=tooling_root,
+        config_path=config_path,
+        runner=run,
+    )
+    _run_alignment_check(
+        repo_root=host_repo,
+        tooling_repo=tooling_root,
+        config_path=config_path,
+        runner=run,
+    )
     committed = _commit_and_push(
         repo_root=host_repo,
         target_ref=push_ref,
-        message=f"chore(sync): update source KM to {registry_version}",
+        message=f"chore(sync): update source KM to {target_version}",
         runner=run,
     )
     return KmLatestSyncResult(
@@ -198,10 +181,8 @@ def sync_latest_km_version(
     )
 
 
-def update_supported_versions_in_config(
-    config_path: Path, versions: Sequence[str]
-) -> tuple[str, ...]:
-    """Add known KM versions to config in sorted order."""
+def update_knowledge_model_version(config_path: Path, version: str) -> str:
+    """Replace the configured KM version and bundle path."""
 
     payload = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
@@ -209,20 +190,17 @@ def update_supported_versions_in_config(
     knowledge_model = payload.get("knowledge_model")
     if not isinstance(knowledge_model, dict):
         raise TranslationRepositoryConfigError("Expected mapping at `knowledge_model`")
-    existing = knowledge_model.get("supported_versions")
-    if not isinstance(existing, list):
-        raise TranslationRepositoryConfigError("Expected string list at `supported_versions`")
-    merged = tuple(dict.fromkeys(sorted_versions([*(str(item) for item in existing), *versions])))
-    knowledge_model["supported_versions"] = list(merged)
+    normalized = normalize_version(version)
+    knowledge_model["version"] = normalized
     knowledge_model["bundle_path"] = _source_km_path_from_config_payload(
         knowledge_model,
-        merged[-1],
+        normalized,
     ).as_posix()
     config_path.write_text(
         yaml.safe_dump(payload, allow_unicode=True, sort_keys=False),
         encoding="utf-8",
     )
-    return merged
+    return normalized
 
 
 def render_km_latest_sync_markdown(result: KmLatestSyncResult) -> str:
@@ -259,8 +237,8 @@ def render_km_latest_sync_markdown(result: KmLatestSyncResult) -> str:
                 "scheduled run retry.",
             ]
         )
-    elif result.registry_version == result.configured_version:
-        lines.extend(["", "The configured KM is already current."])
+    else:
+        lines.extend(["", "No newer published KM is available."])
     return "\n".join(lines) + "\n"
 
 
@@ -315,11 +293,10 @@ def _run_export_tree(
     repo_root: Path,
     tooling_repo: Path,
     config_path: Path,
-    version: str,
     runner: CommandRunner,
 ) -> None:
     config = load_translation_repository_config(config_path)
-    paths = version_paths(config, version)
+    paths = version_paths(config)
     _run_checked(
         runner,
         [
@@ -338,24 +315,24 @@ def _run_export_tree(
             config.translation.source_language,
             "--target-lang",
             config.translation.target_language,
+            "--force",
+            "--yes",
         ],
         cwd=tooling_repo,
-        description=f"export translation tree for KM {version}",
+        description=f"export translation tree for KM {paths.version}",
         echo_output=True,
     )
 
 
-def _run_sync_merge_build_and_tests(
+def _run_sync_build_and_tests(
     *,
     repo_root: Path,
     tooling_repo: Path,
     config_path: Path,
-    version: str,
-    localize_base_po_path: Path | None,
     runner: CommandRunner,
 ) -> None:
     config = load_translation_repository_config(_resolve_repo_path(repo_root, config_path))
-    paths = version_paths(config, version)
+    paths = version_paths(config)
     _run_checked(
         runner,
         [
@@ -382,27 +359,7 @@ def _run_sync_merge_build_and_tests(
             "shared-block",
         ],
         cwd=tooling_repo,
-        description=f"sync translation artifacts for KM {version}",
-        echo_output=True,
-    )
-    if localize_base_po_path is None:
-        raise KmLatestSyncError("Missing transient Localize base PO for latest-KM merge")
-    merge_command = [
-        str(tooling_virtualenv_command_path(tooling_repo, "dsw-km-merge-localize-po")),
-        "--repo-root",
-        str(repo_root),
-        "--config",
-        config_path.as_posix(),
-        "--km-version",
-        version,
-        "--base-po",
-        str(localize_base_po_path),
-    ]
-    _run_checked(
-        runner,
-        merge_command,
-        cwd=tooling_repo,
-        description=f"merge Localize PO for KM {version}",
+        description=f"sync translation artifacts for KM {paths.version}",
         echo_output=True,
     )
     _run_checked(
@@ -427,15 +384,20 @@ def _run_sync_merge_build_and_tests(
             config.translation.translated_name,
         ],
         cwd=tooling_repo,
-        description=f"build translated KM for KM {version}",
+        description=f"build translated KM for KM {paths.version}",
         echo_output=True,
     )
     _run_checked(
         runner,
-        [str(tooling_virtualenv_python_path(tooling_repo)), "-m", "pytest", "tests/translation"],
+        [
+            str(tooling_virtualenv_python_path(tooling_repo)),
+            "-m",
+            "pytest",
+            "tests/translation",
+        ],
         cwd=tooling_repo,
         env={"DSW_TRANSLATION_OUTPUT_ROOT": str(repo_root)},
-        description=f"run translation tests for KM {version}",
+        description=f"run translation tests for KM {paths.version}",
         echo_output=True,
     )
 
@@ -445,7 +407,6 @@ def _run_alignment_check(
     repo_root: Path,
     tooling_repo: Path,
     config_path: Path,
-    version: str,
     runner: CommandRunner,
 ) -> None:
     _run_checked(
@@ -456,12 +417,10 @@ def _run_alignment_check(
             str(repo_root),
             "--config",
             config_path.as_posix(),
-            "--km-version",
-            version,
             "--fail-on-mismatch",
         ],
         cwd=tooling_repo,
-        description=f"verify Localize/repository alignment for KM {version}",
+        description="verify Localize/repository alignment",
         echo_output=True,
     )
 
@@ -535,7 +494,7 @@ def _source_km_path_from_config_payload(
         raise TranslationRepositoryConfigError(
             "knowledge_model.organization_id and knowledge_model.km_id are required"
         )
-    normalized = sorted_versions([version])[-1]
+    normalized = normalize_version(version)
     package_id = format_package_id(
         organization_id=organization_id,
         km_id=km_id,

@@ -312,7 +312,6 @@ def test_translation_tree_watch_filter_accepts_only_editable_inputs() -> None:
             shared_blocks_context_path,
             tree_dir / "outline.md",
             tree_dir / "shared_blocks_outline.md",
-            tree_dir / "shared_blocks.md",
             tree_dir / "_translation_tree.json",
             tree_dir.parent / "builds" / "final_translated.po",
             tree_dir.parent / "reviews" / "final_translated.diff",

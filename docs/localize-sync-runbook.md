@@ -41,12 +41,11 @@ The external translation workflow should run:
 The workflow runs the `dsw-km-sync-localize` command. That command:
 
 1. Downloads the current Weblate PO to `sources/localize/zh_Hant/latest.po`.
-2. Writes the previous checked-in `latest.po` to a temporary comparison file.
-3. Force-refreshes `tree/` from the latest Weblate PO.
-4. Rebuilds `builds/final_translated.po`.
-5. Rebuilds `builds/final_translated.km`.
-6. Refreshes review outputs.
-7. Commits and pushes only when tracked files changed.
+2. Force-refreshes `tree/` from the latest Weblate PO.
+3. Rebuilds `builds/final_translated.po`.
+4. Rebuilds `builds/final_translated.km`.
+5. Refreshes review outputs.
+6. Commits and pushes only when tracked files changed.
 
 Scheduled runs commit directly to `master` when repository policy allows it.
 Pull request runs always produce a read-only GitHub translation report. Writer
@@ -112,7 +111,7 @@ To run the same alignment check from your machine, use:
 make repo-align TRANSLATION_REPO_DIR=/path/to/dsw-root-locales-zh_Hant
 ```
 
-## Merge Gate Behavior
+## PR Gate and Post-Merge Import
 
 Before a same-repository branch reaches `master`, the pull request writer pulls
 Weblate again and refreshes the branch when the PR does not edit translation

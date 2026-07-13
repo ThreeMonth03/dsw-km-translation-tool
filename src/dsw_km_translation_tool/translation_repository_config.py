@@ -22,13 +22,13 @@ class TranslationRepositoryConfigError(ValueError):
 
 @dataclass(frozen=True)
 class KnowledgeModelRepositoryConfig:
-    """Source KM coordinates and supported package-version policy."""
+    """Source KM coordinates and the currently tracked package version."""
 
     organization_id: str
     km_id: str
     upstream_repository: str
     bundle_path: Path | None
-    supported_versions: tuple[str, ...]
+    version: str
 
 
 @dataclass(frozen=True)
@@ -75,7 +75,7 @@ class RegistryConfig:
 
 @dataclass(frozen=True)
 class KmVersionWorkspacePaths:
-    """Conventional workspace paths for one KM package version."""
+    """Conventional workspace paths for the configured KM package."""
 
     version: str
     package_id: str
@@ -87,7 +87,6 @@ class KmVersionWorkspacePaths:
     final_km_path: Path
     review_diff_path: Path
     validation_report_path: Path
-    localize_merge_report_path: Path
     conflicts_report_path: Path
 
 
@@ -150,25 +149,16 @@ def load_translation_repository_config(path: str | Path) -> TranslationRepositor
     )
 
 
-def _load_knowledge_model_config(payload: dict[str, Any]) -> KnowledgeModelRepositoryConfig:
-    versions = tuple(sorted_versions(_required_str_list(payload, "supported_versions")))
-    if not versions:
-        raise TranslationRepositoryConfigError(
-            "knowledge_model.supported_versions must not be empty"
-        )
-    duplicates = _duplicates(versions)
-    if duplicates:
-        raise TranslationRepositoryConfigError(
-            "knowledge_model.supported_versions contains duplicate versions: "
-            + ", ".join(duplicates)
-        )
+def _load_knowledge_model_config(
+    payload: dict[str, Any],
+) -> KnowledgeModelRepositoryConfig:
     bundle_path_raw = _optional_str(payload, "bundle_path")
     return KnowledgeModelRepositoryConfig(
         organization_id=_require_str(payload, "organization_id"),
         km_id=_require_str(payload, "km_id"),
         upstream_repository=_require_str(payload, "upstream_repository"),
         bundle_path=Path(bundle_path_raw) if bundle_path_raw else None,
-        supported_versions=versions,
+        version=normalize_version(_require_str(payload, "version")),
     )
 
 
@@ -206,16 +196,15 @@ def _load_registry_config(payload: dict[str, Any]) -> RegistryConfig:
 
 
 def tracking_branch(config: TranslationRepositoryConfig) -> str:
-    """Return the branch that should track the latest configured KM version."""
+    """Return the branch that should track the configured KM."""
 
     return config.branches.tracking_branch
 
 
-def version_paths(config: TranslationRepositoryConfig, version: str) -> KmVersionWorkspacePaths:
-    """Return conventional workspace paths for one KM package version."""
+def version_paths(config: TranslationRepositoryConfig) -> KmVersionWorkspacePaths:
+    """Return conventional workspace paths for the configured KM package."""
 
-    normalized = normalize_version(version)
-    validate_supported_version(config, normalized)
+    normalized = config.knowledge_model.version
     package_id = format_package_id(
         organization_id=config.knowledge_model.organization_id,
         km_id=config.knowledge_model.km_id,
@@ -236,23 +225,8 @@ def version_paths(config: TranslationRepositoryConfig, version: str) -> KmVersio
         final_km_path=Path("builds") / "final_translated.km",
         review_diff_path=Path("reviews") / "final_translated.diff",
         validation_report_path=Path("reports") / "final_report.json",
-        localize_merge_report_path=Path("reviews") / "localize_merge_report.json",
         conflicts_report_path=Path("reviews") / "conflicts.json",
     )
-
-
-def validate_supported_version(config: TranslationRepositoryConfig, version: str) -> None:
-    """Raise if ``version`` is not configured as supported."""
-
-    normalized = normalize_version(version)
-    if normalized not in config.knowledge_model.supported_versions:
-        raise TranslationRepositoryConfigError(f"Unsupported KM version: {version}")
-
-
-def sorted_versions(versions: list[str] | tuple[str, ...]) -> list[str]:
-    """Return normalized KM versions sorted by semantic-version order."""
-
-    return sorted((normalize_version(version) for version in versions), key=version_sort_key)
 
 
 def normalize_version(version: str) -> str:
@@ -312,27 +286,3 @@ def _optional_int(parent: dict[str, Any], key: str, default: int) -> int:
     if not isinstance(value, int):
         raise TranslationRepositoryConfigError(f"Expected integer at `{key}`")
     return value
-
-
-def _required_str_list(parent: dict[str, Any], key: str) -> list[str]:
-    value = parent.get(key)
-    if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
-        raise TranslationRepositoryConfigError(f"Expected string list at `{key}`")
-    return [item.strip() for item in value if item.strip()]
-
-
-def _optional_str_list(parent: dict[str, Any], key: str) -> list[str]:
-    value = parent.get(key, [])
-    if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
-        raise TranslationRepositoryConfigError(f"Expected string list at `{key}`")
-    return [item.strip() for item in value if item.strip()]
-
-
-def _duplicates(values: tuple[str, ...]) -> list[str]:
-    seen: set[str] = set()
-    duplicates: list[str] = []
-    for value in values:
-        if value in seen and value not in duplicates:
-            duplicates.append(value)
-        seen.add(value)
-    return duplicates

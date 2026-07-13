@@ -7,18 +7,15 @@ from pathlib import Path
 from dsw_km_translation_tool.repository_ci_sync import build_repository_ci_sync_config
 from dsw_km_translation_tool.translation_repository_config import (
     load_translation_repository_config,
-    sorted_versions,
     tracking_branch,
     version_paths,
 )
 from tests.helpers import run_cli_command
 
 
-def write_config(path: Path, *, supported_versions: list[str] | None = None) -> None:
+def write_config(path: Path, *, version: str = "2.7.0") -> None:
     """Write a minimal valid translation config for tests."""
 
-    versions = supported_versions or ["2.7.0"]
-    version_lines = "\n".join(f"    - {version}" for version in versions)
     path.write_text(
         f"""schema_version: 1
 
@@ -27,8 +24,7 @@ knowledge_model:
   km_id: root
   upstream_repository: https://github.com/ds-wizard/dsw-root-locales.git
   bundle_path: sources/knowledge-models/dsw-root-2.7.0/dsw-root-2.7.0.km
-  supported_versions:
-{version_lines}
+  version: {version}
 
 translation:
   source_language: en
@@ -56,37 +52,25 @@ registry:
     )
 
 
-def test_config_loader_normalizes_versions_and_paths(workspace: Path) -> None:
+def test_config_loader_normalizes_version_and_paths(workspace: Path) -> None:
     """Verify that KM repository config derives the tracking branch and workspace paths."""
 
     config_path = workspace / "translation-config.yml"
-    write_config(config_path, supported_versions=["2.7.0", "2.6.10", "v2.6.9"])
+    write_config(config_path, version="v2.7.0")
 
     config = load_translation_repository_config(config_path)
 
-    assert config.knowledge_model.supported_versions == ("2.6.9", "2.6.10", "2.7.0")
+    assert config.knowledge_model.version == "2.7.0"
     assert config.registry.api_url == "https://api.registry.ds-wizard.org"
     assert tracking_branch(config) == "translation/latest"
 
-    paths = version_paths(config, "2.7.0")
+    paths = version_paths(config)
     assert paths.package_id == "dsw:root:2.7.0"
     assert paths.source_km_path == Path("sources/knowledge-models/dsw-root-2.7.0/dsw-root-2.7.0.km")
     assert paths.localize_latest_po_path == Path("sources/localize/zh_Hant/latest.po")
     assert paths.translation_tree_dir == Path("tree")
     assert paths.final_po_path == Path("builds/final_translated.po")
-    assert paths.localize_merge_report_path == Path("reviews/localize_merge_report.json")
     assert paths.conflicts_report_path == Path("reviews/conflicts.json")
-
-
-def test_version_sorting_handles_multi_digit_segments() -> None:
-    """Verify semantic sorting for KM package versions."""
-
-    assert sorted_versions(["2.6.9", "2.6.10", "2.5.0", "v2.7.0"]) == [
-        "2.5.0",
-        "2.6.9",
-        "2.6.10",
-        "2.7.0",
-    ]
 
 
 def test_config_loader_uses_default_registry_when_omitted(workspace: Path) -> None:
@@ -144,14 +128,13 @@ def test_repository_ci_sync_config_derives_tracking_branch_and_source_paths(
     host_repo.mkdir()
     tooling_repo.mkdir()
     config_path = host_repo / "translation-config.yml"
-    write_config(config_path, supported_versions=["2.6.0", "2.7.0"])
+    write_config(config_path)
 
     config = build_repository_ci_sync_config(
         host_repo_path=host_repo,
         tooling_repo_path=tooling_repo,
         config_path=Path("translation-config.yml"),
         mode="schedule",
-        km_version="2.7.0",
     )
 
     assert config.translation_root == "."
@@ -164,66 +147,9 @@ def test_repository_ci_sync_config_derives_tracking_branch_and_source_paths(
     assert config.source_km_path == Path(
         "sources/knowledge-models/dsw-root-2.7.0/dsw-root-2.7.0.km"
     )
-    assert config.localize_base_po_path is None
-    assert config.localize_merge_report_path is None
-    assert config.localize_conflict_policy == "latest-wins"
     assert config.original_po_path == host_repo / "sources/localize/zh_Hant/latest.po"
     assert config.original_model_path == (
         host_repo / "sources/knowledge-models/dsw-root-2.7.0/dsw-root-2.7.0.km"
     )
     assert config.output_organization_id == "dsw"
     assert config.output_km_id == "root-zh-hant"
-
-
-def test_repository_ci_sync_config_accepts_transient_localize_base(
-    workspace: Path,
-) -> None:
-    """Verify callers can opt into Localize merge with a temporary base PO."""
-
-    host_repo = workspace / "translation-repo"
-    tooling_repo = workspace / "tooling-repo"
-    host_repo.mkdir()
-    tooling_repo.mkdir()
-    config_path = host_repo / "translation-config.yml"
-    transient_base = workspace / "tmp" / "base.po"
-    write_config(config_path, supported_versions=["2.7.0"])
-
-    config = build_repository_ci_sync_config(
-        host_repo_path=host_repo,
-        tooling_repo_path=tooling_repo,
-        config_path=Path("translation-config.yml"),
-        mode="schedule",
-        km_version="2.7.0",
-        localize_base_po_path=transient_base,
-    )
-
-    assert config.localize_base_po_path == transient_base
-    assert config.localize_merge_report_path == Path("reviews/localize_merge_report.json")
-
-
-def test_repository_ci_sync_config_accepts_transient_localize_report(
-    workspace: Path,
-) -> None:
-    """Verify CI callers can keep merge reports outside the repository."""
-
-    host_repo = workspace / "translation-repo"
-    tooling_repo = workspace / "tooling-repo"
-    host_repo.mkdir()
-    tooling_repo.mkdir()
-    config_path = host_repo / "translation-config.yml"
-    transient_base = workspace / "tmp" / "base.po"
-    transient_report = workspace / "tmp" / "localize_merge_report.json"
-    write_config(config_path, supported_versions=["2.7.0"])
-
-    config = build_repository_ci_sync_config(
-        host_repo_path=host_repo,
-        tooling_repo_path=tooling_repo,
-        config_path=Path("translation-config.yml"),
-        mode="schedule",
-        km_version="2.7.0",
-        localize_base_po_path=transient_base,
-        localize_merge_report_path=transient_report,
-    )
-
-    assert config.localize_base_po_path == transient_base
-    assert config.localize_merge_report_path == transient_report

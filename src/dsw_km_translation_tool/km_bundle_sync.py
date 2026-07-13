@@ -41,7 +41,6 @@ def pull_km_bundle(
     config_path: Path,
     repo_root: Path,
     token: str,
-    km_version: str | None = None,
     downloader: BundleDownloader | None = None,
     allow_existing_change: bool = False,
 ) -> KmBundlePullResult:
@@ -56,10 +55,8 @@ def pull_km_bundle(
         raise KmRegistryError("Pulling KM bundles from the DSW Registry requires a token")
 
     repository_config = load_translation_repository_config(config_path)
-    version = normalize_version(
-        km_version or repository_config.knowledge_model.supported_versions[-1]
-    )
-    paths = version_paths(repository_config, version)
+    version = normalize_version(repository_config.knowledge_model.version)
+    paths = version_paths(repository_config)
     target_path = repo_root / paths.source_km_path
     coordinate = format_package_id(
         organization_id=repository_config.knowledge_model.organization_id,

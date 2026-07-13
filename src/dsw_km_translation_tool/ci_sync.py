@@ -22,7 +22,6 @@ from .layout import (
     DEFAULT_TARGET_LANG,
     TranslationOutputLayout,
 )
-from .localize_merge import LocalizePoMerger
 
 DEFAULT_SYNC_COMMIT_MESSAGE = "chore(sync): refresh translation artifacts"
 RESTORABLE_SYNC_FILENAMES = frozenset(
@@ -66,12 +65,6 @@ class CiSyncCommitConfig:
         output_name: Optional display name for the generated KM.
         restore_source_ref: Git ref used when restoring a malformed
             translation source file during CI recovery.
-        localize_base_po_path: Optional Localize base PO snapshot used to enable
-            conservative three-way merge before generating the KM.
-        localize_merge_report_path: Optional JSON report path for Localize merge
-            decisions. Relative paths are resolved inside the host repository.
-        localize_conflict_policy: Conflict policy passed to the Localize merge.
-            Use ``latest-wins`` when the latest Weblate state is authoritative.
     """
 
     host_repo_path: Path
@@ -88,9 +81,6 @@ class CiSyncCommitConfig:
     output_km_id: str | None = None
     output_name: str | None = None
     restore_source_ref: str = "origin/master"
-    localize_base_po_path: Path | None = None
-    localize_merge_report_path: Path | None = None
-    localize_conflict_policy: str = "conservative"
 
     @property
     def host_repo_dir(self) -> Path:
@@ -201,27 +191,6 @@ class CiSyncCommitConfig:
         )
 
     @property
-    def localize_base_path(self) -> Path | None:
-        """Return the optional Localize base PO snapshot path."""
-
-        if self.localize_base_po_path is None:
-            return None
-        return self._resolve_source_path(
-            configured_path=self.localize_base_po_path,
-            default_path=self.localize_base_po_path,
-        )
-
-    @property
-    def localize_merge_report_file(self) -> Path | None:
-        """Return the optional Localize merge report path."""
-
-        if self.localize_merge_report_path is None:
-            return None
-        if self.localize_merge_report_path.is_absolute():
-            return self.localize_merge_report_path.resolve()
-        return (self.host_repo_dir / self.localize_merge_report_path).resolve()
-
-    @property
     def original_model_path(self) -> Path:
         """Return the source KM bundle path for building translated KM output."""
 
@@ -284,16 +253,6 @@ class CiSyncCommitConfig:
             raise CiSyncError(f"Missing original PO file: {self.original_po_path}")
         if not self.original_model_path.exists():
             raise CiSyncError(f"Missing original KM file: {self.original_model_path}")
-        if self.localize_base_path is not None and not self.localize_base_path.exists():
-            raise CiSyncError(f"Missing Localize base PO file: {self.localize_base_path}")
-        if (self.localize_base_path is None) != (self.localize_merge_report_file is None):
-            raise CiSyncError(
-                "Localize merge requires both localize_base_po_path and localize_merge_report_path."
-            )
-        if self.localize_conflict_policy not in {"conservative", "latest-wins"}:
-            raise CiSyncError(
-                "Localize conflict policy must be either 'conservative' or 'latest-wins'."
-            )
 
 
 def run_ci_sync_commit(
@@ -320,7 +279,6 @@ def run_ci_sync_commit(
     print(f"[ci-sync] Translation root: {config.translation_root_arg}")
 
     _run_sync_with_origin_restore(config, runner)
-    _run_localize_merge(config)
     _run_checked(
         runner,
         _build_po_to_km_command(config),
@@ -372,27 +330,6 @@ def run_ci_sync_commit(
     )
     print(f"[ci-sync] Pushed sync commit to {config.target_ref}.")
     return True
-
-
-def _run_localize_merge(config: CiSyncCommitConfig) -> None:
-    """Run optional Localize PO merge after rebuilding the repo PO."""
-
-    base_po_path = config.localize_base_path
-    merge_report_path = config.localize_merge_report_file
-    if base_po_path is None or merge_report_path is None:
-        return
-    result = LocalizePoMerger().merge(
-        base_po_path=base_po_path,
-        latest_po_path=config.original_po_path,
-        repo_po_path=config.final_po_path,
-        out_po_path=config.final_po_path,
-        report_path=merge_report_path,
-        conflict_policy=config.localize_conflict_policy,
-    )
-    print("[ci-sync] Localize merge")
-    print(f"[ci-sync]   Conflict policy: {config.localize_conflict_policy}")
-    print(f"[ci-sync]   Accepted latest: {result.accepted_latest}")
-    print(f"[ci-sync]   Conflicts: {result.conflicts}")
 
 
 def _run_sync_with_origin_restore(
@@ -574,7 +511,14 @@ def _translation_root_has_tracked_changes(
 
     result = _run_checked(
         runner,
-        ["git", "status", "--porcelain", "--untracked-files=no", "--", config.translation_root_arg],
+        [
+            "git",
+            "status",
+            "--porcelain",
+            "--untracked-files=no",
+            "--",
+            config.translation_root_arg,
+        ],
         cwd=config.host_repo_dir,
         description="inspect tracked translation changes",
     )

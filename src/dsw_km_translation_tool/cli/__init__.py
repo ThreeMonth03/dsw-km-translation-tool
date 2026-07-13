@@ -1,1 +1,1 @@
-"""Packaged command-line entry points for DSW KM translation tooling."""
+"""Packaged command-line entry points for the DSW KM Translation Tool."""

@@ -7,7 +7,10 @@ import sys
 from pathlib import Path
 from types import SimpleNamespace
 
-from dsw_km_translation_tool.cli import import_github_translations, report_github_translations
+from dsw_km_translation_tool.cli import (
+    import_github_translations,
+    report_github_translations,
+)
 from dsw_km_translation_tool.github_translation_contributions import (
     CONFLICT_DECISION,
     IMPORT_DECISION,

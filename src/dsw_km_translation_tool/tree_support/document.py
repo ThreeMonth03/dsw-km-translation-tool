@@ -6,7 +6,7 @@ import re
 from pathlib import Path
 from typing import Iterable
 
-from ..constants import FIELD_EXPORT_ORDER, LEGACY_SHARED_FIELD_NOTES, SHARED_FIELD_NOTE
+from ..constants import FIELD_EXPORT_ORDER, SHARED_FIELD_NOTE
 from ..data_models import TranslationFieldState
 
 
@@ -57,7 +57,7 @@ class TranslationMarkdownDocument:
             event_type: DSW event type for the node.
             fields: Translation fields to render.
             shared_fields: Field names whose source of truth is
-                `shared_blocks.md`.
+                `shared_blocks/`.
 
         Returns:
             Rendered markdown content for `translation.md`.
@@ -276,7 +276,7 @@ class TranslationMarkdownDocument:
             Updated parser index after skipping the optional note.
         """
 
-        if index < len(lines) and lines[index].strip() in LEGACY_SHARED_FIELD_NOTES:
+        if index < len(lines) and lines[index].strip() == SHARED_FIELD_NOTE:
             index += 1
             index = self._consume_blank_lines(lines, index)
         return index

@@ -66,7 +66,6 @@ def build_alignment_status_report(
     *,
     repo_root: Path,
     config_path: Path,
-    km_version: str | None = None,
     artifact_dir: Path | None = None,
     downloader: Downloader | None = None,
 ) -> AlignmentStatusReport:
@@ -81,8 +80,6 @@ def build_alignment_status_report(
     Args:
         repo_root: Translation repository root.
         config_path: Path to ``translation-config.yml``.
-        km_version: Optional KM version override. Defaults to the latest
-            configured supported version.
         artifact_dir: Optional directory where generated comparison artifacts
             are written for later diffing.
         downloader: Optional injectable URL downloader used by tests.
@@ -94,8 +91,8 @@ def build_alignment_status_report(
     resolved_repo_root = repo_root.resolve()
     resolved_config_path = _resolve_repo_path(resolved_repo_root, config_path)
     repository_config = load_translation_repository_config(resolved_config_path)
-    version = km_version or repository_config.knowledge_model.supported_versions[-1]
-    paths = version_paths(repository_config, version)
+    version = repository_config.knowledge_model.version
+    paths = version_paths(repository_config)
 
     checked_in_localize_po = resolved_repo_root / paths.localize_latest_po_path
     checked_in_tree_dir = resolved_repo_root / paths.translation_tree_dir

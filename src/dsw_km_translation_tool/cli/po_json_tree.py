@@ -117,6 +117,11 @@ def build_argument_parser() -> argparse.ArgumentParser:
             "preserving existing translations."
         ),
     )
+    parser.add_argument(
+        "--yes",
+        action="store_true",
+        help="Confirm --force non-interactively for trusted automation.",
+    )
     return parser
 
 
@@ -130,7 +135,14 @@ def main() -> None:
     )
 
     if args.out_dir:
-        if args.force and not confirm_force_overwrite(args.out_dir, args.target_lang):
+        if (
+            args.force
+            and not args.yes
+            and not confirm_force_overwrite(
+                args.out_dir,
+                args.target_lang,
+            )
+        ):
             raise SystemExit(1)
         context = workflow.export_tree(
             po_path=args.po,
@@ -159,10 +171,6 @@ def main() -> None:
             out_shared_blocks_root=shared_blocks_dir_out,
         )
         print(f"Wrote shared-block directory to {shared_blocks_result.output_shared_blocks_root}")
-        stale_shared_blocks_index = Path(args.out_dir) / "shared_blocks.md"
-        stale_shared_blocks_outline = Path(args.out_dir) / "shared_blocks_outline.md"
-        stale_shared_blocks_index.unlink(missing_ok=True)
-        stale_shared_blocks_outline.unlink(missing_ok=True)
     else:
         context = workflow.build_tree_context(po_path=args.po, model_path=args.json)
 

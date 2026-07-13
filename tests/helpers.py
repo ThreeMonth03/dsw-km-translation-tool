@@ -12,8 +12,8 @@ from pathlib import Path
 
 from dsw_km_translation_tool import TranslationWorkflowService
 from dsw_km_translation_tool.constants import (
-    LEGACY_SHARED_FIELD_NOTES,
     MANIFEST_NAME,
+    SHARED_FIELD_NOTE,
     TRANSLATION_FILENAME,
     TREE_BACKUP_DIRNAME,
     UUID_FILENAME,
@@ -22,7 +22,6 @@ from dsw_km_translation_tool.data_models import (
     OutlineBuildResult,
     PoBlock,
     PoEntry,
-    SharedBlocksBuildResult,
     SharedBlocksOutlineBuildResult,
     SharedStringSyncResult,
     TranslationFieldState,
@@ -31,10 +30,7 @@ from dsw_km_translation_tool.data_models import (
     WorkflowContext,
 )
 from dsw_km_translation_tool.po import PoCatalogParser
-from dsw_km_translation_tool.shared_blocks import (
-    SharedBlocksCatalogParser,
-    resolve_shared_blocks_root_path,
-)
+from dsw_km_translation_tool.shared_blocks import SharedBlocksCatalogParser
 
 HEADER_UUID_PATTERN = re.compile(r"^- UUID: `(?P<uuid>[^`]+)`$")
 HEADER_EVENT_TYPE_PATTERN = re.compile(r"^- Event Type: `(?P<event_type>[^`]*)`$")
@@ -249,9 +245,8 @@ def field_section_contains_shared_note(markdown_text: str, field_name: str) -> b
         `True` when the field section contains the machine-generated note.
     """
 
-    note_pattern = "|".join(re.escape(note) for note in LEGACY_SHARED_FIELD_NOTES)
     section_pattern = re.compile(
-        rf"^## {re.escape(field_name)}\n\n(?P<note>{note_pattern})\n",
+        rf"^## {re.escape(field_name)}\n\n{re.escape(SHARED_FIELD_NOTE)}\n",
         re.MULTILINE,
     )
     return section_pattern.search(markdown_text) is not None
@@ -453,31 +448,6 @@ def build_outline_markdown(
     )
 
 
-def build_shared_blocks_markdown(
-    workflow: TranslationWorkflowService,
-    tree_dir: Path,
-    original_po_path: Path,
-    output_shared_blocks_path: Path,
-) -> SharedBlocksBuildResult:
-    """Build shared-block markdown for one translation tree.
-
-    Args:
-        workflow: Workflow service under test.
-        tree_dir: Translation tree directory.
-        original_po_path: Original PO template path.
-        output_shared_blocks_path: Destination shared-block markdown path.
-
-    Returns:
-        Shared-block build result.
-    """
-
-    return workflow.build_shared_blocks_markdown(
-        tree_dir=str(tree_dir),
-        original_po_path=str(original_po_path),
-        out_shared_blocks_path=str(output_shared_blocks_path),
-    )
-
-
 def build_shared_blocks_outline_markdown(
     workflow: TranslationWorkflowService,
     tree_dir: Path,
@@ -557,19 +527,18 @@ def run_shared_string_sync(
 
 
 def update_shared_block_translation(
-    shared_blocks_path: Path,
+    shared_blocks_root: Path,
     group_key: tuple[tuple[str, str], ...],
     target_text: str,
 ) -> None:
     """Update one canonical shared-block translation directly on disk.
 
     Args:
-        shared_blocks_path: Canonical shared-block directory path.
+        shared_blocks_root: Canonical shared-block directory path.
         group_key: Structured group key identifying the target block.
         target_text: Replacement translated text.
     """
 
-    shared_blocks_root = resolve_shared_blocks_root_path(shared_blocks_path)
     context_path = SharedBlocksCatalogParser.group_context_path(
         shared_blocks_root,
         group_key,

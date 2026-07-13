@@ -17,7 +17,6 @@ from .data_models import (
     OutlineBuildResult,
     PoBuildResult,
     PoDiffReviewResult,
-    SharedBlocksBuildResult,
     SharedBlocksDirectoryBuildResult,
     SharedBlocksOutlineBuildResult,
     SharedStringSyncResult,
@@ -327,7 +326,7 @@ class TranslationWorkflowService:
             tree_dir=tree_dir,
             original_po_path=original_po_path,
             out_po_path=out_po_path,
-            shared_blocks_path=shared_blocks_root_path,
+            shared_blocks_root=shared_blocks_root_path,
             group_by=group_by,
         )
         if shared_blocks_root_path:
@@ -336,7 +335,6 @@ class TranslationWorkflowService:
                 original_po_path=original_po_path,
                 out_shared_blocks_root=shared_blocks_root_path,
             )
-            (Path(shared_blocks_root_path).parent / "shared_blocks.md").unlink(missing_ok=True)
             result = replace(
                 result,
                 written_artifact_paths=tuple(
@@ -447,30 +445,6 @@ class TranslationWorkflowService:
         if not isinstance(value, str):
             return value
         return value.replace("\u2028", "").replace("\u2029", "")
-
-    def build_shared_blocks_markdown(
-        self,
-        tree_dir: str,
-        original_po_path: str,
-        out_shared_blocks_path: str,
-    ) -> SharedBlocksBuildResult:
-        """Build a generated shared-block index markdown file for the tree.
-
-        Args:
-            tree_dir: Translation tree directory.
-            original_po_path: Original PO file used as the shared-block source.
-            out_shared_blocks_path: Destination markdown path for the generated
-                index file.
-
-        Returns:
-            Shared-block build result.
-        """
-
-        return self.shared_blocks_builder.build(
-            tree_dir=tree_dir,
-            original_po_path=original_po_path,
-            output_shared_blocks_path=out_shared_blocks_path,
-        )
 
     def build_shared_blocks_directory(
         self,

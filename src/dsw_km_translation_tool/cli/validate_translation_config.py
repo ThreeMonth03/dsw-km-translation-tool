@@ -42,19 +42,18 @@ def main() -> None:
     except TranslationRepositoryConfigError as error:
         raise SystemExit(f"Invalid translation config: {error}") from error
 
-    versions = config.knowledge_model.supported_versions
-    latest_version = versions[-1]
-    latest_paths = version_paths(config, latest_version)
+    version = config.knowledge_model.version
+    paths = version_paths(config)
     lines = [
         "KM translation config is valid.",
         f"Knowledge model: {config.knowledge_model.organization_id}:{config.knowledge_model.km_id}",
         f"Target language: {config.translation.target_language}",
-        f"Supported versions: {', '.join(versions)}",
+        f"KM version: {version}",
         f"Tracking branch: {tracking_branch(config)}",
-        f"Latest source KM path: {latest_paths.source_km_path.as_posix()}",
+        f"Source KM path: {paths.source_km_path.as_posix()}",
         f"Localize PO URL: {config.localize.download_url}",
         f"Registry API: {config.registry.api_url}",
-        f"Translation tree path: {latest_paths.translation_tree_dir.as_posix()}",
+        f"Translation tree path: {paths.translation_tree_dir.as_posix()}",
     ]
     print("\n".join(lines))
     if args.summary:

@@ -9,8 +9,8 @@ from pathlib import Path
 
 from .command import CommandRunner, default_command_runner, make_checked_runner
 from .constants import TRANSLATION_FILENAME
-from .localize_merge import PoEntryState, parse_po_entry_states
 from .po_support.render import PoSectionRenderer
+from .po_support.state import PoEntryState, parse_po_entry_states
 from .tree_support.document import TranslationMarkdownDocument
 
 PoKey = tuple[str, str]

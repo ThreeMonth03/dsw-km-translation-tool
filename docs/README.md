@@ -1,6 +1,6 @@
 # Maintainer Docs
 
-Use this directory as the maintenance manual for the DSW KM translation tooling.
+Use this directory as the maintenance manual for the DSW KM Translation Tool.
 The root [`readme.md`][root-readme] stays as the quick-start entry point;
 durable design and operating procedures live here.
 

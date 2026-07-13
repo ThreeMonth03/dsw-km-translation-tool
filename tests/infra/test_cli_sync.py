@@ -205,7 +205,7 @@ def test_sync_shared_strings_cli_updates_tree_and_outputs_synced_po(
     assert_clean_model_validation(workflow, artifacts.output_po, model_path)
 
 
-def test_sync_cli_uses_shared_blocks_markdown_as_canonical_source(
+def test_sync_cli_uses_shared_block_contexts_as_canonical_source(
     repo_root,
     workflow,
     po_path,
@@ -254,7 +254,7 @@ def test_sync_cli_uses_shared_blocks_markdown_as_canonical_source(
     canonical_translation = f"[SHARED_BLOCKS] {available_keys[0][0][:8]}:{available_keys[0][1]}"
 
     update_shared_block_translation(
-        shared_blocks_path=artifacts.shared_blocks_dir_path,
+        shared_blocks_root=artifacts.shared_blocks_dir_path,
         group_key=shared_group_key,
         target_text=canonical_translation,
     )

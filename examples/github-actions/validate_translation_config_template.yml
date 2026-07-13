@@ -26,7 +26,7 @@ jobs:
           path: translation-repo
           fetch-depth: 0
 
-      - name: Checkout DSW KM Translation Tooling
+      - name: Checkout DSW KM Translation Tool
         uses: actions/checkout@v5
         with:
           repository: ${{ env.TOOLING_REPOSITORY }}

@@ -13,7 +13,7 @@ Use these notes for repository operation:
 | Secrets and workflow permissions | [Security and Permissions](security-and-permissions.md) |
 | Maintainer handoff | [Handoff Checklist](handoff-checklist.md) |
 
-Reusable tooling details live in the DSW KM translation tool docs:
+Reusable tooling details live in the DSW KM Translation Tool docs:
 
 ```text
 https://www.threemonth03.com/dsw-km-translation-tool/

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import shutil
 from pathlib import Path
 
 from .data_models import (
@@ -12,7 +13,6 @@ from .po import PoCatalogParser, PoCatalogWriter
 from .shared_blocks import (
     SharedBlocksCatalogParser,
     resolve_shared_blocks_backup_root,
-    resolve_shared_blocks_root_path,
 )
 from .sync_support import SharedStringGroupBuilder, SharedStringGroupProcessor
 from .tree import TranslationTreeRepository
@@ -28,7 +28,7 @@ class SharedStringSynchronizer:
         po_writer: Optional PO writer used when generating an updated PO file.
         group_builder: Optional builder used to derive shared-string groups.
         group_processor: Optional processor used to resolve and apply group updates.
-        shared_blocks_parser: Optional parser used to read `shared_blocks.md`.
+        shared_blocks_parser: Optional parser used to read `shared_blocks/`.
     """
 
     def __init__(
@@ -44,7 +44,6 @@ class SharedStringSynchronizer:
         self.group_builder = group_builder or SharedStringGroupBuilder()
         self.group_processor = group_processor or SharedStringGroupProcessor()
         self.shared_blocks_parser = shared_blocks_parser or SharedBlocksCatalogParser(
-            source_lang=tree_repository.source_lang,
             target_lang=tree_repository.target_lang,
         )
 
@@ -53,7 +52,7 @@ class SharedStringSynchronizer:
         tree_dir: str,
         original_po_path: str,
         out_po_path: str | None = None,
-        shared_blocks_path: str | None = None,
+        shared_blocks_root: str | None = None,
         group_by: str = "shared-block",
     ) -> SharedStringSyncResult:
         """Synchronize repeated translation groups across the tree.
@@ -62,7 +61,7 @@ class SharedStringSynchronizer:
             tree_dir: Translation tree directory.
             original_po_path: Original PO file used as the grouping source.
             out_po_path: Optional output PO path to refresh after sync.
-            shared_blocks_path: Optional canonical shared-block directory path used
+            shared_blocks_root: Optional canonical shared-block directory used
                 as the source for shared-block synchronization.
             group_by: Grouping strategy for shared strings.
 
@@ -84,7 +83,7 @@ class SharedStringSynchronizer:
             expected_group_keys = self.expected_shared_block_group_keys(groups)
             canonical_translations = self.load_shared_block_translations(
                 tree_dir=tree_dir,
-                shared_blocks_path=shared_blocks_path,
+                shared_blocks_root=shared_blocks_root,
                 expected_group_keys=expected_group_keys,
             )
         else:
@@ -124,14 +123,14 @@ class SharedStringSynchronizer:
     def load_shared_block_translations(
         self,
         tree_dir: str,
-        shared_blocks_path: str | None,
+        shared_blocks_root: str | None,
         expected_group_keys: set[tuple[tuple[str, str], ...]],
     ) -> dict[tuple[tuple[str, str], ...], str]:
         """Load canonical shared-block translations when the directory exists.
 
         Args:
             tree_dir: Translation tree root directory.
-            shared_blocks_path: Candidate shared-block directory path.
+            shared_blocks_root: Candidate shared-block directory path.
             expected_group_keys: Structured shared-block group set expected from
                 the source PO.
 
@@ -139,37 +138,34 @@ class SharedStringSynchronizer:
             Mapping from shared-block keys to canonical translated text.
         """
 
-        if not shared_blocks_path:
+        if not shared_blocks_root:
             return {}
-        shared_blocks_file = Path(shared_blocks_path)
-        shared_blocks_root = resolve_shared_blocks_root_path(shared_blocks_file)
-        if not shared_blocks_root.exists():
+        root_path = Path(shared_blocks_root)
+        if not root_path.exists():
             restored_backup = self.restore_shared_blocks_backup(
-                shared_blocks_root=shared_blocks_root,
-                shared_blocks_path=shared_blocks_file,
+                shared_blocks_root=root_path,
                 tree_dir=tree_dir,
                 expected_group_keys=expected_group_keys,
             )
             if restored_backup is not None:
                 raise ValueError(
                     "Missing shared-block context files were restored from the "
-                    f"last known-good backup.\nFile: {shared_blocks_root}\n"
+                    f"last known-good backup.\nFile: {root_path}\n"
                     f"Backup: {restored_backup}"
                 )
             return {}
         try:
             return self.shared_blocks_parser.parse(
-                str(shared_blocks_root),
+                str(root_path),
                 expected_group_keys=expected_group_keys,
             )
         except ValueError as error:
             restore_path = self._extract_shared_blocks_restore_candidate(
                 error_message=str(error),
-                shared_blocks_root=shared_blocks_root,
+                shared_blocks_root=root_path,
             )
             restored_backup = self.restore_shared_blocks_backup(
-                shared_blocks_root=shared_blocks_root,
-                shared_blocks_path=shared_blocks_file,
+                shared_blocks_root=root_path,
                 tree_dir=tree_dir,
                 expected_group_keys=expected_group_keys,
                 restore_path=restore_path,
@@ -177,19 +173,19 @@ class SharedStringSynchronizer:
             if restored_backup is not None:
                 raise ValueError(
                     "Invalid shared-block context files were restored from the "
-                    f"last known-good backup.\nFile: {restore_path or shared_blocks_root}\n"
+                    f"last known-good backup.\nFile: {restore_path or root_path}\n"
                     f"Backup: {restored_backup}\nReason: {error}"
                 ) from error
             raise ValueError(
                 "Invalid shared-block context files and no valid backup was "
-                f"available.\nFile: {restore_path or shared_blocks_root}\nReason: {error}"
+                f"available.\nFile: {restore_path or root_path}\nReason: {error}"
             ) from error
 
     def validate_shared_block_translations(
         self,
         translations: dict[tuple[tuple[str, str], ...], str],
         expected_group_keys: set[tuple[tuple[str, str], ...]],
-        shared_blocks_path: str,
+        shared_blocks_root: str,
     ) -> None:
         """Validate that the shared-block directory covers the full group set.
 
@@ -197,7 +193,7 @@ class SharedStringSynchronizer:
             translations: Parsed shared-block translation mapping.
             expected_group_keys: Structured shared-block group set expected
                 from the source PO.
-            shared_blocks_path: Source path used in error messages.
+            shared_blocks_root: Source directory used in error messages.
 
         Raises:
             ValueError: If the shared-block file is incomplete or contains
@@ -226,13 +222,12 @@ class SharedStringSynchronizer:
         preview = "\n".join(preview_lines)
         raise ValueError(
             "Shared-block directory does not match the expected shared-group set.\n"
-            f"File: {shared_blocks_path}\n{preview}"
+            f"File: {shared_blocks_root}\n{preview}"
         )
 
     def restore_shared_blocks_backup(
         self,
         shared_blocks_root: Path,
-        shared_blocks_path: Path,
         tree_dir: str,
         expected_group_keys: set[tuple[tuple[str, str], ...]],
         restore_path: Path | None = None,
@@ -241,7 +236,6 @@ class SharedStringSynchronizer:
 
         Args:
             shared_blocks_root: Canonical shared-block directory root.
-            shared_blocks_path: Shared-block markdown path to restore.
             tree_dir: Translation tree root directory.
             expected_group_keys: Structured shared-block group set expected
                 from the source PO.
@@ -265,7 +259,7 @@ class SharedStringSynchronizer:
         self.validate_shared_block_translations(
             translations=translations,
             expected_group_keys=expected_group_keys,
-            shared_blocks_path=str(backup_root),
+            shared_blocks_root=str(backup_root),
         )
 
         if restore_path is None:
@@ -273,8 +267,6 @@ class SharedStringSynchronizer:
             if shared_blocks_root.exists():
                 for child in shared_blocks_root.iterdir():
                     if child.is_dir():
-                        import shutil
-
                         shutil.rmtree(child)
                     else:
                         child.unlink()

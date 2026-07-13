@@ -1,5 +1,5 @@
-DSW KM Translation Tooling
-=======================================
+DSW KM Translation Tool
+=======================
 
 This site documents the tooling used to keep DSW Knowledge Model translations
 aligned between Weblate, a Git translation repository, and validated KM outputs.

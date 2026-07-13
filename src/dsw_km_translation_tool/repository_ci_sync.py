@@ -23,7 +23,6 @@ def build_repository_ci_sync_config(
     tooling_repo_path: Path,
     config_path: Path,
     mode: str,
-    km_version: str | None = None,
     translation_root: str | None = None,
     target_ref: str | None = None,
     source_lang: str | None = None,
@@ -35,8 +34,6 @@ def build_repository_ci_sync_config(
     output_km_id: str | None = None,
     output_name: str | None = None,
     restore_source_ref: str | None = None,
-    localize_base_po_path: Path | None = None,
-    localize_merge_report_path: Path | None = None,
 ) -> CiSyncCommitConfig:
     """Build sync automation config from a translation repository config.
 
@@ -46,8 +43,6 @@ def build_repository_ci_sync_config(
         config_path: Path to ``translation-config.yml``. Relative paths are
             resolved inside ``host_repo_path``.
         mode: CI trigger mode.
-        km_version: KM version to sync. Defaults to the latest configured
-            supported version.
         translation_root: Translation artifact root inside the host repository.
             Defaults to ``.`` for tracking branches.
         target_ref: Branch/ref that should receive generated commits. Defaults
@@ -62,11 +57,6 @@ def build_repository_ci_sync_config(
         output_name: Optional translated KM display name override.
         restore_source_ref: Optional git ref used for recovery restores. Defaults
             to ``origin/<tracking branch>``.
-        localize_base_po_path: Optional transient Localize base snapshot. When
-            provided, the sync runs a latest-wins PO merge and writes a merge
-            report.
-        localize_merge_report_path: Optional transient merge report path. When
-            omitted, the configured repository review path is used.
 
     Returns:
         Populated CI sync configuration.
@@ -75,13 +65,8 @@ def build_repository_ci_sync_config(
     host_repo = host_repo_path.resolve()
     resolved_config_path = _resolve_host_path(host_repo, config_path)
     repository_config = load_translation_repository_config(resolved_config_path)
-    version = km_version or repository_config.knowledge_model.supported_versions[-1]
-    paths = version_paths(repository_config, version)
+    paths = version_paths(repository_config)
     branch = tracking_branch(repository_config)
-
-    resolved_merge_report_path = None
-    if localize_base_po_path is not None:
-        resolved_merge_report_path = localize_merge_report_path or paths.localize_merge_report_path
     return CiSyncCommitConfig(
         host_repo_path=host_repo,
         tooling_repo_path=tooling_repo_path,
@@ -99,9 +84,6 @@ def build_repository_ci_sync_config(
         output_km_id=output_km_id or repository_config.translation.translated_km_id,
         output_name=output_name or repository_config.translation.translated_name,
         restore_source_ref=restore_source_ref or f"origin/{branch}",
-        localize_base_po_path=localize_base_po_path,
-        localize_merge_report_path=resolved_merge_report_path,
-        localize_conflict_policy="latest-wins",
     )
 
 

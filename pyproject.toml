@@ -12,7 +12,7 @@ license = "BSD-3-Clause"
 dependencies = [
     "dsw-models @ git+https://github.com/ds-wizard/engine-tools.git@v4.27.0#subdirectory=packages/dsw-models",
     "pydantic>=2,<3",
-    "PyYAML==6.0.3",
+    "PyYAML>=6,<7",
     "watchdog>=6,<7",
 ]
 
@@ -31,7 +31,6 @@ dsw-km-discover-versions = "dsw_km_translation_tool.cli.discover_km_versions:mai
 dsw-km-export-tree = "dsw_km_translation_tool.cli.po_json_tree:main"
 dsw-km-init-translation-repo = "dsw_km_translation_tool.cli.init_translation_repository:main"
 dsw-km-import-github-translations = "dsw_km_translation_tool.cli.import_github_translations:main"
-dsw-km-merge-localize-po = "dsw_km_translation_tool.cli.merge_localize_po:main"
 dsw-km-po-to-km = "dsw_km_translation_tool.cli.po_to_km:main"
 dsw-km-pull-bundle = "dsw_km_translation_tool.cli.pull_km_bundle:main"
 dsw-km-pull-localize-po = "dsw_km_translation_tool.cli.pull_localize_po:main"

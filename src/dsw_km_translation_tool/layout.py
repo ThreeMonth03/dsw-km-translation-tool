@@ -56,12 +56,6 @@ class TranslationOutputLayout:
         return self.tree_dir / "outline.md"
 
     @property
-    def shared_blocks_path(self) -> Path:
-        """Return the shared-block markdown path inside the tree root."""
-
-        return self.tree_dir / "shared_blocks.md"
-
-    @property
     def shared_blocks_dir(self) -> Path:
         """Return the canonical shared-block directory inside the tree root."""
 

@@ -24,6 +24,10 @@ workflow.
 | [Localize alignment report][localize-alignment-template] | `contents: read` | none | No |
 | [KM version auto update][km-auto-update-template] | `contents: write` | `DSW_REGISTRY_TOKEN` only when a newer KM exists | Writes Git only after validation |
 
+The workflows that write the tracking branch or Weblate share the
+`translation-state-master` concurrency group. Keep that group aligned when
+updating workflow files so writer jobs cannot race.
+
 ## Secret Placement
 
 Configure secrets in the production translation repository:

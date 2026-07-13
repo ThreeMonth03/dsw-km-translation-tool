@@ -48,7 +48,7 @@ These modules handle the local representation of translation data:
   can inspect.
 - [`tree.py`][tree-py], [`outline.py`][outline-py], [`workflow.py`][workflow-py]: export and inspect the
   translator-facing folder tree.
-- [`shared_blocks.py`][shared-blocks-py], [`sync.py`][sync-py], [`review.py`][review-py]: synchronize repeated strings,
+- [`shared_blocks/`][shared-blocks-dir], [`sync.py`][sync-py], [`review.py`][review-py]: synchronize repeated strings,
   rebuild generated PO files, and produce review diffs.
 - [`knowledge_model_service.py`][knowledge-model-service-py]: applies translated PO content back into a KM
   bundle.
@@ -63,8 +63,8 @@ These modules connect the translation repository to the Weblate website:
 
 - [`translation_repository_config.py`][translation-repository-config-py]: loads `translation-config.yml` and
   computes repository paths.
-- [`localize_sync.py`][localize-sync-py]: downloads the current Weblate PO snapshot and can expose
-  the previous checked-in snapshot as a temporary comparison file for sync.
+- [`localize_sync.py`][localize-sync-py]: downloads the current Weblate PO
+  snapshot into the translation repository.
 - [`localize_status.py`][localize-status-py]: reports PO completion, empty strings, and Weblate
   review-state counts without modifying translations.
 - [`weblate_checks.py`][weblate-checks-py]: reports Weblate units matching quality-check queries
@@ -72,7 +72,6 @@ These modules connect the translation repository to the Weblate website:
 - [`alignment_status.py`][alignment-status-py]: verifies that Weblate, the checked-in Localize PO,
   the translation tree, the final PO, and the final KM are mutually aligned.
 - [`localize_tree_sync.py`][localize-tree-sync-py]: force-refreshes `tree/` from the latest Weblate PO.
-- [`localize_merge.py`][localize-merge-py]: contains PO merge decisions.
 - [`github_translation_contributions.py`][github-translation-contributions-py] and
   [`weblate_upload.py`][weblate-upload-py]: report reviewed GitHub translation
   edits and upload safe post-merge imports to Weblate.
@@ -109,15 +108,18 @@ belong in [Localize Sync Runbook](localize-sync-runbook.md).
 - [`examples/github-actions/validate_translation_config_template.yml`][validate-config-template] is the
   read-only config validation workflow for dedicated translation repositories.
 
-Keep GitHub Actions as orchestration. Branch selection, recovery, PO merge, KM
-generation, and commit decisions belong in Python helpers. Use
+Keep GitHub Actions as orchestration. Branch selection, recovery, GitHub
+translation import decisions, KM generation, and commit decisions belong in
+Python helpers. Use
 [Workflow Templates](workflow-templates.md) when copying or updating templates
-in translation repositories.
+in translation repositories. Workflows that write the tracking branch or
+Weblate share one concurrency group so those state transitions cannot race.
 
 ## Ownership Rules
 
-- If a change affects Localize/Weblate download or conflict policy, it
-  belongs in the Localize sync layer and must be reflected in the runbook.
+- If a change affects Localize/Weblate download or GitHub import conflict
+  policy, it belongs in the Localize sync layer and must be reflected in the
+  runbook.
 - If a change affects tree format, shared strings, generated PO, or KM output,
   it belongs in the PO/KM/tree layer and needs round-trip tests.
 - If a translation repository needs a new workflow behavior, add it to the
@@ -142,7 +144,6 @@ in translation repositories.
 [knowledge-model-service-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/knowledge_model_service.py
 [localize-alignment-template]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/examples/github-actions/localize_alignment_report_template.yml
 [localize-auto-sync-template]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/examples/github-actions/localize_auto_sync_template.yml
-[localize-merge-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/localize_merge.py
 [localize-status-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/localize_status.py
 [localize-status-template]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/examples/github-actions/localize_status_report_template.yml
 [localize-sync-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/localize_sync.py
@@ -155,7 +156,7 @@ in translation repositories.
 [readme]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/readme.md
 [repository-ci-sync-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/repository_ci_sync.py
 [review-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/review.py
-[shared-blocks-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/shared_blocks.py
+[shared-blocks-dir]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/src/dsw_km_translation_tool/shared_blocks
 [sphinx-dir]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/docs/sphinx
 [source-inputs-fixture-dir]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/tests/fixtures/source_inputs
 [cli-dir]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/src/dsw_km_translation_tool/cli

@@ -34,11 +34,6 @@ def build_argument_parser() -> argparse.ArgumentParser:
         help="Path to translation-config.yml.",
     )
     parser.add_argument(
-        "--km-version",
-        default=None,
-        help="KM version to inspect. Defaults to the latest configured version.",
-    )
-    parser.add_argument(
         "--json-out",
         help="Optional path to write the alignment report as JSON.",
     )
@@ -74,7 +69,6 @@ def main() -> None:
     report = build_alignment_status_report(
         repo_root=repo_root,
         config_path=config_path,
-        km_version=args.km_version,
         artifact_dir=Path(args.artifact_dir) if args.artifact_dir else None,
     )
     print(render_alignment_status_markdown(report), end="")

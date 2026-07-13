@@ -14,7 +14,6 @@ from .translation_repository_config import (
     TranslationRepositoryConfig,
     load_translation_repository_config,
     normalize_version,
-    sorted_versions,
     version_sort_key,
 )
 
@@ -51,16 +50,15 @@ class KmRegistryPackage:
 
 @dataclass(frozen=True)
 class KmVersionDiscoveryResult:
-    """Comparison between configured KM versions and Registry versions."""
+    """Comparison between the configured KM and Registry packages."""
 
     organization_id: str
     km_id: str
     registry_api_url: str
-    configured_versions: tuple[str, ...]
+    configured_version: str
     registry_versions: tuple[str, ...]
-    new_versions: tuple[str, ...]
-    missing_versions: tuple[str, ...]
-    latest_configured_version: str | None
+    newer_versions: tuple[str, ...]
+    configured_version_missing: bool
     latest_registry_version: str | None
     packages: tuple[KmRegistryPackage, ...]
 
@@ -71,11 +69,10 @@ class KmVersionDiscoveryResult:
             "organization_id": self.organization_id,
             "km_id": self.km_id,
             "registry_api_url": self.registry_api_url,
-            "configured_versions": list(self.configured_versions),
+            "configured_version": self.configured_version,
             "registry_versions": list(self.registry_versions),
-            "new_versions": list(self.new_versions),
-            "missing_versions": list(self.missing_versions),
-            "latest_configured_version": self.latest_configured_version,
+            "newer_versions": list(self.newer_versions),
+            "configured_version_missing": self.configured_version_missing,
             "latest_registry_version": self.latest_registry_version,
             "packages": [package.to_report_dict() for package in self.packages],
         }
@@ -136,23 +133,25 @@ def discover_km_versions_for_config(
         organization_id=km_config.organization_id,
         km_id=km_config.km_id,
     )
-    registry_versions = tuple(sorted_versions(tuple(package.version for package in packages)))
-    configured_versions = km_config.supported_versions
-    configured_set = set(configured_versions)
-    registry_set = set(registry_versions)
-    new_versions = tuple(version for version in registry_versions if version not in configured_set)
-    missing_versions = tuple(
-        version for version in configured_versions if version not in registry_set
+    registry_versions = tuple(
+        sorted(
+            (normalize_version(package.version) for package in packages),
+            key=version_sort_key,
+        )
+    )
+    configured_version = km_config.version
+    configured_key = version_sort_key(configured_version)
+    newer_versions = tuple(
+        version for version in registry_versions if version_sort_key(version) > configured_key
     )
     return KmVersionDiscoveryResult(
         organization_id=km_config.organization_id,
         km_id=km_config.km_id,
         registry_api_url=config.registry.api_url,
-        configured_versions=configured_versions,
+        configured_version=configured_version,
         registry_versions=registry_versions,
-        new_versions=new_versions,
-        missing_versions=missing_versions,
-        latest_configured_version=configured_versions[-1] if configured_versions else None,
+        newer_versions=newer_versions,
+        configured_version_missing=configured_version not in registry_versions,
         latest_registry_version=registry_versions[-1] if registry_versions else None,
         packages=packages,
     )
@@ -175,7 +174,7 @@ def write_km_version_discovery_report(
 def render_km_version_discovery_markdown(result: KmVersionDiscoveryResult) -> str:
     """Render KM version discovery as maintainer-readable Markdown."""
 
-    status = "new version available" if result.new_versions else "current"
+    status = "new version available" if result.newer_versions else "current"
     lines = [
         "## KM Version Monitor",
         "",
@@ -185,22 +184,21 @@ def render_km_version_discovery_markdown(result: KmVersionDiscoveryResult) -> st
         "",
         "| Metric | Versions |",
         "| --- | --- |",
-        f"| Configured versions | {_format_versions(result.configured_versions)} |",
+        f"| Configured version | {_format_version(result.configured_version)} |",
         f"| Registry versions | {_format_versions(result.registry_versions)} |",
-        f"| New versions | {_format_versions(result.new_versions)} |",
-        f"| Missing in registry | {_format_versions(result.missing_versions)} |",
-        f"| Latest configured | {_format_version(result.latest_configured_version)} |",
+        f"| Newer versions | {_format_versions(result.newer_versions)} |",
+        f"| Configured version missing | {'yes' if result.configured_version_missing else 'no'} |",
         f"| Latest registry | {_format_version(result.latest_registry_version)} |",
         "",
     ]
-    if result.new_versions:
+    if result.newer_versions:
         lines.extend(
             [
                 "### Follow-up",
                 "",
                 (
                     "A newer published KM exists in the Registry. Run the KM update "
-                    "runbook on a disposable branch before changing `translation-config.yml`."
+                    "guarded updater will retry on its next scheduled run."
                 ),
                 "",
             ]

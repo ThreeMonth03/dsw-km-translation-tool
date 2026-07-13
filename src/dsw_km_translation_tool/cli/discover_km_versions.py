@@ -49,11 +49,6 @@ def build_argument_parser() -> argparse.ArgumentParser:
         default=None,
         help="Optional path to write a full Markdown discovery report.",
     )
-    parser.add_argument(
-        "--fail-on-new-version",
-        action="store_true",
-        help="Exit with a non-zero status when Registry has versions missing from config.",
-    )
     return parser
 
 
@@ -70,10 +65,10 @@ def main() -> None:
 
     print(f"KM Registry discovery for {result.organization_id}:{result.km_id}")
     print(f"  Registry API       : {result.registry_api_url}")
-    print(f"  Configured versions: {_format_versions(result.configured_versions)}")
+    print(f"  Configured version : {result.configured_version}")
     print(f"  Registry versions  : {_format_versions(result.registry_versions)}")
-    print(f"  New versions       : {_format_versions(result.new_versions)}")
-    print(f"  Missing in registry: {_format_versions(result.missing_versions)}")
+    print(f"  Newer versions     : {_format_versions(result.newer_versions)}")
+    print(f"  Configured missing : {'yes' if result.configured_version_missing else 'no'}")
     print()
     print(render_km_version_discovery_markdown(result), end="")
     if args.report:
@@ -87,11 +82,6 @@ def main() -> None:
         details_path = _resolve_path(repo_root, args.details_out)
         write_km_version_discovery_markdown(result=result, report_path=details_path)
         print(f"  Markdown report    : {details_path}")
-    if args.fail_on_new_version and result.new_versions:
-        raise SystemExit(
-            "Registry has KM versions missing from translation-config.yml: "
-            + ", ".join(result.new_versions)
-        )
 
 
 def _resolve_path(repo_root: Path, path_arg: str) -> Path:

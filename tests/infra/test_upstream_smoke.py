@@ -75,7 +75,9 @@ def test_upstream_smoke_reuses_matching_cached_km_bundle(
     assert second.km_bundle_changed is False
 
 
-def test_upstream_smoke_can_skip_when_registry_token_is_missing(workspace: Path) -> None:
+def test_upstream_smoke_can_skip_when_registry_token_is_missing(
+    workspace: Path,
+) -> None:
     """Verify scheduled smoke can opt into a clean skip while secrets are absent."""
 
     config_template = workspace / "template.yml"
@@ -114,7 +116,9 @@ def test_upstream_smoke_report_outputs_json(workspace: Path) -> None:
     assert report["registry_version"] == "2.7.0"
 
 
-def test_upstream_smoke_markdown_report_overwrites_previous_run(workspace: Path) -> None:
+def test_upstream_smoke_markdown_report_overwrites_previous_run(
+    workspace: Path,
+) -> None:
     """Verify repeated smoke runs leave a single current Markdown report."""
 
     config_template = workspace / "template.yml"

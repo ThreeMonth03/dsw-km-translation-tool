@@ -9,7 +9,7 @@ from pathlib import Path
 
 from .alignment_status import build_alignment_status_report
 from .km_bundle_sync import BundleDownloader, pull_km_bundle
-from .km_latest_sync import update_supported_versions_in_config
+from .km_latest_sync import update_knowledge_model_version
 from .km_registry import Downloader, discover_km_versions
 from .localize_sync import Downloader as LocalizeDownloader
 from .localize_sync import pull_localize_po
@@ -74,7 +74,7 @@ def run_upstream_smoke(
     shutil.copyfile(config_template_path, config_path)
 
     initial_config = load_translation_repository_config(config_path)
-    configured_version = initial_config.knowledge_model.supported_versions[-1]
+    configured_version = initial_config.knowledge_model.version
     discovery = discover_km_versions(
         config_path=config_path,
         downloader=registry_downloader,
@@ -94,21 +94,19 @@ def run_upstream_smoke(
             )
         raise UpstreamSmokeError("DSW Registry token is required for upstream smoke")
 
-    update_supported_versions_in_config(config_path, [registry_version])
+    update_knowledge_model_version(config_path, registry_version)
     updated_config = load_translation_repository_config(config_path)
-    paths = version_paths(updated_config, registry_version)
+    paths = version_paths(updated_config)
 
     km_result = pull_km_bundle(
         config_path=config_path,
         repo_root=resolved_work_dir,
         token=registry_token,
-        km_version=registry_version,
         downloader=bundle_downloader,
     )
     localize_result = pull_localize_po(
         config_path=config_path,
         repo_root=resolved_work_dir,
-        km_version=registry_version,
         downloader=localize_downloader,
     )
 
@@ -149,7 +147,6 @@ def run_upstream_smoke(
     alignment = build_alignment_status_report(
         repo_root=resolved_work_dir,
         config_path=config_path,
-        km_version=registry_version,
         downloader=lambda _url: latest_po_path.read_bytes(),
     )
     if not alignment.aligned:

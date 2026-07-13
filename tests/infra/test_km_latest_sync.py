@@ -11,7 +11,7 @@ import yaml
 from dsw_km_translation_tool.km_latest_sync import (
     render_km_latest_sync_markdown,
     sync_latest_km_version,
-    update_supported_versions_in_config,
+    update_knowledge_model_version,
     write_km_latest_sync_report,
 )
 from tests.infra.test_translation_repository_config import write_config
@@ -37,7 +37,7 @@ def test_sync_latest_km_noops_when_config_is_current(workspace: Path) -> None:
     """Verify latest-KM sync is a no-op when Registry and config agree."""
 
     config_path = workspace / "translation-config.yml"
-    write_config(config_path, supported_versions=["2.7.0"])
+    write_config(config_path)
 
     result = sync_latest_km_version(
         repo_root=workspace,
@@ -55,11 +55,37 @@ def test_sync_latest_km_noops_when_config_is_current(workspace: Path) -> None:
     assert result.skipped_reason is None
 
 
+def test_sync_latest_km_does_not_downgrade_to_registry_version(
+    workspace: Path,
+) -> None:
+    """Verify stale Registry responses cannot move the configured KM backward."""
+
+    config_path = workspace / "translation-config.yml"
+    write_config(config_path, version="2.8.0")
+
+    result = sync_latest_km_version(
+        repo_root=workspace,
+        tooling_repo=workspace / "tooling",
+        config_path=Path("translation-config.yml"),
+        registry_token="secret",
+        downloader=lambda _url: registry_payload("2.7.0"),
+    )
+
+    assert result.changed is False
+    assert result.configured_version == "2.8.0"
+    assert result.registry_version == "2.7.0"
+    assert result.status == "current"
+    assert (
+        yaml.safe_load(config_path.read_text(encoding="utf-8"))["knowledge_model"]["version"]
+        == "2.8.0"
+    )
+
+
 def test_sync_latest_km_skips_new_version_without_token(workspace: Path) -> None:
     """Verify new Registry versions can be safely skipped until a token is configured."""
 
     config_path = workspace / "translation-config.yml"
-    write_config(config_path, supported_versions=["2.7.0"])
+    write_config(config_path)
 
     result = sync_latest_km_version(
         repo_root=workspace,
@@ -77,7 +103,9 @@ def test_sync_latest_km_skips_new_version_without_token(workspace: Path) -> None
     assert result.skipped_reason == "missing-registry-token"
 
 
-def test_sync_latest_km_updates_validates_and_pushes_target_ref(workspace: Path) -> None:
+def test_sync_latest_km_updates_validates_and_pushes_target_ref(
+    workspace: Path,
+) -> None:
     """Verify a new Registry KM updates only after validation commands pass."""
 
     config_path = workspace / "translation-config.yml"
@@ -85,7 +113,7 @@ def test_sync_latest_km_updates_validates_and_pushes_target_ref(workspace: Path)
     tooling_repo.mkdir()
     (tooling_repo / ".venv" / "bin").mkdir(parents=True)
     (tooling_repo / ".venv" / "bin" / "python").write_text("", encoding="utf-8")
-    write_config(config_path, supported_versions=["2.7.0"])
+    write_config(config_path)
     runner = RecordingRunner()
 
     result = sync_latest_km_version(
@@ -101,7 +129,7 @@ def test_sync_latest_km_updates_validates_and_pushes_target_ref(workspace: Path)
     )
 
     config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
-    assert config["knowledge_model"]["supported_versions"] == ["2.7.0", "2.8.0"]
+    assert config["knowledge_model"]["version"] == "2.8.0"
     assert config["knowledge_model"]["bundle_path"] == (
         "sources/knowledge-models/dsw-root-2.8.0/dsw-root-2.8.0.km"
     )
@@ -117,7 +145,6 @@ def test_sync_latest_km_updates_validates_and_pushes_target_ref(workspace: Path)
         "dsw-km-validate-config",
         "dsw-km-export-tree",
         "dsw-km-sync-shared-strings",
-        "dsw-km-merge-localize-po",
         "dsw-km-po-to-km",
         "python -m pytest",
         "dsw-km-report-alignment",
@@ -136,7 +163,7 @@ def test_sync_latest_km_does_not_push_when_validation_fails(workspace: Path) -> 
     config_path = workspace / "translation-config.yml"
     tooling_repo = workspace / "tooling"
     tooling_repo.mkdir()
-    write_config(config_path, supported_versions=["2.7.0"])
+    write_config(config_path)
     runner = RecordingRunner(fail_on="dsw-km-report-alignment")
 
     try:
@@ -160,17 +187,19 @@ def test_sync_latest_km_does_not_push_when_validation_fails(workspace: Path) -> 
     assert not any(command.startswith("git push") for command in runner.command_names)
 
 
-def test_update_supported_versions_in_config_adds_versions_once(workspace: Path) -> None:
-    """Verify known KM versions are kept sorted and unique."""
+def test_update_knowledge_model_version_replaces_current_version(
+    workspace: Path,
+) -> None:
+    """Verify the updater replaces the current KM version and bundle path."""
 
     config_path = workspace / "translation-config.yml"
-    write_config(config_path, supported_versions=["2.7.0"])
+    write_config(config_path)
 
-    merged = update_supported_versions_in_config(config_path, ["2.8.0", "2.7.0", "v2.9.0"])
+    updated = update_knowledge_model_version(config_path, "v2.9.0")
 
-    assert merged == ("2.7.0", "2.8.0", "2.9.0")
+    assert updated == "2.9.0"
     payload = yaml.safe_load(config_path.read_text(encoding="utf-8"))
-    assert payload["knowledge_model"]["supported_versions"] == ["2.7.0", "2.8.0", "2.9.0"]
+    assert payload["knowledge_model"]["version"] == "2.9.0"
     assert payload["knowledge_model"]["bundle_path"] == (
         "sources/knowledge-models/dsw-root-2.9.0/dsw-root-2.9.0.km"
     )

@@ -14,6 +14,10 @@ permissions for this repository.
 | `km_version_auto_update.yml` | `contents: write` | `DSW_REGISTRY_TOKEN` only when a newer KM exists | tracking branch only after validation |
 | `validate_translation_config.yml` | `contents: read` | none | nothing |
 
+The workflows that write `master` or Weblate share the
+`translation-state-master` concurrency group. Keep that group aligned when
+updating workflow files so writer jobs cannot race.
+
 ## Actions Secrets
 
 Configure these Actions repository secrets:

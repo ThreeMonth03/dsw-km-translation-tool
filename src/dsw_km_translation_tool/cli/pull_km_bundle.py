@@ -31,11 +31,6 @@ def build_argument_parser() -> argparse.ArgumentParser:
         help="Translation repository root where sources/ should be updated.",
     )
     parser.add_argument(
-        "--km-version",
-        default=None,
-        help="KM version to pull. Defaults to the latest configured version.",
-    )
-    parser.add_argument(
         "--registry-token-env",
         default="DSW_REGISTRY_TOKEN",
         help="Environment variable containing the DSW Registry token.",
@@ -70,7 +65,6 @@ def main() -> None:
             config_path=config_path,
             repo_root=repo_root,
             token=token,
-            km_version=args.km_version,
             allow_existing_change=args.allow_existing_change,
         )
     except (KmRegistryError, TranslationRepositoryConfigError) as error:

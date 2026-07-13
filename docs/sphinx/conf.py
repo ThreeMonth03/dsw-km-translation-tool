@@ -1,4 +1,4 @@
-"""Sphinx configuration for the DSW KM translation tooling docs."""
+"""Sphinx configuration for the DSW KM Translation Tool docs."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ ROOT_DIR = Path(__file__).resolve().parents[2]
 SRC_DIR = ROOT_DIR / "src"
 sys.path.insert(0, str(SRC_DIR))
 
-project = "DSW KM Translation Tooling"
+project = "DSW KM Translation Tool"
 author = "depositar"
 
 extensions = [
@@ -21,7 +21,7 @@ extensions = [
 
 exclude_patterns = ["_build"]
 html_theme = "furo"
-html_title = "DSW KM Translation Tooling"
+html_title = "DSW KM Translation Tool"
 
 autodoc_class_signature = "separated"
 autodoc_default_options = {

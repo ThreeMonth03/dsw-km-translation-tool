@@ -1,7 +1,7 @@
 Localize and Git Sync
 =====================
 
-Use this page for maintainer-facing config, pull, merge, tree refresh, and CI
+Use this page for maintainer-facing config, pull, tree refresh, and CI
 writer entrypoints in Weblate-to-Git synchronization. It is the code companion
 to the Localize sync runbook. Use the internal change guide for narrow helper
 behavior behind these entrypoints.
@@ -51,10 +51,6 @@ Repository Configuration
 
 .. autofunction:: dsw_km_translation_tool.translation_repository_config.version_paths
 
-.. autofunction:: dsw_km_translation_tool.translation_repository_config.validate_supported_version
-
-.. autofunction:: dsw_km_translation_tool.translation_repository_config.sorted_versions
-
 .. autofunction:: dsw_km_translation_tool.translation_repository_config.format_package_id
 
 Translation Repository Bootstrap
@@ -84,26 +80,6 @@ Localize Pull and Tree Refresh
    :show-inheritance:
 
 .. autofunction:: dsw_km_translation_tool.localize_tree_sync.refresh_tree_from_localize
-
-PO Merge
---------
-
-.. autoclass:: dsw_km_translation_tool.localize_merge.LocalizeMergeDecision
-   :members:
-   :show-inheritance:
-
-.. autoclass:: dsw_km_translation_tool.localize_merge.LocalizeMergeResult
-   :members:
-   :show-inheritance:
-
-.. autoclass:: dsw_km_translation_tool.localize_merge.PoEntryState
-   :members:
-   :show-inheritance:
-
-.. autoclass:: dsw_km_translation_tool.localize_merge.LocalizePoMerger
-   :members:
-   :exclude-members: __init__, __new__
-   :show-inheritance:
 
 CI Writer
 ---------

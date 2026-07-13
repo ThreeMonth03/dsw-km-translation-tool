@@ -67,10 +67,6 @@ Tree Models
    :members:
    :show-inheritance:
 
-.. autoclass:: dsw_km_translation_tool.data_models.tree.SharedBlocksBuildResult
-   :members:
-   :show-inheritance:
-
 .. autoclass:: dsw_km_translation_tool.data_models.tree.SharedBlocksDirectoryBuildResult
    :members:
    :show-inheritance:

@@ -17,11 +17,13 @@ from tests.helpers import run_cli_command
 from tests.infra.test_translation_repository_config import write_config
 
 
-def test_discover_km_versions_reports_new_and_missing_versions(workspace: Path) -> None:
-    """Verify Registry package listings are compared with configured versions."""
+def test_discover_km_versions_reports_newer_and_missing_current_version(
+    workspace: Path,
+) -> None:
+    """Verify Registry packages are compared with the configured version."""
 
     config_path = workspace / "translation-config.yml"
-    write_config(config_path, supported_versions=["2.6.0", "2.7.0"])
+    write_config(config_path, version="2.6.0")
     requested_urls: list[str] = []
 
     def downloader(url: str) -> bytes:
@@ -52,11 +54,10 @@ def test_discover_km_versions_reports_new_and_missing_versions(workspace: Path) 
     assert requested_urls == [
         "https://api.registry.ds-wizard.org/knowledge-model-packages?organizationId=dsw&kmId=root"
     ]
-    assert result.configured_versions == ("2.6.0", "2.7.0")
+    assert result.configured_version == "2.6.0"
     assert result.registry_versions == ("2.7.0", "2.8.0")
-    assert result.new_versions == ("2.8.0",)
-    assert result.missing_versions == ("2.6.0",)
-    assert result.latest_configured_version == "2.7.0"
+    assert result.newer_versions == ("2.7.0", "2.8.0")
+    assert result.configured_version_missing is True
     assert result.latest_registry_version == "2.8.0"
     assert result.packages[0].metamodel_version == 19
 
@@ -85,13 +86,15 @@ def test_write_km_version_discovery_report_is_stable_json(workspace: Path) -> No
     write_km_version_discovery_report(result=result, report_path=report_path)
 
     report = json.loads(report_path.read_text(encoding="utf-8"))
-    assert report["configured_versions"] == ["2.7.0"]
+    assert report["configured_version"] == "2.7.0"
     assert report["registry_versions"] == ["2.7.0"]
-    assert report["new_versions"] == []
+    assert report["newer_versions"] == []
     assert "organization" not in report["packages"][0]
 
 
-def test_render_km_version_discovery_markdown_reports_follow_up(workspace: Path) -> None:
+def test_render_km_version_discovery_markdown_reports_follow_up(
+    workspace: Path,
+) -> None:
     """Verify Markdown output highlights newly published KM versions."""
 
     config_path = workspace / "translation-config.yml"
@@ -122,8 +125,8 @@ def test_render_km_version_discovery_markdown_reports_follow_up(workspace: Path)
 
     assert "## KM Version Monitor" in markdown
     assert "Status: **new version available**" in markdown
-    assert "| New versions | `2.8.0` |" in markdown
-    assert "Run the KM update runbook" in markdown
+    assert "| Newer versions | `2.8.0` |" in markdown
+    assert "guarded updater will retry" in markdown
     assert "| 2.7.0 | Common DSW Knowledge Model | 19 |" in markdown
 
 
@@ -151,7 +154,7 @@ def test_write_km_version_discovery_markdown_appends_report(workspace: Path) -> 
 
     report = report_path.read_text(encoding="utf-8")
     assert "Status: **current**" in report
-    assert "| New versions | (none) |" in report
+    assert "| Newer versions | (none) |" in report
 
 
 def test_discover_km_versions_cli_writes_markdown_outputs(
@@ -221,6 +224,6 @@ def test_discover_km_versions_cli_writes_markdown_outputs(
     assert result.returncode == 0, result.stderr or result.stdout
     assert registry_requests == ["/knowledge-model-packages?organizationId=dsw&kmId=root"]
     assert "## KM Version Monitor" in result.stdout
-    assert json.loads(report_path.read_text(encoding="utf-8"))["new_versions"] == []
+    assert json.loads(report_path.read_text(encoding="utf-8"))["newer_versions"] == []
     assert "Status: **current**" in details_path.read_text(encoding="utf-8")
     assert "Status: **current**" in summary_path.read_text(encoding="utf-8")

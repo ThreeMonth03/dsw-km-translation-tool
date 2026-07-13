@@ -25,11 +25,6 @@ def build_argument_parser() -> argparse.ArgumentParser:
         default=".",
         help="Translation repository root where sources/ should be updated.",
     )
-    parser.add_argument(
-        "--km-version",
-        default=None,
-        help="KM version to pull. Defaults to the latest configured version.",
-    )
     return parser
 
 
@@ -44,13 +39,10 @@ def main() -> None:
     result = pull_localize_po(
         config_path=config_path,
         repo_root=repo_root,
-        km_version=args.km_version,
     )
     print(f"Localize PO pull for KM {result.version}")
     print(f"  URL        : {result.url}")
     print(f"  Latest PO  : {result.latest_po_path}")
-    if result.base_po_path is not None:
-        print(f"  Merge base : {result.base_po_path}")
     print(f"  Downloaded : {result.bytes_downloaded} bytes")
     print(f"  Changed    : {result.changed}")
     print(f"  Initialized: {result.initialized}")

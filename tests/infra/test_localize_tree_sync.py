@@ -58,7 +58,6 @@ def test_refresh_tree_from_localize_reexports_weblate_snapshot(
     assert (host_repo / "tree" / "outline.md").exists()
     assert (host_repo / "tree" / "shared_blocks").is_dir()
     assert (host_repo / "tree" / "shared_blocks_outline.md").exists()
-    assert not (host_repo / "tree" / "shared_blocks.md").exists()
     assert scan_result.translations[(entry.uuid, entry.field)] == localize_text
 
 

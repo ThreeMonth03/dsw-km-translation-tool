@@ -167,8 +167,8 @@ def _hydrate_translation_repository(
     localize_downloader: LocalizeDownloader | None,
 ) -> TranslationRepositoryBootstrapResult:
     config = load_translation_repository_config(config_path)
-    km_version = config.knowledge_model.supported_versions[-1]
-    paths = version_paths(config, km_version)
+    km_version = config.knowledge_model.version
+    paths = version_paths(config)
 
     bundle_result = pull_km_bundle(
         config_path=config_path,
@@ -302,7 +302,10 @@ def _render_workflow_template(text: str, config: TranslationRepositoryConfig) ->
             f"TOOLING_REPOSITORY: {config.tooling.repository}",
         )
         .replace("TOOLING_REF: master", f"TOOLING_REF: {config.tooling.ref}")
-        .replace("TRACKING_BRANCH: master", f"TRACKING_BRANCH: {config.branches.tracking_branch}")
+        .replace(
+            "TRACKING_BRANCH: master",
+            f"TRACKING_BRANCH: {config.branches.tracking_branch}",
+        )
         .replace('branches: ["master"]', f'branches: ["{config.branches.tracking_branch}"]')
         .replace("|| 'master' }}", f"|| '{config.branches.tracking_branch}' }}")
     )

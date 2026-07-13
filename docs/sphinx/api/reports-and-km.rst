@@ -118,7 +118,7 @@ KM Registry and Bundle Sync
 
 .. autofunction:: dsw_km_translation_tool.km_latest_sync.sync_latest_km_version
 
-.. autofunction:: dsw_km_translation_tool.km_latest_sync.update_supported_versions_in_config
+.. autofunction:: dsw_km_translation_tool.km_latest_sync.update_knowledge_model_version
 
 .. autofunction:: dsw_km_translation_tool.km_latest_sync.render_km_latest_sync_markdown
 

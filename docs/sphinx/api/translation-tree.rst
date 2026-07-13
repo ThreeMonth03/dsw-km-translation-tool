@@ -77,12 +77,12 @@ Review and Shared Strings
    :show-inheritance:
 
 .. autoclass:: dsw_km_translation_tool.shared_blocks.SharedBlocksCatalogParser
-   :members: parse, parse_directory
+   :members: parse
    :exclude-members: __init__, __new__
    :show-inheritance:
 
 .. autoclass:: dsw_km_translation_tool.shared_blocks.SharedBlocksCatalogBuilder
-   :members: build, build_directory, build_outline
+   :members: build_directory, build_outline
    :exclude-members: __init__, __new__
    :show-inheritance:
 

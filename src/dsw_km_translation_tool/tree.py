@@ -145,7 +145,7 @@ class TranslationTreeRepository:
             latest_by_uuid: Latest merged KM entities keyed by UUID.
             model_name: Human-readable model name.
             shared_reference_keys: Shared `(uuid, field)` keys that should be
-                edited in `shared_blocks.md`.
+                edited in `shared_blocks/`.
             preserve_existing_translations: Whether to keep existing target
                 text already present in the output tree.
 
@@ -496,7 +496,7 @@ class TranslationTreeRepository:
             event_type: Event type stored in the document header.
             fields: Translation fields to render and persist.
             shared_fields: Field names whose source of truth is
-                `shared_blocks.md`.
+                `shared_blocks/`.
         """
 
         markdown_text = self.document.render(
