@@ -2,18 +2,18 @@ name: KM Translation Operations
 
 on:
   pull_request:
-    branches: ["master"]
+    branches: ["{{TRACKING_BRANCH}}"]
   push:
     branches:
-      - master
+      - "{{TRACKING_BRANCH}}"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 env:
-  TOOLING_REPOSITORY: ThreeMonth03/dsw-km-translation-tool
-  TOOLING_REF: master
+  TOOLING_REPOSITORY: {{TOOLING_REPOSITORY}}
+  TOOLING_REF: {{TOOLING_REF}}
 
 jobs:
   validate-translation-config:
@@ -47,3 +47,9 @@ jobs:
           tooling-repo/.venv/bin/dsw-km-validate-config
           --config "$GITHUB_WORKSPACE/translation-repo/translation-config.yml"
           --summary "$GITHUB_STEP_SUMMARY"
+
+      - name: Check managed repository scaffold
+        run: >-
+          tooling-repo/.venv/bin/dsw-km-scaffold check
+          --repo-root "$GITHUB_WORKSPACE/translation-repo"
+          --tooling-repo "$GITHUB_WORKSPACE/tooling-repo"

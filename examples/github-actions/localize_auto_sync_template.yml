@@ -4,7 +4,7 @@ on:
   schedule:
     - cron: "0 1,13 * * *"
   pull_request:
-    branches: ["master"]
+    branches: ["{{TRACKING_BRANCH}}"]
   workflow_dispatch:
 
 permissions:
@@ -14,13 +14,13 @@ concurrency:
   group: >-
     ${{ github.event_name == 'pull_request' &&
     format('translation-pr-{0}', github.event.pull_request.head.ref) ||
-    'translation-state-master' }}
+    'translation-state-{{TRACKING_BRANCH}}' }}
   cancel-in-progress: false
 
 env:
-  TOOLING_REPOSITORY: ThreeMonth03/dsw-km-translation-tool
-  TOOLING_REF: master
-  TRACKING_BRANCH: master
+  TOOLING_REPOSITORY: {{TOOLING_REPOSITORY}}
+  TOOLING_REF: {{TOOLING_REF}}
+  TRACKING_BRANCH: {{TRACKING_BRANCH}}
   TRANSLATION_CONFIG: translation-config.yml
   TRANSLATION_ROOT: .
 

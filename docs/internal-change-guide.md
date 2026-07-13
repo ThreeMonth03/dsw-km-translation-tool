@@ -21,7 +21,8 @@ the support code.
 | GitHub translation PR/import policy | [`github_translation_contributions.py`][github-translation-contributions-py], [`weblate_upload.py`][weblate-upload-py] | PO state parsing in [`po_support/state.py`][po-state-py] and the Weblate upload client | [`tests/infra/test_github_translation_contributions.py`][test-github-translations-py], [`tests/infra/test_weblate_upload.py`][test-weblate-upload-py] |
 | CI writer commit or recovery behavior | [`ci_sync.py`][ci-sync-py], [`repository_ci_sync.py`][repository-ci-sync-py] | Git command helpers in [`command.py`][command-py] | [`tests/infra/test_ci_sync.py`][test-ci-sync-py] |
 | KM Registry discovery or latest-KM update behavior | [`km_registry.py`][km-registry-py], [`km_latest_sync.py`][km-latest-sync-py] | [`km_bundle_sync.py`][km-bundle-sync-py] and helper functions in the same modules | KM tests under [`tests/infra/`][tests-infra] |
-| New translation repository scaffold or hydration | [`translation_repository_bootstrap.py`][translation-repository-bootstrap-py] | Templates in [`examples/translation-repository/`][translation-repo-template-dir] and [`examples/github-actions/`][github-actions-templates] | [`tests/infra/test_translation_repository_bootstrap.py`][test-bootstrap-py] |
+| New translation repository initialization or hydration | [`translation_repository_bootstrap.py`][translation-repository-bootstrap-py] | Scaffold rendering in [`translation_repository_scaffold.py`][translation-repository-scaffold-py] | [`tests/infra/test_translation_repository_bootstrap.py`][test-bootstrap-py] |
+| Existing repository docs or workflow scaffold | [`translation_repository_scaffold.py`][translation-repository-scaffold-py] | Templates in [`examples/translation-repository/`][translation-repo-template-dir] and [`examples/github-actions/`][github-actions-templates] | [`tests/infra/test_translation_repository_scaffold.py`][test-scaffold-py] |
 | GitHub Actions template wiring | [`examples/github-actions/`][github-actions-templates] | Workflow templates and packaged CLI modules in [`src/dsw_km_translation_tool/cli/`][cli-dir] | [`tests/infra/test_github_workflows.py`][test-github-workflows-py] |
 
 ## Editing Rules
@@ -65,6 +66,7 @@ the support code.
 [test-github-workflows-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/tests/infra/test_github_workflows.py
 [test-github-translations-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/tests/infra/test_github_translation_contributions.py
 [test-bootstrap-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/tests/infra/test_translation_repository_bootstrap.py
+[test-scaffold-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/tests/infra/test_translation_repository_scaffold.py
 [test-shared-sync-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/tests/translation/test_shared_string_sync.py
 [test-tree-export-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/tests/translation/test_tree_export.py
 [test-tree-roundtrip-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/tests/translation/test_tree_roundtrip.py
@@ -73,6 +75,7 @@ the support code.
 [tests-translation]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/tests/translation
 [translation-repo-template-dir]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/examples/translation-repository
 [translation-repository-bootstrap-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/translation_repository_bootstrap.py
+[translation-repository-scaffold-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/translation_repository_scaffold.py
 [tree-document-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/tree_support/document.py
 [tree-naming-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/tree_support/naming.py
 [tree-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/tree.py

@@ -1,9 +1,9 @@
 # Workflow Templates
 
-Use this page when reviewing or manually updating GitHub Actions workflows in a
-dedicated translation repository. New repositories should usually be created
-with [Translation Repository Bootstrap](translation-repository-bootstrap.md)
-instead of copying each file by hand. The templates live in
+Use this page when reviewing or changing GitHub Actions workflows managed for a
+dedicated translation repository. Create new repositories with
+[Translation Repository Bootstrap](translation-repository-bootstrap.md), and
+refresh existing repositories with scaffold sync. The templates live in
 [`examples/github-actions/`][github-actions-templates].
 
 The tooling repository also has its own
@@ -28,21 +28,21 @@ in that config rather than hard-coding them into workflow steps.
 | [`localize_alignment_report_template.yml`][alignment-template] | Translation repository | No | None | Verify Weblate, tree, final PO, and final KM outputs still match. |
 | [`km_version_auto_update_template.yml`][km-update-template] | Translation repository | Yes | `DSW_REGISTRY_TOKEN` | Move to a newer published KM only after validation passes. |
 
-## Variables to Review
+## Rendered Values
 
-Each workflow template has a small `env` block. Review these values when copying
-or updating a workflow:
+Workflow templates use explicit placeholders such as:
 
 ```yaml
-TOOLING_REPOSITORY: ThreeMonth03/dsw-km-translation-tool
-TOOLING_REF: master
-TRACKING_BRANCH: master
+TOOLING_REPOSITORY: {{TOOLING_REPOSITORY}}
+TOOLING_REF: {{TOOLING_REF}}
+TRACKING_BRANCH: {{TRACKING_BRANCH}}
 TRANSLATION_CONFIG: translation-config.yml
 ```
 
-Use `TOOLING_REF: master` while the translation repository should track the
-latest automation. Switch to a tag only if the translation repository needs a
-frozen tooling version.
+Do not replace them manually. `repo-init` renders them for new repositories;
+`repo-scaffold-sync` renders them for existing repositories from
+`translation-config.yml`. Unknown placeholders fail instead of leaking into a
+workflow.
 
 ## Permissions and Secrets
 
@@ -72,8 +72,8 @@ When a workflow behavior changes:
 1. Update the template in [`examples/github-actions/`][github-actions-templates].
 2. Update tests that validate workflow wiring, especially
    [`tests/infra/test_github_workflows.py`][test-github-workflows].
-3. Copy the reviewed template into each production translation repository that
-   uses it.
+3. Run `make repo-scaffold-sync TRANSLATION_REPO_DIR=/path/to/repo` for each
+   production translation repository that uses it.
 4. Run the read-only validation, status, and alignment workflows before relying
    on writer workflows.
 

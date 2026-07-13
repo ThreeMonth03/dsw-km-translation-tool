@@ -51,7 +51,8 @@ workspace for translators and maintainers.
 ## Localize/Weblate Safety
 
 - Treat the latest Weblate state as authoritative for zh-Hant production sync.
-- Keep production automation one-way from Weblate to Git.
+- Allow Git-to-Weblate writes only through the guarded post-merge translation
+  import workflow.
 - Store Weblate and DSW API tokens as described in
   [Security and Permissions](security-and-permissions.md).
 - Preserve Weblate review-state flags during sync.
@@ -80,10 +81,10 @@ This requires `DSW_REGISTRY_TOKEN`. It downloads the current Weblate PO and
 uses a cacheable workspace under `.cache/upstream-smoke/`; it does not write to
 the production translation repository.
 
-For workflow template changes, update the template and the production workflow
-together, then let the normal repository CI validate both sides. For production
-sync behavior changes, test against a disposable translation checkout before
-touching the production translation repository.
+For workflow template changes, update the template, run scaffold sync against
+the production translation repository, then let normal repository CI validate
+both sides. For production sync behavior changes, test against a disposable
+translation checkout before touching the production translation repository.
 
 [config-dir]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/config
 [cli-dir]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/src/dsw_km_translation_tool/cli

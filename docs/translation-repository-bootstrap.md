@@ -19,6 +19,9 @@ repository:
 It does not commit, push, configure GitHub secrets, or upload translations to
 Weblate.
 
+Use bootstrap only to create a repository. To refresh docs and workflows in an
+existing repository, use the scaffold commands below.
+
 ## Command
 
 From the tooling repository:
@@ -59,6 +62,23 @@ network downloads:
 4. Run `localize_alignment_report.yml`.
 5. Run `localize_auto_sync.yml` and confirm it creates no unexpected changes.
 
+## Existing Repositories
+
+Check whether managed docs and workflows still match their tooling templates:
+
+```shell
+make repo-scaffold-check TRANSLATION_REPO_DIR=/path/to/translation-repo
+```
+
+Refresh only those managed files:
+
+```shell
+make repo-scaffold-sync TRANSLATION_REPO_DIR=/path/to/translation-repo
+```
+
+Scaffold sync reads `translation-config.yml` to render repository-specific
+values, but never modifies that config or any translation artifact.
+
 ## Template Ownership
 
 - Translation repository docs are rendered from
@@ -68,6 +88,8 @@ network downloads:
   [`examples/github-actions/`][github-actions-templates].
 - Workflow `TOOLING_REPOSITORY`, `TOOLING_REF`, and tracking branch values are
   rendered from `translation-config.yml`.
+- Unknown template placeholders fail the command instead of being copied into
+  the target repository.
 
 [example-config]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/examples/translation-config.yml
 [github-actions-templates]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/examples/github-actions

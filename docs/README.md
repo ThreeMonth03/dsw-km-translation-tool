@@ -15,7 +15,7 @@ durable design and operating procedures live here.
 | Operate Localize/Weblate-to-Git sync | [Localize Sync Runbook](localize-sync-runbook.md) |
 | Accept GitHub PR translation contributions | [Localize Sync Runbook](localize-sync-runbook.md) |
 | Create a new translation repository | [Translation Repository Bootstrap](translation-repository-bootstrap.md) |
-| Copy or update translation repository workflows | [Workflow Templates](workflow-templates.md) |
+| Review or refresh translation repository workflows | [Workflow Templates](workflow-templates.md) |
 | Check repository/Weblate build alignment | [Localize Sync Runbook](localize-sync-runbook.md) |
 | Check current upstream KM/Weblate compatibility | [Command Reference](command-reference.md) |
 | Configure workflow permissions and secrets | [Security and Permissions](security-and-permissions.md) |
@@ -34,7 +34,7 @@ durable design and operating procedures live here.
 - Use runbooks for operating production workflows.
 - Use [Translation Repository Bootstrap](translation-repository-bootstrap.md)
   when creating a new translation repository from templates and upstream inputs.
-- Use [Workflow Templates](workflow-templates.md) when copying or changing
+- Use [Workflow Templates](workflow-templates.md) when reviewing or changing
   GitHub Actions templates for translation repositories.
 - Use [Security and Permissions](security-and-permissions.md) for secrets and
   workflow permissions.

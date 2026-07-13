@@ -53,6 +53,8 @@ Set `TRANSLATION_REPO_DIR` before running these targets.
 | `make repo-status` | Report files only | Inspect the checked-in Weblate PO |
 | `make repo-checks` | Report files only | Query Weblate quality checks such as `has:check` |
 | `make repo-align` | Report files only | Compare Weblate, tree, final PO, and final KM outputs |
+| `make repo-scaffold-check` | Read-only | Verify managed docs and workflows match the tooling templates |
+| `make repo-scaffold-sync` | Filesystem writer | Refresh managed docs and workflows without changing config or translations |
 | `make repo-github-translations` | Report files only | Compare GitHub translation edits with current Weblate |
 | `make repo-init` | Writes files | Initialize a new translation repository from templates and upstream inputs |
 | `make repo-pull-po` | Writes files | Refresh `sources/localize/` in the checkout |
@@ -66,6 +68,17 @@ Example:
 ```shell
 make repo-align TRANSLATION_REPO_DIR=/path/to/dsw-root-locales-zh_Hant
 ```
+
+After changing translation repository templates, check and refresh an existing
+repository with:
+
+```shell
+make repo-scaffold-check TRANSLATION_REPO_DIR=/path/to/translation-repo
+make repo-scaffold-sync TRANSLATION_REPO_DIR=/path/to/translation-repo
+```
+
+The sync target never writes `translation-config.yml`, `tree/`, `sources/`, or
+`builds/`.
 
 To create a new translation repository, set `NEW_TRANSLATION_REPO_DIR`:
 

@@ -39,6 +39,7 @@ dsw-km-report-github-translations = "dsw_km_translation_tool.cli.report_github_t
 dsw-km-report-localize-status = "dsw_km_translation_tool.cli.report_localize_status:main"
 dsw-km-report-weblate-checks = "dsw_km_translation_tool.cli.report_weblate_checks:main"
 dsw-km-review-po = "dsw_km_translation_tool.cli.review_po_changes:main"
+dsw-km-scaffold = "dsw_km_translation_tool.cli.translation_repository_scaffold:main"
 dsw-km-status = "dsw_km_translation_tool.cli.translation_status:main"
 dsw-km-sync-latest-km = "dsw_km_translation_tool.cli.sync_latest_km:main"
 dsw-km-sync-localize = "dsw_km_translation_tool.cli.sync_from_localize:main"

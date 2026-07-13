@@ -2,7 +2,7 @@ name: GitHub Translation Import
 
 on:
   push:
-    branches: ["master"]
+    branches: ["{{TRACKING_BRANCH}}"]
   workflow_dispatch:
     inputs:
       base_ref:
@@ -18,13 +18,13 @@ permissions:
   contents: write
 
 concurrency:
-  group: translation-state-master
+  group: translation-state-{{TRACKING_BRANCH}}
   cancel-in-progress: false
 
 env:
-  TOOLING_REPOSITORY: ThreeMonth03/dsw-km-translation-tool
-  TOOLING_REF: master
-  TRACKING_BRANCH: master
+  TOOLING_REPOSITORY: {{TOOLING_REPOSITORY}}
+  TOOLING_REF: {{TOOLING_REF}}
+  TRACKING_BRANCH: {{TRACKING_BRANCH}}
   TRANSLATION_CONFIG: translation-config.yml
   TRANSLATION_ROOT: .
 

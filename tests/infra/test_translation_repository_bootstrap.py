@@ -106,6 +106,30 @@ def test_bootstrap_requires_registry_token_for_hydration(
         raise AssertionError("Expected bootstrap to require a Registry token")
 
 
+def test_bootstrap_skips_config_when_source_and_target_are_the_same(
+    repo_root: Path,
+    workspace: Path,
+) -> None:
+    """Verify an existing config is not copied onto itself during scaffold review."""
+
+    target_repo = workspace / "translation-repo"
+    target_repo.mkdir()
+    config_path = target_repo / "translation-config.yml"
+    write_config(config_path)
+    original_config = config_path.read_bytes()
+
+    result = bootstrap_translation_repository(
+        repo_root=target_repo,
+        tooling_repo=repo_root,
+        config_template_path=config_path,
+        hydrate=False,
+        overwrite=True,
+    )
+
+    assert config_path in result.skipped_files
+    assert config_path.read_bytes() == original_config
+
+
 def test_init_translation_repo_cli_scaffold_only(
     repo_root: Path,
     workspace: Path,

@@ -66,6 +66,21 @@ Translation Repository Bootstrap
 
 .. autofunction:: dsw_km_translation_tool.translation_repository_bootstrap.bootstrap_translation_repository
 
+Translation Repository Scaffold
+-------------------------------
+
+.. py:exception:: dsw_km_translation_tool.translation_repository_scaffold.TranslationRepositoryScaffoldError
+
+   Raised when managed repository files cannot be rendered.
+
+.. autoclass:: dsw_km_translation_tool.translation_repository_scaffold.TranslationRepositoryScaffoldResult
+   :members:
+   :show-inheritance:
+
+.. autofunction:: dsw_km_translation_tool.translation_repository_scaffold.check_translation_repository_scaffold
+
+.. autofunction:: dsw_km_translation_tool.translation_repository_scaffold.sync_translation_repository_scaffold
+
 Localize Pull and Tree Refresh
 ------------------------------
 

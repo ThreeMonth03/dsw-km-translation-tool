@@ -16,6 +16,7 @@ DSW_KM_REPORT_GITHUB_TRANSLATIONS := $(VENV_BIN)/dsw-km-report-github-translatio
 DSW_KM_REPORT_LOCALIZE_STATUS := $(VENV_BIN)/dsw-km-report-localize-status
 DSW_KM_REPORT_WEBLATE_CHECKS := $(VENV_BIN)/dsw-km-report-weblate-checks
 DSW_KM_REVIEW_PO := $(VENV_BIN)/dsw-km-review-po
+DSW_KM_SCAFFOLD := $(VENV_BIN)/dsw-km-scaffold
 DSW_KM_STATUS := $(VENV_BIN)/dsw-km-status
 DSW_KM_SYNC_LATEST_KM := $(VENV_BIN)/dsw-km-sync-latest-km
 DSW_KM_SYNC_LOCALIZE := $(VENV_BIN)/dsw-km-sync-localize
@@ -78,6 +79,7 @@ DOCS_BUILD ?= docs/sphinx/_build/html
 .PHONY: venv install-dev install-hooks check compile format format-check lint
 .PHONY: test test-infra test-translation docs docs-clean
 .PHONY: repo-validate repo-pull-po repo-status repo-checks repo-align
+.PHONY: repo-scaffold-check repo-scaffold-sync
 .PHONY: repo-github-translations repo-import-github-translations
 .PHONY: repo-init repo-sync repo-sync-branch repo-km-status repo-km-pull repo-km-update upstream-smoke
 .PHONY: export-tree export-tree-force status localize-status sync sync-watch
@@ -101,6 +103,8 @@ help:
 	'  repo-status        Report checked-in Weblate PO health' \
 	'  repo-checks        Query Weblate quality checks' \
 	'  repo-align         Verify Weblate/tree/final PO/final KM alignment' \
+	'  repo-scaffold-check Verify managed docs and workflows match their templates' \
+	'  repo-scaffold-sync Writer: refresh managed docs and workflows only' \
 	'  repo-github-translations Report GitHub translation changes against Weblate' \
 	'  repo-init          Initialize a new translation repo; set NEW_TRANSLATION_REPO_DIR=/path' \
 	'  repo-sync          Writer: pull Weblate, rebuild outputs, commit/push if changed' \
@@ -138,6 +142,8 @@ help-all:
 	'  repo-status        Report checked-in Weblate PO health in TRANSLATION_REPO_DIR' \
 	'  repo-checks        Query Weblate quality checks for TRANSLATION_REPO_DIR' \
 	'  repo-align         Verify output alignment in TRANSLATION_REPO_DIR' \
+	'  repo-scaffold-check Verify managed docs and workflows in TRANSLATION_REPO_DIR' \
+	'  repo-scaffold-sync Writer: refresh managed docs and workflows in TRANSLATION_REPO_DIR' \
 	'  repo-github-translations Report GitHub translation changes against Weblate' \
 	'  repo-init          Initialize NEW_TRANSLATION_REPO_DIR from templates and upstream inputs' \
 	'  repo-sync          Writer: sync Weblate to Git in TRANSLATION_REPO_DIR' \
@@ -246,6 +252,18 @@ repo-align: venv require-translation-repo
 		--details-out "$(TRANSLATION_REPO_DIR)/$(ALIGNMENT_MD)" \
 		--artifact-dir "$(TRANSLATION_REPO_DIR)/$(ALIGNMENT_ARTIFACT_DIR)" \
 		--fail-on-mismatch
+
+repo-scaffold-check: venv require-translation-repo
+	$(DSW_KM_SCAFFOLD) check \
+		--repo-root "$(TRANSLATION_REPO_DIR)" \
+		--tooling-repo "$(CURDIR)" \
+		--config "$(TRANSLATION_CONFIG)"
+
+repo-scaffold-sync: venv require-translation-repo
+	$(DSW_KM_SCAFFOLD) sync \
+		--repo-root "$(TRANSLATION_REPO_DIR)" \
+		--tooling-repo "$(CURDIR)" \
+		--config "$(TRANSLATION_CONFIG)"
 
 repo-github-translations: venv require-translation-repo
 	$(DSW_KM_REPORT_GITHUB_TRANSLATIONS) \

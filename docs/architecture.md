@@ -80,6 +80,9 @@ These modules connect the translation repository to the Weblate website:
 - [`translation_repository_bootstrap.py`][translation-repository-bootstrap-py]: scaffolds a new translation
   repository and hydrates it from Registry/Weblate inputs without committing or
   pushing.
+- [`translation_repository_scaffold.py`][translation-repository-scaffold-py]: renders, checks, and
+  refreshes managed translation repository docs and workflows without changing
+  repository config or translations.
 - [`km_bundle_sync.py`][km-bundle-sync-py], [`km_latest_sync.py`][km-latest-sync-py], [`km_registry.py`][km-registry-py]: support KM bundle
   discovery and update operations.
 - [`command.py`][command-py]: shared subprocess and Git identity helpers used by automation
@@ -94,7 +97,7 @@ belong in [Localize Sync Runbook](localize-sync-runbook.md).
 - [`.github/workflows/upstream_smoke.yml`][upstream-smoke-workflow] checks the current
   upstream Registry KM and Weblate PO without writing to a translation repo.
 - [`examples/github-actions/localize_auto_sync_template.yml`][localize-auto-sync-template] is the
-  copy-ready workflow for dedicated translation repositories.
+  rendered sync workflow template for dedicated translation repositories.
 - [`examples/github-actions/github_translation_import_template.yml`][github-import-template] is the
   guarded post-merge workflow for importing reviewed GitHub translation edits
   to Weblate.
@@ -111,7 +114,7 @@ belong in [Localize Sync Runbook](localize-sync-runbook.md).
 Keep GitHub Actions as orchestration. Branch selection, recovery, GitHub
 translation import decisions, KM generation, and commit decisions belong in
 Python helpers. Use
-[Workflow Templates](workflow-templates.md) when copying or updating templates
+[Workflow Templates](workflow-templates.md) when rendering or updating templates
 in translation repositories. Workflows that write the tracking branch or
 Weblate share one concurrency group so those state transitions cannot race.
 
@@ -123,11 +126,12 @@ Weblate share one concurrency group so those state transitions cannot race.
 - If a change affects tree format, shared strings, generated PO, or KM output,
   it belongs in the PO/KM/tree layer and needs round-trip tests.
 - If a translation repository needs a new workflow behavior, add it to the
-  external template first, then copy the reviewed template into the target repo.
+  external template first, then use scaffold sync to render it into the target
+  repo.
 - If a new translation repository needs different default docs or scaffolded
   files, update `examples/translation-repository/` and the bootstrap tests.
-- After changing a workflow template, compare it with the corresponding
-  workflow in the production translation repository.
+- After changing a workflow or repository template, run scaffold check against
+  the production translation repository.
 - If a command changes, update [Command Reference](command-reference.md).
 
 [alignment-status-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/alignment_status.py
@@ -165,6 +169,7 @@ Weblate share one concurrency group so those state transitions cannot race.
 [tests-translation-dir]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/tests/translation
 [translation-fixture-dir]: https://github.com/ThreeMonth03/dsw-km-translation-tool/tree/master/tests/fixtures/translation_tree
 [translation-repository-bootstrap-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/translation_repository_bootstrap.py
+[translation-repository-scaffold-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/translation_repository_scaffold.py
 [translation-repository-config-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/translation_repository_config.py
 [tree-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/tree.py
 [unittest-workflow]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/.github/workflows/unittest.yml

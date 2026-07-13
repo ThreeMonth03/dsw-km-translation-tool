@@ -87,8 +87,13 @@ TRANSLATION_REPO_DIR=/path/to/translation-repo
 cd "$TOOL_REPO_DIR"
 make install-dev
 make repo-validate TRANSLATION_REPO_DIR="$TRANSLATION_REPO_DIR"
+make repo-scaffold-check TRANSLATION_REPO_DIR="$TRANSLATION_REPO_DIR"
 make repo-align TRANSLATION_REPO_DIR="$TRANSLATION_REPO_DIR"
 ```
+
+After the tooling repository changes its managed docs or workflow templates,
+refresh them with `make repo-scaffold-sync`. This command reads but never
+changes `translation-config.yml` or translation artifacts.
 
 Writer targets such as `make repo-sync` and `make repo-km-update` may commit and
 push from the checkout where they run. Use them only from a disposable checkout

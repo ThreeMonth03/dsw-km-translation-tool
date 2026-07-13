@@ -11,10 +11,10 @@ from .km_registry import KmRegistryError
 from .localize_sync import Downloader as LocalizeDownloader
 from .localize_sync import pull_localize_po
 from .translation_repository_config import (
-    TranslationRepositoryConfig,
     load_translation_repository_config,
     version_paths,
 )
+from .translation_repository_scaffold import render_translation_repository_scaffold
 from .workflow import TranslationWorkflowService
 
 
@@ -40,11 +40,7 @@ class TranslationRepositoryBootstrapResult:
     skipped_reason: str | None = None
 
 
-WORKFLOW_TEMPLATE_SUFFIX = "_template.yml"
-WORKFLOW_TARGET_SUFFIX = ".yml"
 DEFAULT_CONFIG_TEMPLATE = Path("examples") / "translation-config.yml"
-TRANSLATION_REPOSITORY_TEMPLATE_DIR = Path("examples") / "translation-repository"
-GITHUB_ACTIONS_TEMPLATE_DIR = Path("examples") / "github-actions"
 
 
 def bootstrap_translation_repository(
@@ -103,22 +99,17 @@ def bootstrap_translation_repository(
     )
     config = load_translation_repository_config(config_path)
 
-    _copy_translation_repository_templates(
-        tooling_root=tooling_root,
-        target_root=target_root,
+    for item in render_translation_repository_scaffold(
+        tooling_repo=tooling_root,
         config=config,
-        overwrite=overwrite,
-        written=written,
-        skipped=skipped,
-    )
-    _copy_workflow_templates(
-        tooling_root=tooling_root,
-        target_root=target_root,
-        config=config,
-        overwrite=overwrite,
-        written=written,
-        skipped=skipped,
-    )
+    ):
+        _write_text_file(
+            text=item.content,
+            target=target_root / item.path,
+            overwrite=overwrite,
+            written=written,
+            skipped=skipped,
+        )
 
     if not hydrate:
         return TranslationRepositoryBootstrapResult(
@@ -248,85 +239,6 @@ def _hydrate_translation_repository(
     )
 
 
-def _copy_translation_repository_templates(
-    *,
-    tooling_root: Path,
-    target_root: Path,
-    config: TranslationRepositoryConfig,
-    overwrite: bool,
-    written: list[Path],
-    skipped: list[Path],
-) -> None:
-    template_root = tooling_root / TRANSLATION_REPOSITORY_TEMPLATE_DIR
-    _require_directory(template_root, "translation repository template directory")
-    for source in sorted(template_root.rglob("*")):
-        if not source.is_file():
-            continue
-        relative_path = source.relative_to(template_root)
-        _write_text_file(
-            text=_render_repository_template(source.read_text(encoding="utf-8"), config),
-            target=target_root / relative_path,
-            overwrite=overwrite,
-            written=written,
-            skipped=skipped,
-        )
-
-
-def _render_repository_template(
-    text: str,
-    config: TranslationRepositoryConfig,
-) -> str:
-    replacements = {
-        "TARGET_LANGUAGE_LABEL": config.translation.target_language_label,
-        "TOOLING_REPOSITORY": config.tooling.repository,
-        "TOOLING_REF": config.tooling.ref,
-    }
-    for name, value in replacements.items():
-        text = text.replace(f"{{{{{name}}}}}", value)
-    return text
-
-
-def _copy_workflow_templates(
-    *,
-    tooling_root: Path,
-    target_root: Path,
-    config: TranslationRepositoryConfig,
-    overwrite: bool,
-    written: list[Path],
-    skipped: list[Path],
-) -> None:
-    template_root = tooling_root / GITHUB_ACTIONS_TEMPLATE_DIR
-    _require_directory(template_root, "GitHub Actions template directory")
-    workflow_root = target_root / ".github" / "workflows"
-    for source in sorted(template_root.glob(f"*{WORKFLOW_TEMPLATE_SUFFIX}")):
-        target_name = source.name.removesuffix(WORKFLOW_TEMPLATE_SUFFIX) + WORKFLOW_TARGET_SUFFIX
-        target = workflow_root / target_name
-        rendered = _render_workflow_template(source.read_text(encoding="utf-8"), config)
-        _write_text_file(
-            text=rendered,
-            target=target,
-            overwrite=overwrite,
-            written=written,
-            skipped=skipped,
-        )
-
-
-def _render_workflow_template(text: str, config: TranslationRepositoryConfig) -> str:
-    return (
-        text.replace(
-            "TOOLING_REPOSITORY: ThreeMonth03/dsw-km-translation-tool",
-            f"TOOLING_REPOSITORY: {config.tooling.repository}",
-        )
-        .replace("TOOLING_REF: master", f"TOOLING_REF: {config.tooling.ref}")
-        .replace(
-            "TRACKING_BRANCH: master",
-            f"TRACKING_BRANCH: {config.branches.tracking_branch}",
-        )
-        .replace('branches: ["master"]', f'branches: ["{config.branches.tracking_branch}"]')
-        .replace("|| 'master' }}", f"|| '{config.branches.tracking_branch}' }}")
-    )
-
-
 def _copy_file(
     *,
     source: Path,
@@ -335,6 +247,9 @@ def _copy_file(
     written: list[Path],
     skipped: list[Path],
 ) -> None:
+    if source.resolve() == target.resolve():
+        skipped.append(target)
+        return
     if target.exists() and not overwrite:
         skipped.append(target)
         return
@@ -373,9 +288,4 @@ def _resolve_tooling_path(tooling_root: Path, path: Path) -> Path:
 
 def _require_file(path: Path, label: str) -> None:
     if not path.is_file():
-        raise TranslationRepositoryBootstrapError(f"Missing {label}: {path}")
-
-
-def _require_directory(path: Path, label: str) -> None:
-    if not path.is_dir():
         raise TranslationRepositoryBootstrapError(f"Missing {label}: {path}")
