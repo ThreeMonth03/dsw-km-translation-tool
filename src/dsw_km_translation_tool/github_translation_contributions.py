@@ -393,6 +393,23 @@ def write_import_po(
     return path
 
 
+def find_unapplied_weblate_imports(
+    *,
+    report: GitHubTranslationReport,
+    latest_po_path: Path,
+) -> tuple[GitHubTranslationDecision, ...]:
+    """Return importable decisions not reflected in a fresh Weblate PO."""
+
+    weblate_entries = parse_po_entry_states(latest_po_path)
+    return tuple(
+        decision
+        for decision in report.importable_decisions
+        if (entry := weblate_entries.get(decision.key)) is None
+        or entry.msgid != decision.source
+        or entry.msgstr != decision.github
+    )
+
+
 def _build_decision(
     *,
     key: PoKey,

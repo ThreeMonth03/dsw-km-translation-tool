@@ -460,6 +460,111 @@ def test_import_github_translations_cli_blocks_markdown_errors(
     assert "uploaded=false" in outputs
 
 
+def test_import_github_translations_cli_verifies_weblate_upload(
+    monkeypatch,
+    workspace: Path,
+) -> None:
+    """Verify a successful import is confirmed against a fresh Weblate PO."""
+
+    repo = initialize_translation_repo(workspace)
+    write_config(repo / "translation-config.yml")
+    base_ref = commit_translation(repo, "base", "舊翻譯")
+    head_ref = commit_translation(repo, "github", "GitHub 新翻譯")
+    latest_before = write_latest_po(workspace / "before.po", "舊翻譯")
+    latest_after = write_latest_po(workspace / "after.po", "GitHub 新翻譯")
+    pulls = iter((latest_before, latest_after))
+    github_output = workspace / "github-output.txt"
+
+    monkeypatch.setattr(
+        import_github_translations,
+        "pull_localize_po",
+        lambda **_kwargs: SimpleNamespace(latest_po_path=next(pulls)),
+    )
+    monkeypatch.setattr(
+        import_github_translations,
+        "upload_translation_file",
+        lambda **_kwargs: SimpleNamespace(api_url="https://weblate.test/api/file/"),
+    )
+    monkeypatch.setenv("LOCALIZE_API_TOKEN", "test-token")
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "dsw-km-import-github-translations",
+            "--repo-root",
+            str(repo),
+            "--config",
+            "translation-config.yml",
+            "--base-ref",
+            base_ref,
+            "--head-ref",
+            head_ref,
+            "--json-out",
+            str(workspace / "import.json"),
+            "--details-out",
+            str(workspace / "import.md"),
+            "--github-output",
+            str(github_output),
+        ],
+    )
+
+    import_github_translations.main()
+
+    assert "uploaded=true" in github_output.read_text(encoding="utf-8")
+
+
+def test_import_github_translations_cli_rejects_unapplied_upload(
+    monkeypatch,
+    workspace: Path,
+) -> None:
+    """Verify Weblate file-import skips cannot be reported as successful."""
+
+    repo = initialize_translation_repo(workspace)
+    write_config(repo / "translation-config.yml")
+    base_ref = commit_translation(repo, "base", "舊翻譯")
+    head_ref = commit_translation(repo, "github", "GitHub 新翻譯")
+    latest_po = write_latest_po(workspace / "latest.po", "舊翻譯")
+    github_output = workspace / "github-output.txt"
+
+    monkeypatch.setattr(
+        import_github_translations,
+        "pull_localize_po",
+        lambda **_kwargs: SimpleNamespace(latest_po_path=latest_po),
+    )
+    monkeypatch.setattr(
+        import_github_translations,
+        "upload_translation_file",
+        lambda **_kwargs: SimpleNamespace(api_url="https://weblate.test/api/file/"),
+    )
+    monkeypatch.setenv("LOCALIZE_API_TOKEN", "test-token")
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "dsw-km-import-github-translations",
+            "--repo-root",
+            str(repo),
+            "--config",
+            "translation-config.yml",
+            "--base-ref",
+            base_ref,
+            "--head-ref",
+            head_ref,
+            "--json-out",
+            str(workspace / "import.json"),
+            "--details-out",
+            str(workspace / "import.md"),
+            "--github-output",
+            str(github_output),
+        ],
+    )
+
+    with pytest.raises(SystemExit, match="Weblate did not apply 1"):
+        import_github_translations.main()
+
+    assert "uploaded=false" in github_output.read_text(encoding="utf-8")
+
+
 def initialize_translation_repo(workspace: Path) -> Path:
     """Create a small Git repository for translation contribution tests."""
 

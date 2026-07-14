@@ -58,8 +58,9 @@ current secret list and placement.
 workflow that writes Weblate. It runs after reviewed changes reach `master`,
 imports only safe GitHub translation edits, and fails with a report if Weblate
 changed the same entries differently or the translation lost source Markdown
-formatting. It also rejects canonical shared translations that were not expanded
-into every referenced tree field.
+formatting, including boundary whitespace. It also rejects canonical shared
+translations that were not expanded into every referenced tree field and
+verifies that Weblate applied every uploaded entry.
 
 `localize_auto_sync_template.yml` compares pull-request translation reports
 against the pull request's base commit, not whatever `master` contains when a

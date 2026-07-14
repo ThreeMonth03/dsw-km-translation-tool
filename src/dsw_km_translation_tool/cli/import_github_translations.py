@@ -15,6 +15,7 @@ from dsw_km_translation_tool.cli.github_outputs import (
 from dsw_km_translation_tool.github_translation_contributions import (
     GitHubTranslationReport,
     build_github_translation_report,
+    find_unapplied_weblate_imports,
     write_github_translation_json,
     write_github_translation_markdown,
     write_import_po,
@@ -149,6 +150,24 @@ def main() -> None:
             po_path=import_po_path,
             token=token,
         )
+        verification_pull = pull_localize_po(
+            config_path=config_path,
+            repo_root=temp_root / "verification",
+        )
+        unapplied = find_unapplied_weblate_imports(
+            report=report,
+            latest_po_path=verification_pull.latest_po_path,
+        )
+        if unapplied:
+            _write_github_translation_outputs(
+                output_path=args.github_output,
+                report=report,
+                uploaded=False,
+            )
+            keys = ", ".join(f"{decision.uuid}:{decision.field}" for decision in unapplied[:10])
+            raise SystemExit(
+                f"Weblate did not apply {len(unapplied)} uploaded translation entries: {keys}"
+            )
         _write_github_translation_outputs(
             output_path=args.github_output,
             report=report,

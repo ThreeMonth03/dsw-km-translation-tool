@@ -39,8 +39,9 @@ GitHub and Weblate changed the same entry differently, the import workflow
 fails and writes a conflict report. It does not use timestamps or a
 last-writer-wins rule to choose between reviewers. Pull-request and post-merge
 checks also reject translations that do not preserve source Markdown
-formatting or leave canonical shared blocks inconsistent with their expanded
-tree fields.
+formatting and boundary whitespace, or leave canonical shared blocks
+inconsistent with their expanded tree fields. After upload, the workflow
+downloads Weblate again and fails unless every expected entry is present.
 
 ## Writer Workflows
 

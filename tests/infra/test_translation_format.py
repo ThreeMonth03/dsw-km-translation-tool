@@ -27,3 +27,13 @@ def test_changed_link_destination_is_invalid() -> None:
         "link to `https://example.test/4`: source has 1, translation has 0",
         "link to `https://example.test/wrong`: source has 0, translation has 1",
     )
+
+
+def test_boundary_whitespace_must_match_source() -> None:
+    source = " Source title\u2028"
+    translation = "翻譯"
+
+    assert compare_markdown_format(source, translation) == (
+        "leading whitespace: source has ' ', translation has ''",
+        "trailing whitespace: source has '\\u2028', translation has ''",
+    )

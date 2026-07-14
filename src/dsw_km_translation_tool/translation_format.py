@@ -26,12 +26,13 @@ def compare_markdown_format(source: str, translation: str) -> tuple[str, ...]:
     """Return formatting differences between source and translated Markdown.
 
     Text and paragraph wrapping may change during translation. Formatting that
-    carries structure or an immutable destination must remain equivalent.
+    carries structure, an immutable destination, or boundary whitespace must
+    remain equivalent.
     """
 
     source_features = _collect_markdown_features(source)
     translation_features = _collect_markdown_features(translation)
-    issues: list[str] = []
+    issues = list(_compare_boundary_whitespace(source, translation))
     for feature in sorted(source_features.keys() | translation_features.keys()):
         source_count = source_features[feature]
         translation_count = translation_features[feature]
@@ -39,6 +40,29 @@ def compare_markdown_format(source: str, translation: str) -> tuple[str, ...]:
             continue
         issues.append(f"{feature}: source has {source_count}, translation has {translation_count}")
     return tuple(issues)
+
+
+def _compare_boundary_whitespace(source: str, translation: str) -> tuple[str, ...]:
+    issues: list[str] = []
+    for boundary, source_value, translation_value in (
+        ("leading", _leading_whitespace(source), _leading_whitespace(translation)),
+        ("trailing", _trailing_whitespace(source), _trailing_whitespace(translation)),
+    ):
+        if source_value != translation_value:
+            issues.append(
+                f"{boundary} whitespace: source has {source_value!r}, "
+                f"translation has {translation_value!r}"
+            )
+    return tuple(issues)
+
+
+def _leading_whitespace(text: str) -> str:
+    return text[: len(text) - len(text.lstrip())]
+
+
+def _trailing_whitespace(text: str) -> str:
+    stripped_length = len(text.rstrip())
+    return text[stripped_length:]
 
 
 def _collect_markdown_features(text: str) -> Counter[str]:

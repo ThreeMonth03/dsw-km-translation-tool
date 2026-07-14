@@ -54,8 +54,9 @@ text. Fork pull requests never receive writer commits from this workflow.
 
 When a pull request edits `tree/**/translation.md`, the workflow reports those
 GitHub translation changes, validates that source Markdown formatting is
-preserved, and skips Weblate-to-Git writer sync for that PR. Invalid formatting
-fails the pull-request check with field-level details. Skipping writer sync
+preserved, including leading and trailing whitespace, and skips Weblate-to-Git
+writer sync for that PR. Invalid formatting fails the pull-request check with
+field-level details. Skipping writer sync
 prevents unmerged GitHub translation work from being replaced by the latest
 Weblate mirror before review.
 
@@ -136,8 +137,10 @@ changes that land after the PR check:
 - The translated Markdown lost source formatting: fail and write a format
   report.
 
-After a successful import, the workflow runs normal Weblate-to-Git sync so the
-repository returns to being a Weblate mirror.
+After upload, the workflow downloads Weblate again and verifies every imported
+entry. It fails if Weblate did not apply the expected content. A verified
+import then runs normal Weblate-to-Git sync so the repository returns to being
+a Weblate mirror.
 
 Use forward commits for sync and workflow corrections on public branches.
 
