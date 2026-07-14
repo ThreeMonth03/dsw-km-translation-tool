@@ -35,28 +35,51 @@ class SharedBlocksCatalogParser:
 
         translations: dict[GroupKey, str] = {}
         for context_path in sorted(root.glob(f"*/{SHARED_BLOCK_CONTEXT_FILENAME}")):
-            group_key = self._parse_group_key(context_path)
-            translations[group_key] = self._parse_translation(context_path)
+            group_key, translation = self.parse_document(
+                context_path.read_text(encoding="utf-8"),
+                source=str(context_path),
+            )
+            translations[group_key] = translation
         return translations
 
     def _parse_expected_translation(self, root: Path, group_key: GroupKey) -> str:
         context_path = self.group_context_path(root, group_key)
         if not context_path.exists():
             raise ValueError(f"Missing shared-block context file.\nFile: {context_path}")
-        return self._parse_translation(context_path)
+        parsed_group_key, translation = self.parse_document(
+            context_path.read_text(encoding="utf-8"),
+            source=str(context_path),
+        )
+        if parsed_group_key != group_key:
+            raise ValueError(
+                "Shared-block key metadata does not match its generated path.\n"
+                f"File: {context_path}"
+            )
+        return translation
 
-    def _parse_group_key(self, context_path: Path) -> GroupKey:
-        for line in context_path.read_text(encoding="utf-8").splitlines():
+    def parse_document(
+        self,
+        text: str,
+        *,
+        source: str = "<shared-block>",
+    ) -> tuple[GroupKey, str]:
+        """Parse one canonical shared-block document from memory."""
+
+        lines = text.splitlines()
+        group_key = self._parse_group_key(lines, source)
+        translation = self._parse_translation(lines, source)
+        return group_key, translation
+
+    def _parse_group_key(self, lines: list[str], source: str) -> GroupKey:
+        for line in lines:
             match = SHARED_KEY_RE.fullmatch(line.strip())
             if match is not None:
                 return self.deserialize_group_key(match.group("key"))
         raise ValueError(
-            "Missing shared-block key metadata in generated context markdown.\n"
-            f"File: {context_path}"
+            f"Missing shared-block key metadata in generated context markdown.\nFile: {source}"
         )
 
-    def _parse_translation(self, context_path: Path) -> str:
-        lines = context_path.read_text(encoding="utf-8").splitlines()
+    def _parse_translation(self, lines: list[str], source: str) -> str:
         headings = {
             f"### Translation ({self.target_lang})",
             f"### Current Translation ({self.target_lang})",
@@ -65,10 +88,9 @@ class SharedBlocksCatalogParser:
             if line.strip() not in headings:
                 continue
             block_start = self._skip_blank_lines(lines, index + 1)
-            return self._read_fenced_block(lines, block_start, context_path)
+            return self._read_fenced_block(lines, block_start, source)
         raise ValueError(
-            "Missing editable translation block in shared-block context markdown.\n"
-            f"File: {context_path}"
+            f"Missing editable translation block in shared-block context markdown.\nFile: {source}"
         )
 
     @staticmethod
@@ -124,10 +146,10 @@ class SharedBlocksCatalogParser:
         return index
 
     @staticmethod
-    def _read_fenced_block(lines: list[str], index: int, path: Path) -> str:
+    def _read_fenced_block(lines: list[str], index: int, source: str) -> str:
         if index >= len(lines) or lines[index].strip() != "~~~text":
             raise ValueError(
-                f"{path}: line {index + 1}: Missing opening fence for "
+                f"{source}: line {index + 1}: Missing opening fence for "
                 "shared-block translation block."
             )
 
@@ -137,5 +159,5 @@ class SharedBlocksCatalogParser:
                 return "\n".join(block_lines)
             block_lines.append(line)
         raise ValueError(
-            f"{path}: line {len(lines)}: Missing closing fence for shared-block translation block."
+            f"{source}: line {len(lines)}: Missing closing fence for shared-block translation block."
         )

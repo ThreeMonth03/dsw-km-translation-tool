@@ -15,8 +15,8 @@ permissions for this repository.
 | `validate_translation_config.yml` | `contents: read` | none | nothing |
 
 The workflows that write `master` or Weblate share the
-`translation-state-master` concurrency group. Keep that group aligned when
-updating workflow files so writer jobs cannot race.
+`translation-state-master` concurrency group with `queue: max`. Keep both
+settings aligned so later runs do not replace pending writer jobs.
 
 ## Actions Secrets
 

@@ -11,6 +11,11 @@ from .command import CommandRunner, default_command_runner, make_checked_runner
 from .constants import TRANSLATION_FILENAME
 from .po_support.render import PoSectionRenderer
 from .po_support.state import PoEntryState, parse_po_entry_states
+from .shared_block_consistency import (
+    SharedBlockConsistencyIssue,
+    find_shared_block_consistency_issues,
+)
+from .translation_format import compare_markdown_format
 from .tree_support.document import TranslationMarkdownDocument
 
 PoKey = tuple[str, str]
@@ -63,12 +68,19 @@ class GitHubTranslationDecision:
     base: str
     github: str
     weblate: str
+    format_issues: tuple[str, ...]
 
     @property
     def key(self) -> PoKey:
         """Return the PO key for this decision."""
 
         return (self.uuid, self.field)
+
+    @property
+    def has_format_errors(self) -> bool:
+        """Return whether the GitHub translation lost Markdown structure."""
+
+        return bool(self.format_issues)
 
 
 @dataclass(frozen=True)
@@ -82,6 +94,8 @@ class GitHubTranslationReport:
     importable_entries: int
     already_imported_entries: int
     conflict_entries: int
+    format_error_entries: int
+    shared_block_issues: tuple[SharedBlockConsistencyIssue, ...]
     decisions: tuple[GitHubTranslationDecision, ...]
 
     @property
@@ -97,11 +111,25 @@ class GitHubTranslationReport:
         return self.conflict_entries > 0
 
     @property
+    def has_format_errors(self) -> bool:
+        """Return whether changed translations contain Markdown format errors."""
+
+        return self.format_error_entries > 0
+
+    @property
+    def has_shared_block_errors(self) -> bool:
+        """Return whether canonical shared translations disagree with the tree."""
+
+        return bool(self.shared_block_issues)
+
+    @property
     def importable_decisions(self) -> tuple[GitHubTranslationDecision, ...]:
         """Return decisions that should be uploaded to Weblate."""
 
         return tuple(
-            decision for decision in self.decisions if decision.decision == IMPORT_DECISION
+            decision
+            for decision in self.decisions
+            if decision.decision == IMPORT_DECISION and not decision.has_format_errors
         )
 
     def to_dict(self) -> dict[str, object]:
@@ -111,6 +139,8 @@ class GitHubTranslationReport:
         data["latest_po_path"] = str(self.latest_po_path)
         data["has_translation_changes"] = self.has_translation_changes
         data["has_conflicts"] = self.has_conflicts
+        data["has_format_errors"] = self.has_format_errors
+        data["has_shared_block_errors"] = self.has_shared_block_errors
         return data
 
 
@@ -168,11 +198,21 @@ def build_github_translation_report(
         for key in sorted(set(base_entries) | set(head_entries))
         if _target_text(base_entries.get(key)) != _target_text(head_entries.get(key))
     )
+    shared_block_issues = find_shared_block_consistency_issues(
+        repo_root=repo_root,
+        base_ref=base_ref,
+        head_ref=head_ref,
+        head_targets={key: entry.target for key, entry in head_entries.items()},
+        tree_path=tree_path,
+        target_lang=target_lang,
+        runner=runner,
+    )
     return _build_report(
         base_ref=base_ref,
         head_ref=head_ref,
         latest_po_path=latest_po_path,
         decisions=decisions,
+        shared_block_issues=shared_block_issues,
     )
 
 
@@ -291,32 +331,37 @@ def render_github_translation_markdown(
         f"Importable entries: **{report.importable_entries}**",
         f"Already in Weblate: **{report.already_imported_entries}**",
         f"Conflicts: **{report.conflict_entries}**",
+        f"Markdown format errors: **{report.format_error_entries}**",
+        f"Shared-block consistency errors: **{len(report.shared_block_issues)}**",
         "",
     ]
     if not report.decisions:
         lines.append("No GitHub-originated translation changes were detected.")
-        return "\n".join(lines) + "\n"
-
-    visible = report.decisions if limit is None else report.decisions[:limit]
-    lines.extend(
-        [
-            "| Decision | UUID | Field | GitHub Translation | Weblate Translation | Path |",
-            "| --- | --- | --- | --- | --- | --- |",
-        ]
-    )
-    for decision in visible:
-        lines.append(
-            "| "
-            f"{decision.decision} | "
-            f"`{decision.uuid}` | "
-            f"`{decision.field}` | "
-            f"{_markdown_cell(decision.github)} | "
-            f"{_markdown_cell(decision.weblate)} | "
-            f"`{decision.path}` |"
+    else:
+        visible = report.decisions if limit is None else report.decisions[:limit]
+        lines.extend(
+            [
+                "| Decision | Format | UUID | Field | GitHub Translation | Weblate Translation | Path |",
+                "| --- | --- | --- | --- | --- | --- | --- |",
+            ]
         )
-    hidden_count = len(report.decisions) - len(visible)
-    if hidden_count > 0:
-        lines.extend(["", f"... and {hidden_count} more entries."])
+        for decision in visible:
+            lines.append(
+                "| "
+                f"{decision.decision} | "
+                f"{_markdown_cell('; '.join(decision.format_issues) or 'valid')} | "
+                f"`{decision.uuid}` | "
+                f"`{decision.field}` | "
+                f"{_markdown_cell(decision.github)} | "
+                f"{_markdown_cell(decision.weblate)} | "
+                f"`{decision.path}` |"
+            )
+        hidden_count = len(report.decisions) - len(visible)
+        if hidden_count > 0:
+            lines.extend(["", f"... and {hidden_count} more entries."])
+    if report.shared_block_issues:
+        lines.extend(["", "### Shared-Block Consistency Errors", ""])
+        lines.extend(f"- `{issue.path}`: {issue.message}" for issue in report.shared_block_issues)
     return "\n".join(lines) + "\n"
 
 
@@ -384,6 +429,9 @@ def _build_decision(
         base=base_text,
         github=github_text,
         weblate=weblate_text,
+        format_issues=(
+            compare_markdown_format(source, github_text) if head_entry is not None else ()
+        ),
     )
 
 
@@ -393,6 +441,7 @@ def _build_report(
     head_ref: str,
     latest_po_path: Path,
     decisions: tuple[GitHubTranslationDecision, ...],
+    shared_block_issues: tuple[SharedBlockConsistencyIssue, ...],
 ) -> GitHubTranslationReport:
     counts: dict[str, int] = {}
     for decision in decisions:
@@ -406,14 +455,21 @@ def _build_report(
             ALREADY_IMPORTED_DECISION,
         }
     )
+    format_error_entries = sum(decision.has_format_errors for decision in decisions)
+    importable_entries = sum(
+        decision.decision == IMPORT_DECISION and not decision.has_format_errors
+        for decision in decisions
+    )
     return GitHubTranslationReport(
         base_ref=base_ref,
         head_ref=head_ref,
         latest_po_path=latest_po_path,
         changed_entries=len(decisions),
-        importable_entries=counts.get(IMPORT_DECISION, 0),
+        importable_entries=importable_entries,
         already_imported_entries=counts.get(ALREADY_IMPORTED_DECISION, 0),
         conflict_entries=conflict_entries,
+        format_error_entries=format_error_entries,
+        shared_block_issues=shared_block_issues,
         decisions=decisions,
     )
 

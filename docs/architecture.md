@@ -75,6 +75,8 @@ These modules connect the translation repository to the Weblate website:
 - [`github_translation_contributions.py`][github-translation-contributions-py] and
   [`weblate_upload.py`][weblate-upload-py]: report reviewed GitHub translation
   edits and upload safe post-merge imports to Weblate.
+- [`translation_format.py`][translation-format-py]: compares source and
+  translated Markdown structure before GitHub contributions can be imported.
 - [`ci_sync.py`][ci-sync-py], [`repository_ci_sync.py`][repository-ci-sync-py]: rebuild the translation tree, final PO,
   and final KM, then make Git sync commits.
 - [`translation_repository_bootstrap.py`][translation-repository-bootstrap-py]: scaffolds a new translation
@@ -116,7 +118,9 @@ translation import decisions, KM generation, and commit decisions belong in
 Python helpers. Use
 [Workflow Templates](workflow-templates.md) when rendering or updating templates
 in translation repositories. Workflows that write the tracking branch or
-Weblate share one concurrency group so those state transitions cannot race.
+Weblate share one concurrency group with a retained queue. Post-merge imports
+still revalidate Weblate before upload because external website edits are not
+controlled by the GitHub queue.
 
 ## Ownership Rules
 
@@ -171,6 +175,7 @@ Weblate share one concurrency group so those state transitions cannot race.
 [translation-repository-bootstrap-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/translation_repository_bootstrap.py
 [translation-repository-scaffold-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/translation_repository_scaffold.py
 [translation-repository-config-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/translation_repository_config.py
+[translation-format-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/translation_format.py
 [tree-py]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/src/dsw_km_translation_tool/tree.py
 [unittest-workflow]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/.github/workflows/unittest.yml
 [upstream-smoke-workflow]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/.github/workflows/upstream_smoke.yml

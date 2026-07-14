@@ -11,6 +11,7 @@ permissions:
 concurrency:
   group: translation-state-{{TRACKING_BRANCH}}
   cancel-in-progress: false
+  queue: max
 
 env:
   TOOLING_REPOSITORY: {{TOOLING_REPOSITORY}}

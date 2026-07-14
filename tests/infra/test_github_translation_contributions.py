@@ -7,6 +7,8 @@ import sys
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+
 from dsw_km_translation_tool.cli import (
     import_github_translations,
     report_github_translations,
@@ -63,6 +65,71 @@ def test_github_translation_report_marks_conflicts(workspace: Path) -> None:
     assert report.importable_entries == 0
     assert report.conflict_entries == 1
     assert report.decisions[0].decision == CONFLICT_DECISION
+
+
+def test_github_translation_report_rejects_broken_markdown(workspace: Path) -> None:
+    """Verify changed translations must preserve source Markdown structure."""
+
+    repo, base_ref, head_ref, latest_po = prepare_markdown_error_case(workspace)
+
+    report = build_github_translation_report(
+        repo_root=repo,
+        base_ref=base_ref,
+        head_ref=head_ref,
+        latest_po_path=latest_po,
+    )
+
+    assert report.has_format_errors is True
+    assert report.format_error_entries == 1
+    assert report.importable_entries == 0
+    assert report.decisions[0].format_issues == (
+        "strong emphasis: source has 1, translation has 0",
+    )
+
+
+def test_github_translation_report_rejects_unsynced_shared_blocks(
+    workspace: Path,
+) -> None:
+    """Verify canonical shared edits must be expanded into their tree fields."""
+
+    repo, base_ref, head_ref, latest_po = prepare_shared_block_error_case(workspace)
+
+    report = build_github_translation_report(
+        repo_root=repo,
+        base_ref=base_ref,
+        head_ref=head_ref,
+        latest_po_path=latest_po,
+    )
+
+    assert report.has_translation_changes is False
+    assert report.has_shared_block_errors is True
+    assert len(report.shared_block_issues) == 1
+    assert "Run shared-string sync" in report.shared_block_issues[0].message
+
+
+def test_github_translation_report_accepts_synced_shared_blocks(workspace: Path) -> None:
+    """Verify canonical shared edits pass after their tree fields are expanded."""
+
+    repo = initialize_translation_repo(workspace)
+    commit_translation(repo, "base tree", "舊翻譯")
+    base_ref = commit_shared_translation(repo, "base shared", "舊翻譯")
+    head_ref = commit_shared_translation(
+        repo,
+        "synced shared",
+        "GitHub 新翻譯",
+        tree_target="GitHub 新翻譯",
+    )
+    latest_po = write_latest_po(workspace / "latest.po", "舊翻譯")
+
+    report = build_github_translation_report(
+        repo_root=repo,
+        base_ref=base_ref,
+        head_ref=head_ref,
+        latest_po_path=latest_po,
+    )
+
+    assert report.has_shared_block_errors is False
+    assert report.importable_entries == 1
 
 
 def test_write_import_po_contains_only_importable_entries(workspace: Path) -> None:
@@ -139,7 +206,147 @@ def test_report_github_translations_cli_writes_outputs(
     outputs = github_output.read_text(encoding="utf-8")
     assert "has_translation_changes=true" in outputs
     assert "has_conflicts=false" in outputs
+    assert "has_format_errors=false" in outputs
+    assert "has_shared_block_errors=false" in outputs
     assert "importable_entries=1" in outputs
+
+
+def test_report_github_translations_cli_fails_on_markdown_errors(
+    monkeypatch,
+    workspace: Path,
+) -> None:
+    """Verify a translation PR cannot pass with broken Markdown structure."""
+
+    repo, base_ref, head_ref, latest_po = prepare_markdown_error_case(workspace)
+    write_config(repo / "translation-config.yml")
+    github_output = workspace / "github-output.txt"
+
+    monkeypatch.setattr(
+        report_github_translations,
+        "pull_localize_po",
+        lambda **_kwargs: SimpleNamespace(latest_po_path=latest_po),
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "dsw-km-report-github-translations",
+            "--repo-root",
+            str(repo),
+            "--config",
+            "translation-config.yml",
+            "--base-ref",
+            base_ref,
+            "--head-ref",
+            head_ref,
+            "--json-out",
+            str(workspace / "report.json"),
+            "--details-out",
+            str(workspace / "report.md"),
+            "--github-output",
+            str(github_output),
+        ],
+    )
+
+    with pytest.raises(SystemExit, match="Markdown format errors"):
+        report_github_translations.main()
+
+    outputs = github_output.read_text(encoding="utf-8")
+    assert "has_format_errors=true" in outputs
+    assert "importable_entries=0" in outputs
+
+
+def test_report_github_translations_cli_fails_on_conflicts(
+    monkeypatch,
+    workspace: Path,
+) -> None:
+    """Verify a translation PR cannot pass when Weblate changed the same entry."""
+
+    repo = initialize_translation_repo(workspace)
+    write_config(repo / "translation-config.yml")
+    base_ref = commit_translation(repo, "base", "舊翻譯")
+    head_ref = commit_translation(repo, "github", "GitHub 新翻譯")
+    latest_po = write_latest_po(workspace / "latest.po", "Weblate 新翻譯")
+    github_output = workspace / "github-output.txt"
+
+    monkeypatch.setattr(
+        report_github_translations,
+        "pull_localize_po",
+        lambda **_kwargs: SimpleNamespace(latest_po_path=latest_po),
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "dsw-km-report-github-translations",
+            "--repo-root",
+            str(repo),
+            "--config",
+            "translation-config.yml",
+            "--base-ref",
+            base_ref,
+            "--head-ref",
+            head_ref,
+            "--json-out",
+            str(workspace / "report.json"),
+            "--details-out",
+            str(workspace / "report.md"),
+            "--github-output",
+            str(github_output),
+        ],
+    )
+
+    with pytest.raises(SystemExit, match="conflict with the current Weblate state"):
+        report_github_translations.main()
+
+    outputs = github_output.read_text(encoding="utf-8")
+    assert "has_conflicts=true" in outputs
+    assert "importable_entries=0" in outputs
+
+
+def test_report_github_translations_cli_fails_on_unsynced_shared_blocks(
+    monkeypatch,
+    workspace: Path,
+) -> None:
+    """Verify a translation PR cannot pass with a stale expanded tree."""
+
+    repo, base_ref, head_ref, latest_po = prepare_shared_block_error_case(workspace)
+    write_config(repo / "translation-config.yml")
+    github_output = workspace / "github-output.txt"
+
+    monkeypatch.setattr(
+        report_github_translations,
+        "pull_localize_po",
+        lambda **_kwargs: SimpleNamespace(latest_po_path=latest_po),
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "dsw-km-report-github-translations",
+            "--repo-root",
+            str(repo),
+            "--config",
+            "translation-config.yml",
+            "--base-ref",
+            base_ref,
+            "--head-ref",
+            head_ref,
+            "--json-out",
+            str(workspace / "report.json"),
+            "--details-out",
+            str(workspace / "report.md"),
+            "--github-output",
+            str(github_output),
+        ],
+    )
+
+    with pytest.raises(SystemExit, match="shared blocks out of sync"):
+        report_github_translations.main()
+
+    outputs = github_output.read_text(encoding="utf-8")
+    assert "has_translation_changes=false" in outputs
+    assert "has_shared_block_errors=true" in outputs
 
 
 def test_import_github_translations_cli_blocks_conflicts(
@@ -203,6 +410,56 @@ def test_import_github_translations_cli_blocks_conflicts(
     assert "uploaded=false" in outputs
 
 
+def test_import_github_translations_cli_blocks_markdown_errors(
+    monkeypatch,
+    workspace: Path,
+) -> None:
+    """Verify post-merge import revalidates Markdown before Weblate upload."""
+
+    repo, base_ref, head_ref, latest_po = prepare_markdown_error_case(workspace)
+    write_config(repo / "translation-config.yml")
+    github_output = workspace / "github-output.txt"
+
+    monkeypatch.setattr(
+        import_github_translations,
+        "pull_localize_po",
+        lambda **_kwargs: SimpleNamespace(latest_po_path=latest_po),
+    )
+    monkeypatch.setattr(
+        import_github_translations,
+        "upload_translation_file",
+        lambda **_kwargs: pytest.fail("unexpected upload"),
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "dsw-km-import-github-translations",
+            "--repo-root",
+            str(repo),
+            "--config",
+            "translation-config.yml",
+            "--base-ref",
+            base_ref,
+            "--head-ref",
+            head_ref,
+            "--json-out",
+            str(workspace / "import.json"),
+            "--details-out",
+            str(workspace / "import.md"),
+            "--github-output",
+            str(github_output),
+        ],
+    )
+
+    with pytest.raises(SystemExit, match="Markdown format errors"):
+        import_github_translations.main()
+
+    outputs = github_output.read_text(encoding="utf-8")
+    assert "has_format_errors=true" in outputs
+    assert "uploaded=false" in outputs
+
+
 def initialize_translation_repo(workspace: Path) -> Path:
     """Create a small Git repository for translation contribution tests."""
 
@@ -214,18 +471,98 @@ def initialize_translation_repo(workspace: Path) -> Path:
     return repo
 
 
-def commit_translation(repo: Path, message: str, target: str) -> str:
+def prepare_markdown_error_case(workspace: Path) -> tuple[Path, str, str, Path]:
+    """Create a Git/Weblate fixture containing broken translated Markdown."""
+
+    source = "*The **processor** definition.*"
+    repo = initialize_translation_repo(workspace)
+    base_ref = commit_translation(repo, "base", "*舊的 **資料處理者** 定義。*", source=source)
+    head_ref = commit_translation(
+        repo,
+        "github",
+        "*「**「資料處理者」**是指……。」*",
+        source=source,
+    )
+    latest_po = write_latest_po(
+        workspace / "latest.po",
+        "*舊的 **資料處理者** 定義。*",
+        source=source,
+    )
+    return repo, base_ref, head_ref, latest_po
+
+
+def prepare_shared_block_error_case(workspace: Path) -> tuple[Path, str, str, Path]:
+    """Create a Git fixture whose canonical shared edit was not expanded."""
+
+    repo = initialize_translation_repo(workspace)
+    commit_translation(repo, "base tree", "舊翻譯")
+    base_ref = commit_shared_translation(repo, "base shared", "舊翻譯")
+    head_ref = commit_shared_translation(repo, "unsynced shared", "GitHub 新翻譯")
+    latest_po = write_latest_po(workspace / "latest.po", "舊翻譯")
+    return repo, base_ref, head_ref, latest_po
+
+
+def commit_translation(
+    repo: Path,
+    message: str,
+    target: str,
+    *,
+    source: str = "Source title",
+) -> str:
     """Write one translation value and commit it."""
 
     translation_path = repo / "tree" / "node" / "translation.md"
     translation_path.parent.mkdir(parents=True, exist_ok=True)
-    translation_path.write_text(render_translation_markdown(target), encoding="utf-8")
+    translation_path.write_text(
+        render_translation_markdown(target, source=source),
+        encoding="utf-8",
+    )
     run_git(repo, "add", "tree/node/translation.md")
     run_git(repo, "commit", "-m", message)
     return run_git(repo, "rev-parse", "HEAD").stdout.strip()
 
 
-def render_translation_markdown(target: str) -> str:
+def commit_shared_translation(
+    repo: Path,
+    message: str,
+    target: str,
+    *,
+    tree_target: str | None = None,
+) -> str:
+    """Write one canonical shared translation and optionally expand it."""
+
+    shared_path = repo / "tree" / "shared_blocks" / "shared-group" / "context.md"
+    shared_path.parent.mkdir(parents=True, exist_ok=True)
+    shared_path.write_text(
+        "\n".join(
+            [
+                "# Group 0001",
+                "",
+                f"- Shared Key: `{TEST_UUID}:title`",
+                "",
+                "### Translation (zh_Hant)",
+                "",
+                "~~~text",
+                target,
+                "~~~",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    run_git(repo, "add", "tree/shared_blocks/shared-group/context.md")
+    if tree_target is not None:
+        translation_path = repo / "tree" / "node" / "translation.md"
+        translation_path.write_text(
+            render_translation_markdown(tree_target),
+            encoding="utf-8",
+        )
+        run_git(repo, "add", "tree/node/translation.md")
+    run_git(repo, "commit", "-m", message)
+    return run_git(repo, "rev-parse", "HEAD").stdout.strip()
+
+
+def render_translation_markdown(target: str, *, source: str = "Source title") -> str:
     """Render a minimal translation markdown file."""
 
     return "\n".join(
@@ -241,7 +578,7 @@ def render_translation_markdown(target: str) -> str:
             "### Source (en)",
             "",
             "~~~text",
-            "Source title",
+            source,
             "~~~",
             "",
             "### Translation (zh_Hant)",
@@ -254,7 +591,12 @@ def render_translation_markdown(target: str) -> str:
     )
 
 
-def write_latest_po(path: Path, target: str) -> Path:
+def write_latest_po(
+    path: Path,
+    target: str,
+    *,
+    source: str = "Source title",
+) -> Path:
     """Write a minimal Weblate PO fixture."""
 
     path.write_text(
@@ -265,7 +607,7 @@ def write_latest_po(path: Path, target: str) -> Path:
                 '"Language: zh_Hant\\n"',
                 "",
                 f"#: question:{TEST_UUID}:title",
-                'msgid "Source title"',
+                f'msgid "{source}"',
                 f'msgstr "{target}"',
                 "",
             ]

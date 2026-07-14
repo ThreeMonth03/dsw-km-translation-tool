@@ -11,6 +11,7 @@ requires-python = ">=3.13"
 license = "BSD-3-Clause"
 dependencies = [
     "dsw-models @ git+https://github.com/ds-wizard/engine-tools.git@v4.27.0#subdirectory=packages/dsw-models",
+    "markdown-it-py>=3,<4",
     "pydantic>=2,<3",
     "PyYAML>=6,<7",
     "watchdog>=6,<7",

@@ -53,9 +53,11 @@ sync runs only for same-repository pull requests that do not edit translation
 text. Fork pull requests never receive writer commits from this workflow.
 
 When a pull request edits `tree/**/translation.md`, the workflow reports those
-GitHub translation changes and skips Weblate-to-Git writer sync for that PR.
-This prevents unmerged GitHub translation work from being replaced by the
-latest Weblate mirror before review.
+GitHub translation changes, validates that source Markdown formatting is
+preserved, and skips Weblate-to-Git writer sync for that PR. Invalid formatting
+fails the pull-request check with field-level details. Skipping writer sync
+prevents unmerged GitHub translation work from being replaced by the latest
+Weblate mirror before review.
 
 For a local maintainer run against a checked-out translation repository, use:
 
@@ -120,13 +122,19 @@ state.
 
 For PRs that do edit translation text, the writer is skipped. After the PR is
 merged, the GitHub translation import workflow compares the accepted GitHub
-edits with the latest Weblate PO:
+edits with the latest Weblate PO and repeats all PR checks before any upload.
+The PR check fails before merge when Weblate already conflicts, source Markdown
+formatting is lost, or canonical `shared_blocks/` edits were not expanded into
+their referenced `translation.md` fields. Post-merge validation catches Weblate
+changes that land after the PR check:
 
 - GitHub changed an entry and Weblate still matches the base: import GitHub to
   Weblate.
 - GitHub and Weblate already match: no import is needed.
 - GitHub and Weblate changed the same entry differently: fail and write a
   conflict report.
+- The translated Markdown lost source formatting: fail and write a format
+  report.
 
 After a successful import, the workflow runs normal Weblate-to-Git sync so the
 repository returns to being a Weblate mirror.
@@ -145,6 +153,9 @@ Normal sync is Weblate-first:
 
 GitHub translation import is not last-write-wins. It imports only entries that
 are safe against the current Weblate state. Conflicts require human review.
+
+Writer workflows use the same retained concurrency queue. This prevents a later
+push or scheduled run from replacing an import that is already waiting.
 
 ## KM Updates
 

@@ -86,6 +86,16 @@ def main() -> None:
             summary_path=args.summary,
             markdown_path=Path(args.details_out),
         )
+        if report.has_format_errors:
+            _write_github_translation_outputs(
+                output_path=args.github_output,
+                report=report,
+                uploaded=False,
+            )
+            raise SystemExit(
+                "GitHub translation import contains Markdown format errors. "
+                "Review the report before updating Weblate."
+            )
         if report.has_conflicts:
             _write_github_translation_outputs(
                 output_path=args.github_output,
@@ -95,6 +105,16 @@ def main() -> None:
             raise SystemExit(
                 "GitHub translation import has conflicts. Review the report before "
                 "updating Weblate."
+            )
+        if report.has_shared_block_errors:
+            _write_github_translation_outputs(
+                output_path=args.github_output,
+                report=report,
+                uploaded=False,
+            )
+            raise SystemExit(
+                "GitHub translation import leaves shared blocks out of sync. "
+                "Run shared-string sync before updating Weblate."
             )
         if report.importable_entries == 0:
             _write_github_translation_outputs(
@@ -157,6 +177,8 @@ def _write_github_translation_outputs(
         values={
             "has_translation_changes": report.has_translation_changes,
             "has_conflicts": report.has_conflicts,
+            "has_format_errors": report.has_format_errors,
+            "has_shared_block_errors": report.has_shared_block_errors,
             "importable_entries": report.importable_entries,
             "uploaded": uploaded,
         },

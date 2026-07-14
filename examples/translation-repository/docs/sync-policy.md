@@ -37,13 +37,17 @@ GitHub PR -> reviewed merge -> Weblate import -> Weblate-to-Git sync
 Only entries that are safe against the current Weblate state are imported. If
 GitHub and Weblate changed the same entry differently, the import workflow
 fails and writes a conflict report. It does not use timestamps or a
-last-writer-wins rule to choose between reviewers.
+last-writer-wins rule to choose between reviewers. Pull-request and post-merge
+checks also reject translations that do not preserve source Markdown
+formatting or leave canonical shared blocks inconsistent with their expanded
+tree fields.
 
 ## Writer Workflows
 
 - `localize_auto_sync.yml` commits directly to the tracking branch on scheduled
   runs when tracked files changed.
-- Pull requests receive a read-only GitHub translation report.
+- Pull requests receive a read-only GitHub translation and Markdown format
+  report. Conflicts and validation errors fail the pull-request check.
 - Same-repository pull requests that do not edit translation text can receive a
   sync commit before merge.
 - Delayed pull-request runs compare against the pull request base commit and
@@ -53,6 +57,9 @@ last-writer-wins rule to choose between reviewers.
 - `km_version_auto_update.yml` updates to a newer published KM only after the
   bundle download, Weblate mirror, rebuild, validation, and alignment checks
   pass.
+
+These writer workflows share a retained concurrency queue so pending imports,
+syncs, and KM updates are not replaced by later runs.
 
 ## Read-Only Reports
 

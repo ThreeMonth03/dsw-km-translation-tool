@@ -78,9 +78,26 @@ def main() -> None:
         values={
             "has_translation_changes": report.has_translation_changes,
             "has_conflicts": report.has_conflicts,
+            "has_format_errors": report.has_format_errors,
+            "has_shared_block_errors": report.has_shared_block_errors,
             "importable_entries": report.importable_entries,
         },
     )
+    if report.has_format_errors:
+        raise SystemExit(
+            "GitHub translation changes contain Markdown format errors. "
+            "Review the report before merging."
+        )
+    if report.has_conflicts:
+        raise SystemExit(
+            "GitHub translation changes conflict with the current Weblate state. "
+            "Review the report before merging."
+        )
+    if report.has_shared_block_errors:
+        raise SystemExit(
+            "GitHub translation changes leave shared blocks out of sync. "
+            "Run shared-string sync and review the report before merging."
+        )
 
 
 def _resolve_repo_path(repo_root: Path, path: Path) -> Path:

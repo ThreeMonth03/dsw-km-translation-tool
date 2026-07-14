@@ -109,3 +109,9 @@ or when you intentionally want a Git update.
 - KM auto-update failed before downloading a bundle: check `DSW_REGISTRY_TOKEN`.
 - KM auto-update failed after rebuilding: inspect the validation or alignment
   error.
+- A translation PR failed Markdown validation: open the GitHub translation
+  report and restore the missing emphasis, link, list, or code formatting.
+- A translation PR failed shared-block validation: run shared-string sync so the
+  canonical block and every referenced `translation.md` field agree.
+- A translation PR conflicts with Weblate: resolve the reported entries before
+  merging; the workflow does not choose a winner automatically.
