@@ -33,14 +33,21 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Checkout pull request base repository
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ github.event.pull_request.base.repo.full_name }}
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: pull-request-base
+          fetch-depth: 1
+          persist-credentials: false
+
       - name: Fetch pull request base commit
         if: github.event_name == 'pull_request'
         working-directory: translation-repo
-        env:
-          BASE_REPOSITORY: ${{ github.event.pull_request.base.repo.full_name }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
-          git fetch "https://github.com/$BASE_REPOSITORY.git" "$BASE_SHA"
+          git fetch "$GITHUB_WORKSPACE/pull-request-base" HEAD
           git update-ref refs/remotes/base/pr-base FETCH_HEAD
 
       - name: Checkout DSW KM Translation Tool
