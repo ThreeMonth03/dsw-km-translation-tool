@@ -229,13 +229,16 @@ def test_validate_translation_config_template_is_read_only(repo_root: Path) -> N
     assert "github.event.pull_request.head.sha" in workflow_text
     assert "github.event.pull_request.base.repo.full_name" in workflow_text
     assert "github.event.pull_request.base.sha" in workflow_text
+    assert "pull-request-base" in workflow_text
+    assert 'git fetch "$GITHUB_WORKSPACE/pull-request-base" HEAD' in workflow_text
+    assert 'git fetch "https://github.com/' not in workflow_text
     assert "refs/remotes/base/pr-base" in workflow_text
     assert "tooling-repo/.venv/bin/dsw-km-report-github-translations" in workflow_text
     assert '--base-ref "base/pr-base"' in workflow_text
     assert '--head-ref "HEAD"' in workflow_text
     assert "github-translation-report" in workflow_text
     assert "actions/upload-artifact@v7" in workflow_text
-    assert workflow_text.count("persist-credentials: false") == 2
+    assert workflow_text.count("persist-credentials: false") == 3
     assert "tooling-repo/.venv/bin/dsw-km-scaffold check" in workflow_text
     assert "--summary" in workflow_text
     assert "dsw-km-sync-repository-shared-strings" not in workflow_text
