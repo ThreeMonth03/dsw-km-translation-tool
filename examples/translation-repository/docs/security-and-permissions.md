@@ -19,10 +19,12 @@ The workflows that write `master` or Weblate share the
 Keep both settings aligned so an active writer job is not cancelled by a later
 run.
 
-On pull requests, `localize_auto_sync.yml` writes only when the head branch
-belongs to this repository and still exists. Its shared-translation step
-commits only canonical `tree/shared_blocks/*/context.md` files and referenced
-`tree/**/translation.md` files. Fork pull requests remain read-only.
+Pull-request validation runs in `validate_translation_config.yml` with
+read-only repository permission and no secrets. It compares the exact pull
+request head with its recorded base commit, uploads the translation report,
+and never writes to the branch or Weblate. Contributors must synchronize
+shared translations locally and commit the resulting `tree/` changes before
+the report can pass.
 
 ## Actions Secrets
 

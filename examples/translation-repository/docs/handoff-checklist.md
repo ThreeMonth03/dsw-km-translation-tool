@@ -41,7 +41,7 @@ Configure these secrets in this repository:
 | `localize_status_report.yml` | Scheduled, manual | No | Reports empty translations, review-state counts, and Weblate checks |
 | `localize_alignment_report.yml` | Scheduled, manual | No | Verifies Weblate PO, checked-in PO, tree, final PO, and final KM alignment |
 | `km_version_auto_update.yml` | Scheduled, manual | Git | No-ops when current; updates only after validation passes |
-| `validate_translation_config.yml` | Push, PR, manual | No | Validates config and checks managed docs/workflows for drift |
+| `validate_translation_config.yml` | Push, PR, manual | No | Validates config and scaffold; reports PR translation conflicts, formatting, and shared blocks |
 
 ## Routine Check
 
@@ -69,6 +69,7 @@ See [Maintenance Runbook](maintenance-runbook.md) for commands.
 | Weblate checks changed | `localize-status-report` artifact |
 | KM update failed | `km-version-auto-update` artifact |
 | Config validation failed | `translation-config.yml` and `validate_translation_config.yml` log |
+| Translation PR failed | `github-translation-report` artifact |
 
 ## Local Maintenance
 

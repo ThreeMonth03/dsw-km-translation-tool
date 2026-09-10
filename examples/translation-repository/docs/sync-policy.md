@@ -37,27 +37,18 @@ GitHub PR -> reviewed merge -> Weblate import -> Weblate-to-Git sync
 Only entries that are safe against the current Weblate state are imported. If
 GitHub and Weblate changed the same entry differently, the import workflow
 fails and writes a conflict report. It does not use timestamps or a
-last-writer-wins rule to choose between reviewers. Pull-request and post-merge
-checks also reject translations that do not preserve source Markdown formatting
-and boundary whitespace. For same-repository pull requests, canonical
-`tree/shared_blocks/*/context.md` edits are expanded into every referenced
-`translation.md` field and committed to the pull-request branch before that
-report runs. The reporter still rejects any inconsistency the deterministic
-sync cannot resolve. After upload, the workflow downloads Weblate again and
-fails unless every expected entry is present.
+last-writer-wins rule to choose between reviewers. Read-only pull-request and
+post-merge checks also reject translations that do not preserve source
+Markdown formatting and boundary whitespace. Canonical
+`tree/shared_blocks/*/context.md` edits must be expanded locally into every
+referenced `translation.md` field and committed to the pull-request branch.
+The reporter rejects any remaining inconsistency. After upload, the workflow
+downloads Weblate again and fails unless every expected entry is present.
 
 ## Writer Workflows
 
 - `localize_auto_sync.yml` commits directly to the tracking branch on scheduled
   runs when tracked files changed.
-- Same-repository pull requests first receive a deterministic shared-translation
-  expansion commit when needed, followed by the GitHub translation and Markdown
-  format report.
-- Fork pull requests receive the same report but remain read-only.
-- Same-repository pull requests that do not edit translation text can also
-  receive a Weblate sync commit before merge.
-- Delayed pull-request runs compare against the pull request base commit and
-  skip writer sync if the head branch no longer exists.
 - `github_translation_import.yml` imports accepted GitHub translation edits to
   Weblate after merge, then syncs Weblate back to Git when an upload occurred.
 - `km_version_auto_update.yml` updates to a newer published KM only after the
@@ -69,6 +60,9 @@ import, sync, or KM update when a later run starts.
 
 ## Read-Only Reports
 
+- `validate_translation_config.yml` validates repository configuration and
+  scaffold state. On pull requests, it also compares the exact head and base
+  commits and uploads the GitHub translation report.
 - `localize_status_report.yml` reports empty entries, review-state counts, and
   Weblate `has:check` items.
 - `localize_alignment_report.yml` verifies that Weblate PO, checked-in PO,

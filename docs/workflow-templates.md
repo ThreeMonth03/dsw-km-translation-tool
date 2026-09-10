@@ -21,8 +21,8 @@ in that config rather than hard-coding them into workflow steps.
 
 | Template | Installs In | Writes Git? | Secrets | Use |
 | --- | --- | --- | --- | --- |
-| [`validate_translation_config_template.yml`][validate-template] | Translation repository | No | None | Validate config on pushes, pull requests, or manual runs. |
-| [`localize_auto_sync_template.yml`][auto-sync-template] | Translation repository | Yes | None | Expand shared translations in same-repository PRs, report translation edits, and otherwise pull Weblate into Git and rebuild outputs. |
+| [`validate_translation_config_template.yml`][validate-template] | Translation repository | No | None | Validate config and scaffold state; report translation changes on pull requests. |
+| [`localize_auto_sync_template.yml`][auto-sync-template] | Translation repository | Yes | None | Pull Weblate into Git and rebuild outputs on trusted scheduled runs. |
 | [`github_translation_import_template.yml`][github-import-template] | Translation repository | Yes | `LOCALIZE_API_TOKEN` | After merge, import accepted GitHub translation edits to Weblate, then sync Weblate back to Git. |
 | [`localize_status_report_template.yml`][status-template] | Translation repository | No | Optional `LOCALIZE_API_TOKEN` | Report Weblate PO health and website-side checks. |
 | [`localize_alignment_report_template.yml`][alignment-template] | Translation repository | No | None | Verify Weblate, tree, final PO, and final KM outputs still match. |
@@ -62,14 +62,17 @@ formatting, including boundary whitespace. It also rejects canonical shared
 translations that were not expanded into every referenced tree field and
 verifies that Weblate applied every uploaded entry.
 
-`localize_auto_sync_template.yml` compares pull-request translation reports
-against the pull request's base commit, not whatever `master` contains when a
-runner starts. Before reporting, it expands canonical shared-block edits into
-their referenced tree fields and commits those deterministic changes to a
-same-repository pull-request branch. Fork pull requests remain read-only. The
-workflow also checks that a same-repository pull-request branch still exists
-before attempting either writer. This keeps delayed PR runs from failing after
-the PR was already merged and its branch deleted.
+`validate_translation_config_template.yml` compares pull-request translation
+changes against the base commit recorded by the pull-request event. It checks
+Markdown and boundary-whitespace formatting, Weblate conflicts, and shared
+translation consistency, then uploads a field-level report. The workflow has
+read-only repository permission, receives no secrets, and never modifies the
+pull-request branch. Contributors expand canonical shared-block edits locally
+before pushing them.
+
+`localize_auto_sync_template.yml` is a schedule-only writer. It never executes
+for pull requests or processes pull-request-controlled content with write
+permission.
 
 All templates that write the tracking branch or Weblate share a
 `translation-state-*` concurrency group with `cancel-in-progress: false`.
