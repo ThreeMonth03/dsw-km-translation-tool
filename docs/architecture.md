@@ -138,7 +138,8 @@ belong in [Localize Sync Runbook](localize-sync-runbook.md).
   KM Registry writer. Its safety checks are documented in
   [KM Update Runbook](km-update-runbook.md).
 - [`examples/github-actions/validate_translation_config_template.yml`][validate-config-template] is the
-  read-only config validation workflow for dedicated translation repositories.
+  read-only config, scaffold, and pull-request translation validation workflow
+  for dedicated translation repositories.
 - `examples/github-actions-github/` contains the Weblate-free translation CI
   profile.
 - `examples/km-source-repository/` contains source KM validation and tag-release

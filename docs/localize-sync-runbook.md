@@ -35,7 +35,6 @@ the status report, the check report uses anonymous access. See
 The external translation workflow should run:
 
 - on a schedule, usually twice per day
-- on pull requests targeting `master`
 
 The workflow runs the `dsw-km-sync-localize` command. That command:
 
@@ -47,17 +46,20 @@ The workflow runs the `dsw-km-sync-localize` command. That command:
 6. Commits and pushes only when tracked files changed.
 
 Scheduled runs commit directly to `master` when repository policy allows it.
-Pull request runs always produce a read-only GitHub translation report. Writer
-sync runs only for same-repository pull requests that do not edit translation
-text. Fork pull requests never receive writer commits from this workflow.
+The writer does not run for pull requests.
 
-When a pull request edits `tree/**/translation.md`, the workflow reports those
-GitHub translation changes, validates that source Markdown formatting is
-preserved, including leading and trailing whitespace, and skips Weblate-to-Git
-writer sync for that PR. Invalid formatting fails the pull-request check with
-field-level details. Skipping writer sync
-prevents unmerged GitHub translation work from being replaced by the latest
-Weblate mirror before review.
+## Pull Request Validation
+
+The read-only validation workflow compares the exact pull-request head with
+the base commit recorded by the pull-request event. When a pull request edits
+`tree/**/translation.md`, it reports those changes and validates Weblate
+conflicts, shared translations, and source Markdown formatting, including
+leading and trailing whitespace. Invalid changes fail with a field-level
+`github-translation-report` artifact.
+
+The validation workflow has no secrets or write permission. It never updates
+the pull-request branch. Run `make repo-sync-shared-strings` locally and commit
+the resulting `tree/` changes whenever a canonical shared block is edited.
 
 For a local maintainer run against a checked-out translation repository, use:
 
@@ -115,18 +117,12 @@ make repo-align TRANSLATION_REPO_DIR=/path/to/dsw-root-locales-zh_Hant
 
 ## PR Gate and Post-Merge Import
 
-Before a same-repository branch reaches `master`, the pull request writer pulls
-Weblate again and refreshes the branch when the PR does not edit translation
-text. This makes infra/config/doc PRs include the latest website translation
-state.
-
-For PRs that do edit translation text, the writer is skipped. After the PR is
-merged, the GitHub translation import workflow compares the accepted GitHub
-edits with the latest Weblate PO and repeats all PR checks before any upload.
-The PR check fails before merge when Weblate already conflicts, source Markdown
-formatting is lost, or canonical `shared_blocks/` edits were not expanded into
-their referenced `translation.md` fields. Post-merge validation catches Weblate
-changes that land after the PR check:
+Before merge, the read-only pull-request check fails when the checked-in
+Weblate mirror conflicts, source Markdown formatting is lost, or canonical
+`shared_blocks/` edits were not expanded into their referenced
+`translation.md` fields. After merge, the GitHub translation import workflow
+downloads the latest Weblate PO and repeats all checks before any upload. This
+post-merge validation catches Weblate changes that land after the PR check:
 
 - GitHub changed an entry and Weblate still matches the base: import GitHub to
   Weblate.

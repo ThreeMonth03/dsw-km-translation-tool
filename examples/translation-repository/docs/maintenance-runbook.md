@@ -107,8 +107,9 @@ update.
 - KM auto-update failed before downloading a bundle: check `DSW_REGISTRY_TOKEN`.
 - KM auto-update failed after rebuilding: inspect the validation or alignment
   error.
-- A translation PR failed Markdown validation: open the GitHub translation
-  report and restore the missing emphasis, link, list, or code formatting.
+- A translation PR failed Markdown validation: download the
+  `github-translation-report` artifact and restore the missing emphasis, link,
+  list, code, or boundary-whitespace formatting.
 - A translation PR failed shared-block validation: run
   `make repo-sync-shared-strings TRANSLATION_REPO_DIR=/path/to/repo` locally
   and commit the resulting `tree/` changes to the PR branch. The scheduled
