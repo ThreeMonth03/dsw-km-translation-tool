@@ -7,7 +7,6 @@ schema_version: 3
 knowledge_model:
   organization_id: dsw
   km_id: root
-  upstream_repository: https://github.com/ds-wizard/dsw-root-locales.git
   version: 2.7.0
 
 translation:

@@ -30,7 +30,6 @@ def write_config(
 knowledge_model:
   organization_id: dsw
   km_id: root
-  upstream_repository: https://github.com/ds-wizard/dsw-root-locales.git
   version: {version}
 
 translation:
@@ -114,6 +113,7 @@ def test_config_rejects_previous_schema(workspace: Path, previous: int) -> None:
     "section,field",
     [
         (None, "workflow"),
+        ("knowledge_model", "upstream_repository"),
         ("knowledge_model", "upstream_ref"),
         ("knowledge_model", "upstream_bundle_path"),
         ("knowledge_model", "bundle_path"),

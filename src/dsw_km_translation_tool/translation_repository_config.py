@@ -27,7 +27,6 @@ class KnowledgeModelRepositoryConfig:
 
     organization_id: str
     km_id: str
-    upstream_repository: str
     version: str
 
 
@@ -162,13 +161,12 @@ def _load_knowledge_model_config(
 ) -> KnowledgeModelRepositoryConfig:
     _reject_unknown_keys(
         payload,
-        allowed={"organization_id", "km_id", "upstream_repository", "version"},
+        allowed={"organization_id", "km_id", "version"},
         section="knowledge_model",
     )
     return KnowledgeModelRepositoryConfig(
         organization_id=_require_identifier(payload, "organization_id"),
         km_id=_require_identifier(payload, "km_id"),
-        upstream_repository=_require_str(payload, "upstream_repository"),
         version=normalize_version(_require_str(payload, "version")),
     )
 

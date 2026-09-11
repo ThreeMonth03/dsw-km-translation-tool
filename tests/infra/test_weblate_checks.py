@@ -29,7 +29,6 @@ def write_config(path: Path, download_url: str) -> None:
                 "knowledge_model:",
                 "  organization_id: dsw",
                 "  km_id: root",
-                "  upstream_repository: ds-wizard/dsw-knowledge-models",
                 "  version: 2.7.0",
                 "translation:",
                 "  source_language: en",
