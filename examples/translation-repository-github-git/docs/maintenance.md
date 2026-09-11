@@ -23,9 +23,8 @@ tooling-repo/.venv/bin/dsw-km-sync-git-source \
 
 The command rejects a source checkout whose HEAD differs from the pinned SHA,
 validates the official KM schema and package identity, carries only unchanged
-translations, and builds the editable tree and translated KM.
+translations, and builds the editable tree and native locale PO.
 
-{{PACKAGE_IDENTITY_GUIDANCE}}
 For review feedback, amend the source commit first, update `upstream_ref`, rerun
 the command, update changed translations, and amend this repository's commit.
 
@@ -41,9 +40,9 @@ Commit the tree, catalog, review report, and build outputs together. Pull
 requests rebuild them and fail if the checkout is not reproducible.
 
 Pull-request CI uploads a 14-day review artifact named
-`{{TRANSLATED_ASSET_STEM}}-<commit SHA>`. An immutable `v<version>` tag creates
-a GitHub Release containing the versioned KM and PO, a stable
-`{{TRANSLATED_ASSET_STEM}}.km` alias, checksums, and the pinned
+`{{LOCALE_ASSET_STEM}}-<commit SHA>`. An immutable `v<version>` tag creates
+a GitHub Release containing the versioned PO, a stable
+`{{LOCALE_ASSET_STEM}}.po` alias, checksums, and the pinned
 `translation-config.yml` provenance record. Releases below `1.0.0` are marked
 as pre-releases. Workflow artifacts are for review; GitHub Releases are the
 long-term archive.

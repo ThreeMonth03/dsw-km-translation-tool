@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from .native_locale import validate_native_locale
 from .translation_repository_config import (
     load_translation_repository_config,
     version_paths,
@@ -25,7 +26,6 @@ class TranslationRepositoryBuildResult:
     source_po_path: Path
     tree_dir: Path
     final_po_path: Path
-    final_km_path: Path
 
 
 def build_translation_repository(
@@ -35,7 +35,7 @@ def build_translation_repository(
     allow_uninitialized: bool = False,
     preserve_existing_translations: bool = True,
 ) -> TranslationRepositoryBuildResult:
-    """Rebuild tree, PO, review report, and KM from Git-managed inputs.
+    """Rebuild the tree and native DSW locale PO from Git-managed inputs.
 
     ``preserve_existing_translations`` is intended for ordinary tree-to-output
     rebuilds. Source synchronization must disable it after carrying exact
@@ -51,7 +51,6 @@ def build_translation_repository(
     source_po = root / paths.source_po_path
     tree_dir = root / paths.translation_tree_dir
     final_po = root / paths.final_po_path
-    final_km = root / paths.final_km_path
 
     existing_inputs = (source_km.is_file(), source_po.is_file())
     if not any(existing_inputs) and allow_uninitialized:
@@ -61,7 +60,6 @@ def build_translation_repository(
             source_po_path=source_po,
             tree_dir=tree_dir,
             final_po_path=final_po,
-            final_km_path=final_km,
         )
     if not all(existing_inputs):
         missing = source_km if not source_km.is_file() else source_po
@@ -102,19 +100,10 @@ def build_translation_repository(
         generated_po_path=str(final_po),
         diff_out_path=str(root / paths.review_diff_path),
     )
-    workflow.build_km_from_po(
-        translated_po_path=str(final_po),
-        original_model_path=str(source_km),
-        out_model_path=str(final_km),
-        output_organization_id=config.translation.translated_organization_id,
-        output_km_id=config.translation.translated_km_id,
-        output_name=config.translation.translated_name,
-        package_identity_mappings=config.translation.package_identity_mappings,
-        supplemental_translations_dir=(
-            str(root / config.translation.supplemental_directory)
-            if config.translation.supplemental_directory
-            else None
-        ),
+    validate_native_locale(
+        po_path=final_po,
+        km_path=source_km,
+        target_language=config.translation.target_language,
     )
     return TranslationRepositoryBuildResult(
         initialized=True,
@@ -122,5 +111,4 @@ def build_translation_repository(
         source_po_path=source_po,
         tree_dir=tree_dir,
         final_po_path=final_po,
-        final_km_path=final_km,
     )

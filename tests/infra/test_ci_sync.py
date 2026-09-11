@@ -7,7 +7,6 @@ from dataclasses import replace
 from pathlib import Path
 
 from dsw_km_translation_tool.ci_sync import CiSyncCommitConfig, run_ci_sync_commit
-from dsw_km_translation_tool.data_models import KnowledgeModelPackageIdentityMapping
 
 
 class RecordingRunner:
@@ -155,21 +154,14 @@ def test_ci_sync_commit_skips_commit_when_no_tracked_translation_changes(
     assert committed is False
     commands = [call["args"] for call in runner.calls]
     assert commands[0][0] == str(config.tooling_command_path("dsw-km-sync-shared-strings"))
-    assert commands[1][0] == str(config.tooling_command_path("dsw-km-po-to-km"))
+    assert commands[1][0] == str(config.tooling_command_path("dsw-km-validate-locale"))
     assert commands[2][:4] == [
         str(config.tooling_python_path),
         "-m",
         "pytest",
         "tests/translation",
     ]
-    assert commands[3] == [
-        "git",
-        "add",
-        "-N",
-        "--",
-        "translation/zh_Hant/builds/final_translated.km",
-    ]
-    assert commands[4][:3] == ["git", "status", "--porcelain"]
+    assert commands[3][:3] == ["git", "status", "--porcelain"]
     assert all(command[:2] != ["git", "commit"] for command in commands)
     assert all(command[:2] != ["git", "push"] for command in commands)
 
@@ -196,13 +188,6 @@ def test_ci_sync_commit_stages_commits_and_pushes_tracked_translation_changes(
 
     assert committed is True
     commands = [call["args"] for call in runner.calls]
-    assert [
-        "git",
-        "add",
-        "-N",
-        "--",
-        "translation/zh_Hant/builds/final_translated.km",
-    ] in commands
     assert ["git", "config", "user.name", "github-actions[bot]"] in commands
     assert [
         "git",
@@ -243,14 +228,11 @@ def test_ci_sync_commit_uses_repo_root_layout_for_external_translation_repo(
     assert str(config.host_repo_dir / "reviews" / "final_translated.diff") in sync_command
     assert str(config.host_repo_dir / "tree" / "shared_blocks") in sync_command
     assert str(config.original_po_path) in sync_command
-    po_to_km_command = runner.calls[1]["args"]
-    assert po_to_km_command[0] == str(config.tooling_command_path("dsw-km-po-to-km"))
-    assert str(config.host_repo_dir / "builds" / "final_translated.po") in po_to_km_command
-    assert str(config.host_repo_dir / "builds" / "final_translated.km") in po_to_km_command
-    assert str(config.original_model_path) in po_to_km_command
-    assert ["git", "add", "-N", "--", "builds/final_translated.km"] in [
-        call["args"] for call in runner.calls
-    ]
+    validation_command = runner.calls[1]["args"]
+    assert validation_command[0] == str(config.tooling_command_path("dsw-km-validate-locale"))
+    assert str(config.host_repo_dir / "builds" / "final_translated.po") in validation_command
+    assert str(config.original_model_path) in validation_command
+    assert "--target-language" in validation_command
     translation_test_env = runner.calls[2]["env"]
     assert translation_test_env is not None
     assert translation_test_env["DSW_TRANSLATION_OUTPUT_ROOT"] == str(config.host_repo_dir)
@@ -276,18 +258,6 @@ def test_ci_sync_commit_can_use_host_repo_source_snapshots(workspace) -> None:
         config,
         source_po_path=source_po,
         source_km_path=source_km,
-        output_organization_id="dsw",
-        output_km_id="root-zh-hant",
-        output_name="Common DSW Knowledge Model (zh-Hant)",
-        package_identity_mappings=(
-            KnowledgeModelPackageIdentityMapping(
-                source_organization_id="source",
-                source_km_id="parent",
-                translated_organization_id="translated",
-                translated_km_id="parent-zh-hant",
-                translated_name="Parent Knowledge Model (zh-Hant)",
-            ),
-        ),
     )
     runner = RecordingRunner()
 
@@ -296,22 +266,9 @@ def test_ci_sync_commit_can_use_host_repo_source_snapshots(workspace) -> None:
     assert committed is False
     sync_command = runner.calls[0]["args"]
     assert str(config.host_repo_dir / source_po) in sync_command
-    po_to_km_command = runner.calls[1]["args"]
-    assert str(config.host_repo_dir / source_km) in po_to_km_command
-    assert "--output-organization-id" in po_to_km_command
-    assert "dsw" in po_to_km_command
-    assert "--output-km-id" in po_to_km_command
-    assert "root-zh-hant" in po_to_km_command
-    assert "--output-name" in po_to_km_command
-    assert "Common DSW Knowledge Model (zh-Hant)" in po_to_km_command
-    mapping_flag = po_to_km_command.index("--package-identity-mapping")
-    assert po_to_km_command[mapping_flag + 1 : mapping_flag + 6] == [
-        "source",
-        "parent",
-        "translated",
-        "parent-zh-hant",
-        "Parent Knowledge Model (zh-Hant)",
-    ]
+    validation_command = runner.calls[1]["args"]
+    assert str(config.host_repo_dir / source_km) in validation_command
+    assert str(config.host_repo_dir / source_po) not in validation_command
 
 
 def test_ci_sync_commit_can_restore_from_tracking_branch(workspace) -> None:
@@ -340,9 +297,8 @@ def test_ci_sync_commit_can_restore_from_tracking_branch(workspace) -> None:
             ),
             subprocess.CompletedProcess(["restore"], 0, stdout="", stderr=""),
             subprocess.CompletedProcess(["sync"], 0, stdout="", stderr=""),
-            subprocess.CompletedProcess(["po-to-km"], 0, stdout="", stderr=""),
+            subprocess.CompletedProcess(["validate-locale"], 0, stdout="", stderr=""),
             subprocess.CompletedProcess(["pytest"], 0, stdout="", stderr=""),
-            subprocess.CompletedProcess(["git", "add", "-N"], 0, stdout="", stderr=""),
             subprocess.CompletedProcess(["git", "status"], 0, stdout="", stderr=""),
         ]
     )
@@ -387,9 +343,8 @@ def test_ci_sync_commit_restores_broken_translation_markdown_from_origin_master(
             ),
             subprocess.CompletedProcess(["restore"], 0, stdout="", stderr=""),
             subprocess.CompletedProcess(["sync"], 0, stdout="", stderr=""),
-            subprocess.CompletedProcess(["po-to-km"], 0, stdout="", stderr=""),
+            subprocess.CompletedProcess(["validate-locale"], 0, stdout="", stderr=""),
             subprocess.CompletedProcess(["pytest"], 0, stdout="", stderr=""),
-            subprocess.CompletedProcess(["git", "add", "-N"], 0, stdout="", stderr=""),
             subprocess.CompletedProcess(
                 ["git", "status"],
                 0,
@@ -446,9 +401,8 @@ def test_ci_sync_commit_restores_broken_shared_block_translation_from_origin_mas
             ),
             subprocess.CompletedProcess(["restore"], 0, stdout="", stderr=""),
             subprocess.CompletedProcess(["sync"], 0, stdout="", stderr=""),
-            subprocess.CompletedProcess(["po-to-km"], 0, stdout="", stderr=""),
+            subprocess.CompletedProcess(["validate-locale"], 0, stdout="", stderr=""),
             subprocess.CompletedProcess(["pytest"], 0, stdout="", stderr=""),
-            subprocess.CompletedProcess(["git", "add", "-N"], 0, stdout="", stderr=""),
             subprocess.CompletedProcess(["git", "status"], 0, stdout="", stderr=""),
         ]
     )
@@ -494,7 +448,7 @@ def test_ci_sync_commit_does_not_commit_when_translation_tests_fail_after_restor
             ),
             subprocess.CompletedProcess(["restore"], 0, stdout="", stderr=""),
             subprocess.CompletedProcess(["sync"], 0, stdout="", stderr=""),
-            subprocess.CompletedProcess(["po-to-km"], 0, stdout="", stderr=""),
+            subprocess.CompletedProcess(["validate-locale"], 0, stdout="", stderr=""),
             subprocess.CompletedProcess(
                 ["pytest"],
                 1,
@@ -538,9 +492,9 @@ def test_ci_sync_commit_prints_sync_and_translation_test_logs(
                 stderr="",
             ),
             subprocess.CompletedProcess(
-                ["po-to-km"],
+                ["validate-locale"],
                 0,
-                stdout="Generated KM file: builds/final_translated.km\n",
+                stdout="Native DSW locale is valid.\n",
                 stderr="",
             ),
             subprocess.CompletedProcess(
@@ -549,7 +503,6 @@ def test_ci_sync_commit_prints_sync_and_translation_test_logs(
                 stdout="tests/translation/test_output_mapping.py .....\n",
                 stderr="translation-warning\n",
             ),
-            subprocess.CompletedProcess(["git", "add", "-N"], 0, stdout="", stderr=""),
             subprocess.CompletedProcess(["git", "status"], 0, stdout="", stderr=""),
         ]
     )
@@ -559,6 +512,6 @@ def test_ci_sync_commit_prints_sync_and_translation_test_logs(
     captured = capsys.readouterr()
     assert committed is False
     assert "Shared String Sync" in captured.out
-    assert "Generated KM file:" in captured.out
+    assert "Native DSW locale is valid." in captured.out
     assert "tests/translation/test_output_mapping.py" in captured.out
     assert "translation-warning" in captured.out

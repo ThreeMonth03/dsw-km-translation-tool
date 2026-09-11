@@ -111,12 +111,12 @@ def _render_catalog(
     entries: list[tuple[str, str, str]],
 ) -> str:
     header = (
-        f"Project-Id-Version: {project_id}\\n"
-        f"Language: {target_language}\\n"
-        "MIME-Version: 1.0\\n"
-        "Content-Type: text/plain; charset=utf-8\\n"
-        "Content-Transfer-Encoding: 8bit\\n"
-        "Generated-By: dsw-km-translation-tool\\n"
+        f"Project-Id-Version: {project_id}\n"
+        f"Language: {target_language}\n"
+        "MIME-Version: 1.0\n"
+        "Content-Type: text/plain; charset=utf-8\n"
+        "Content-Transfer-Encoding: 8bit\n"
+        "Generated-By: dsw-km-translation-tool\n"
     )
     sections = [
         "# Generated from a DSW Knowledge Model. Edit translations, not msgids.\n"

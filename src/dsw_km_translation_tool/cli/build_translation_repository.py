@@ -44,7 +44,6 @@ def main() -> None:
     print(f"Source catalog: {result.source_po_path}")
     print(f"Translation tree: {result.tree_dir}")
     print(f"Final PO: {result.final_po_path}")
-    print(f"Final KM: {result.final_km_path}")
 
 
 if __name__ == "__main__":

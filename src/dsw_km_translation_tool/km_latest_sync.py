@@ -24,7 +24,6 @@ from .localize_sync import Downloader as LocalizeDownloader
 from .localize_sync import pull_localize_po
 from .translation_repository_config import (
     DEFAULT_REGISTRY_API_URL,
-    TranslationRepositoryConfig,
     TranslationRepositoryConfigError,
     format_package_id,
     load_translation_repository_config,
@@ -395,28 +394,16 @@ def _run_sync_build_and_tests(
     _run_checked(
         runner,
         [
-            str(tooling_virtualenv_command_path(tooling_repo, "dsw-km-po-to-km")),
-            "--translated-po",
+            str(tooling_virtualenv_command_path(tooling_repo, "dsw-km-validate-locale")),
+            "--po",
             str(repo_root / paths.final_po_path),
-            "--original-km",
+            "--km",
             str(repo_root / paths.source_km_path),
-            "--out-km",
-            str(repo_root / paths.final_km_path),
-            "--source-lang",
-            config.translation.source_language,
-            "--target-lang",
+            "--target-language",
             config.translation.target_language,
-            "--output-organization-id",
-            config.translation.translated_organization_id,
-            "--output-km-id",
-            config.translation.translated_km_id,
-            "--output-name",
-            config.translation.translated_name,
-        ]
-        + _supplemental_po_to_km_args(repo_root, config)
-        + _package_identity_mapping_args(config),
+        ],
         cwd=tooling_repo,
-        description=f"build translated KM for KM {paths.version}",
+        description=f"validate native DSW locale for KM {paths.version}",
         echo_output=True,
     )
     _run_checked(
@@ -432,38 +419,6 @@ def _run_sync_build_and_tests(
         description=f"run translation tests for KM {paths.version}",
         echo_output=True,
     )
-
-
-def _supplemental_po_to_km_args(
-    repo_root: Path,
-    config: TranslationRepositoryConfig,
-) -> list[str]:
-    """Build PO-to-KM flags for configured supplemental forms."""
-
-    directory = config.translation.supplemental_directory
-    if directory is None:
-        return []
-    return ["--supplemental-translations-dir", str(repo_root / directory)]
-
-
-def _package_identity_mapping_args(
-    config: TranslationRepositoryConfig,
-) -> list[str]:
-    """Build PO-to-KM flags for mixed-lineage package identities."""
-
-    args: list[str] = []
-    for mapping in config.translation.package_identity_mappings:
-        args.extend(
-            [
-                "--package-identity-mapping",
-                mapping.source_organization_id,
-                mapping.source_km_id,
-                mapping.translated_organization_id,
-                mapping.translated_km_id,
-                mapping.translated_name,
-            ]
-        )
-    return args
 
 
 def _run_alignment_check(

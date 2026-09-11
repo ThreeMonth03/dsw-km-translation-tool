@@ -16,8 +16,6 @@ from urllib.parse import urlsplit
 
 import yaml
 
-from .data_models import KnowledgeModelPackageIdentityMapping
-
 
 class TranslationRepositoryConfigError(ValueError):
     """Raised when a translation repository config is invalid."""
@@ -38,17 +36,12 @@ class KnowledgeModelRepositoryConfig:
 
 @dataclass(frozen=True)
 class TranslationLanguageConfig:
-    """Target-language metadata for translated KM packages."""
+    """Language metadata for a native DSW knowledge-model locale."""
 
     source_language: str
     target_language: str
     target_language_label: str
-    translated_organization_id: str
-    translated_km_id: str
-    translated_name: str
     catalog_path: Path | None
-    supplemental_directory: Path | None
-    package_identity_mappings: tuple[KnowledgeModelPackageIdentityMapping, ...]
 
 
 @dataclass(frozen=True)
@@ -101,7 +94,6 @@ class KmVersionWorkspacePaths:
     localize_latest_po_path: Path
     translation_tree_dir: Path
     final_po_path: Path
-    final_km_path: Path
     review_diff_path: Path
     validation_report_path: Path
     conflicts_report_path: Path
@@ -145,18 +137,14 @@ def load_translation_repository_config(path: str | Path) -> TranslationRepositor
     if not isinstance(payload, dict):
         raise TranslationRepositoryConfigError("translation-config.yml must contain a mapping")
 
-    schema_version = _optional_int(payload, "schema_version", default=1)
-    if schema_version != 1:
+    schema_version = _require_int(payload, "schema_version")
+    if schema_version != 2:
         raise TranslationRepositoryConfigError(
             f"Unsupported translation-config.yml schema_version {schema_version!r}"
         )
 
     knowledge_model = _load_knowledge_model_config(_require_dict(payload, "knowledge_model"))
     translation = _load_translation_config(_require_dict(payload, "translation"))
-    _validate_package_identity_mappings(
-        knowledge_model=knowledge_model,
-        translation=translation,
-    )
     branches = _load_branch_config(_require_dict(payload, "branches"))
     tooling = _load_tooling_config(_require_dict(payload, "tooling"))
     workflow = _load_workflow_config(_optional_dict(payload, "workflow"))
@@ -202,79 +190,22 @@ def _load_knowledge_model_config(
 
 
 def _load_translation_config(payload: dict[str, Any]) -> TranslationLanguageConfig:
+    _reject_unknown_keys(
+        payload,
+        allowed={
+            "catalog_path",
+            "source_language",
+            "target_language",
+            "target_language_label",
+        },
+        section="translation",
+    )
     return TranslationLanguageConfig(
         source_language=_require_str(payload, "source_language"),
         target_language=_require_str(payload, "target_language"),
         target_language_label=_require_str(payload, "target_language_label"),
-        translated_organization_id=_require_str(payload, "translated_organization_id"),
-        translated_km_id=_require_str(payload, "translated_km_id"),
-        translated_name=_require_str(payload, "translated_name"),
         catalog_path=(Path(value) if (value := _optional_str(payload, "catalog_path")) else None),
-        supplemental_directory=(
-            Path(value) if (value := _optional_str(payload, "supplemental_directory")) else None
-        ),
-        package_identity_mappings=_load_package_identity_mappings(payload),
     )
-
-
-def _load_package_identity_mappings(
-    payload: dict[str, Any],
-) -> tuple[KnowledgeModelPackageIdentityMapping, ...]:
-    raw_mappings = payload.get("package_identity_mappings", [])
-    if not isinstance(raw_mappings, list):
-        raise TranslationRepositoryConfigError(
-            "Expected list at `translation.package_identity_mappings`"
-        )
-
-    mappings: list[KnowledgeModelPackageIdentityMapping] = []
-    for index, raw_mapping in enumerate(raw_mappings):
-        if not isinstance(raw_mapping, dict):
-            raise TranslationRepositoryConfigError(
-                f"Expected mapping at `translation.package_identity_mappings[{index}]`"
-            )
-        mappings.append(
-            KnowledgeModelPackageIdentityMapping(
-                source_organization_id=_require_str(
-                    raw_mapping,
-                    "source_organization_id",
-                ),
-                source_km_id=_require_str(raw_mapping, "source_km_id"),
-                translated_organization_id=_require_str(
-                    raw_mapping,
-                    "translated_organization_id",
-                ),
-                translated_km_id=_require_str(raw_mapping, "translated_km_id"),
-                translated_name=_require_str(raw_mapping, "translated_name"),
-            )
-        )
-    return tuple(mappings)
-
-
-def _validate_package_identity_mappings(
-    *,
-    knowledge_model: KnowledgeModelRepositoryConfig,
-    translation: TranslationLanguageConfig,
-) -> None:
-    primary_source = (knowledge_model.organization_id, knowledge_model.km_id)
-    primary_target = (
-        translation.translated_organization_id,
-        translation.translated_km_id,
-    )
-    source_coordinates = {primary_source}
-    target_coordinates = {primary_target}
-    for mapping in translation.package_identity_mappings:
-        if mapping.source_coordinate in source_coordinates:
-            source = ":".join(mapping.source_coordinate)
-            raise TranslationRepositoryConfigError(
-                f"Duplicate translated package source coordinate: {source}"
-            )
-        if mapping.translated_coordinate in target_coordinates:
-            target = ":".join(mapping.translated_coordinate)
-            raise TranslationRepositoryConfigError(
-                f"Translated package coordinates must remain distinct; duplicate target: {target}"
-            )
-        source_coordinates.add(mapping.source_coordinate)
-        target_coordinates.add(mapping.translated_coordinate)
 
 
 def _load_branch_config(payload: dict[str, Any]) -> BranchConfig:
@@ -416,7 +347,6 @@ def version_paths(config: TranslationRepositoryConfig) -> KmVersionWorkspacePath
         localize_latest_po_path=weblate_po_path,
         translation_tree_dir=Path("tree"),
         final_po_path=Path("builds") / "final_translated.po",
-        final_km_path=Path("builds") / "final_translated.km",
         review_diff_path=Path("reviews") / "final_translated.diff",
         validation_report_path=Path("reports") / "final_report.json",
         conflicts_report_path=Path("reviews") / "conflicts.json",
@@ -485,8 +415,20 @@ def _optional_safe_path(parent: dict[str, Any], key: str) -> Path | None:
     return path
 
 
-def _optional_int(parent: dict[str, Any], key: str, default: int) -> int:
-    value = parent.get(key, default)
+def _require_int(parent: dict[str, Any], key: str) -> int:
+    value = parent.get(key)
     if not isinstance(value, int):
         raise TranslationRepositoryConfigError(f"Expected integer at `{key}`")
     return value
+
+
+def _reject_unknown_keys(
+    payload: dict[str, Any],
+    *,
+    allowed: set[str],
+    section: str,
+) -> None:
+    unknown = sorted(set(payload) - allowed)
+    if unknown:
+        fields = ", ".join(f"{section}.{field}" for field in unknown)
+        raise TranslationRepositoryConfigError(f"Unexpected configuration field(s): {fields}")

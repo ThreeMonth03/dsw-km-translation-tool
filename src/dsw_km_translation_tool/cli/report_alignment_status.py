@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Report read-only alignment between Localize, tree, PO, and KM artifacts."""
+"""Report read-only alignment between Localize, tree, and PO artifacts."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "Verify that Weblate, the checked-in Localize PO, tree output, "
-            "final PO, and final KM are aligned."
+            "and final PO are aligned."
         ),
     )
     parser.add_argument(

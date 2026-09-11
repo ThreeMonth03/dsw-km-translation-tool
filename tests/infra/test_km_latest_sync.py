@@ -182,7 +182,7 @@ def test_sync_latest_km_updates_validates_and_pushes_target_ref(
         "dsw-km-validate-config",
         "dsw-km-export-tree",
         "dsw-km-sync-shared-strings",
-        "dsw-km-po-to-km",
+        "dsw-km-validate-locale",
         "python -m pytest",
         "dsw-km-report-alignment",
         "git config user.name github-actions[bot]",

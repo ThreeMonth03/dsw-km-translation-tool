@@ -3,12 +3,15 @@
 Python tooling for DSW Knowledge Model source release and translation
 maintenance.
 
+The translation workflow targets DSW 4.33 or newer, where Knowledge Model
+translations are imported as native PO locales.
+
 For zh-Hant production work, the latest translation state is maintained in
 Localize/Weblate. This repository provides automation and visualization around
 that workflow:
 
 - mirror Weblate PO exports into a Git translation tree
-- rebuild final PO and KM bundles
+- build and validate native DSW Knowledge Model locale PO files
 - validate translation repository configuration
 - report Weblate PO health and output alignment
 - update to a newer published source KM after validation passes

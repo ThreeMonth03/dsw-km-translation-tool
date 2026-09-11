@@ -6,7 +6,7 @@ Use this runbook for production zh-Hant sync.
 
 The latest translation state is governed by Localize/Weblate. The Git
 translation repository mirrors that state so maintainers can review generated
-trees, build translated KM bundles, and keep reproducible history.
+trees, publish a native DSW locale PO, and keep reproducible history.
 
 Normal scheduled automation is one-way:
 
@@ -41,7 +41,7 @@ The workflow runs the `dsw-km-sync-localize` command. That command:
 1. Downloads the current Weblate PO to `sources/localize/zh_Hant/latest.po`.
 2. Force-refreshes `tree/` from the latest Weblate PO.
 3. Rebuilds `builds/final_translated.po`.
-4. Rebuilds `builds/final_translated.km`.
+4. Validates the PO for native DSW Knowledge Model locale import.
 5. Refreshes review outputs.
 6. Commits and pushes only when tracked files changed.
 
@@ -100,12 +100,11 @@ changing Git or Weblate. It:
 1. Downloads the latest Weblate PO into a temporary file.
 2. Compares it with `sources/localize/zh_Hant/latest.po`.
 3. Rebuilds `builds/final_translated.po` from `tree/`.
-4. Rebuilds `builds/final_translated.km` from the final PO and configured KM
-   metadata.
-5. Uploads JSON, Markdown, and generated comparison artifacts.
+4. Validates the final PO against the configured KM and target language.
+5. Uploads JSON, Markdown, and the generated PO comparison artifact.
 
 The alignment report is allowed to fail when drift is detected. That failure
-means a pull sync, tree rebuild, or KM rebuild should run before maintainers
+means a pull sync or tree rebuild should run before maintainers
 trust the repository outputs. It also requires only `contents: read` and does
 not change translations.
 

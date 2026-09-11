@@ -47,7 +47,6 @@ def test_upstream_smoke_builds_current_upstream_inputs(
     assert (work_dir / "sources/localize/zh_Hant/latest.po").exists()
     assert (work_dir / "sources/knowledge-models/dsw-root-2.7.0/dsw-root-2.7.0.km").exists()
     assert (work_dir / "builds/final_translated.po").exists()
-    assert (work_dir / "builds/final_translated.km").exists()
     assert "Status: **passed**" in render_upstream_smoke_markdown(result)
 
 

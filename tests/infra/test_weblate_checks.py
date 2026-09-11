@@ -25,7 +25,7 @@ def write_config(path: Path, download_url: str) -> None:
     path.write_text(
         "\n".join(
             [
-                "schema_version: 1",
+                "schema_version: 2",
                 "knowledge_model:",
                 "  organization_id: dsw",
                 "  km_id: root",
@@ -35,9 +35,6 @@ def write_config(path: Path, download_url: str) -> None:
                 "  source_language: en",
                 "  target_language: zh_Hant",
                 "  target_language_label: zh-Hant",
-                "  translated_organization_id: dsw",
-                "  translated_km_id: root-zh-hant",
-                "  translated_name: Common DSW Knowledge Model (zh-Hant)",
                 "branches:",
                 "  tracking_branch: master",
                 "tooling:",

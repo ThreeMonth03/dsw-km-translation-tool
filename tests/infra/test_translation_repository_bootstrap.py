@@ -82,7 +82,6 @@ def test_bootstrap_hydrates_tree_and_build_outputs(
     assert result.localize_po_path == target_repo / "sources" / "localize" / "zh_Hant" / "latest.po"
     assert (target_repo / "tree" / "_translation_tree.json").exists()
     assert (target_repo / "builds" / "final_translated.po").exists()
-    assert (target_repo / "builds" / "final_translated.km").exists()
     assert (target_repo / "reviews" / "final_translated.diff").exists()
 
 
@@ -205,4 +204,3 @@ def test_github_bootstrap_generates_empty_catalog_from_km(
     assert result.source_po_path == target_repo / "sources/catalog/zh_Hant/catalog.po"
     assert result.source_po_path.exists()
     assert (target_repo / "tree" / "_translation_tree.json").exists()
-    assert (target_repo / "builds" / "final_translated.km").exists()

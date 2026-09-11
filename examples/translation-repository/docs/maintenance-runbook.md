@@ -102,8 +102,8 @@ update.
 - Sync created no commit: Git is already aligned with Weblate.
 - Alignment failed: download `localize-alignment-report` and compare the
   generated files with the checked-in files.
-- Generated KM changed unexpectedly: compare `sources/localize/*/latest.po`
-  with `builds/final_translated.po`.
+- Native locale validation failed: compare `sources/localize/*/latest.po` with
+  `builds/final_translated.po`, then inspect the reported KM reference.
 - KM auto-update failed before downloading a bundle: check `DSW_REGISTRY_TOKEN`.
 - KM auto-update failed after rebuilding: inspect the validation or alignment
   error.

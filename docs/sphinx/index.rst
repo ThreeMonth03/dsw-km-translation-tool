@@ -2,7 +2,8 @@ DSW KM Translation Tool
 =======================
 
 This site documents the tooling used to keep DSW Knowledge Model translations
-aligned between Weblate, a Git translation repository, and validated KM outputs.
+aligned between Weblate, a Git translation repository, and DSW's native KM
+locale import.
 
 The latest translation text is edited in Weblate. This repository provides the
 automation around that workflow: sync, reports, validation, and guarded KM

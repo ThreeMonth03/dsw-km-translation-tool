@@ -39,7 +39,7 @@ def test_github_source_sync_hydrates_and_then_checks_repository(
     assert synchronized.source_km_path.read_bytes() == model_path.read_bytes()
     assert synchronized.source_po_path.is_file()
     assert (target / "tree" / "_translation_tree.json").is_file()
-    assert (target / "builds" / "final_translated.km").is_file()
+    assert (target / "builds" / "final_translated.po").is_file()
 
     checked = sync_github_translation_source(
         repo_root=target,

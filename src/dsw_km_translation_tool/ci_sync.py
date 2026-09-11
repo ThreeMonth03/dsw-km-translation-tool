@@ -15,7 +15,6 @@ from .command import (
     tooling_virtualenv_python_path,
 )
 from .constants import SHARED_BLOCK_CONTEXT_FILENAME, TRANSLATION_FILENAME
-from .data_models import KnowledgeModelPackageIdentityMapping
 from .layout import (
     DEFAULT_MODEL_PATH,
     DEFAULT_PO_PATH,
@@ -58,16 +57,9 @@ class CiSyncCommitConfig:
         source_po_path: Optional source PO template path. Relative paths are
             resolved inside the host repository; absolute paths are used as-is.
             Defaults to the canonical PO bundled in the tooling repository.
-        source_km_path: Optional source KM bundle path. Relative paths are
-            resolved inside the host repository; absolute paths are used as-is.
-            Defaults to the canonical KM bundled in the tooling repository.
-        output_organization_id: Optional organization ID for the generated KM.
-        output_km_id: Optional KM ID for the generated KM.
-        output_name: Optional display name for the generated KM.
-        supplemental_translations_path: Optional directory of translator-facing
-            forms for KM fields omitted from the upstream PO.
-        package_identity_mappings: Explicit translated identities for
-            additional package coordinates in mixed-lineage bundles.
+        source_km_path: Optional source KM bundle used to validate DSW locale
+            references. Relative paths are resolved inside the host repository;
+            absolute paths are used as-is.
         restore_source_ref: Git ref used when restoring a malformed
             translation source file during CI recovery.
     """
@@ -82,11 +74,6 @@ class CiSyncCommitConfig:
     commit_message: str = DEFAULT_SYNC_COMMIT_MESSAGE
     source_po_path: Path | None = None
     source_km_path: Path | None = None
-    output_organization_id: str | None = None
-    output_km_id: str | None = None
-    output_name: str | None = None
-    supplemental_translations_path: Path | None = None
-    package_identity_mappings: tuple[KnowledgeModelPackageIdentityMapping, ...] = ()
     restore_source_ref: str = "origin/master"
 
     @property
@@ -142,18 +129,6 @@ class CiSyncCommitConfig:
         return self.output_layout.final_po_path
 
     @property
-    def final_km_path(self) -> Path:
-        """Return the generated translated KM output path."""
-
-        return self.output_layout.final_km_path
-
-    @property
-    def final_km_git_path(self) -> str:
-        """Return the generated KM path relative to the host repo."""
-
-        return self.final_km_path.relative_to(self.host_repo_dir).as_posix()
-
-    @property
     def diff_path(self) -> Path:
         """Return the generated review diff path."""
 
@@ -199,22 +174,11 @@ class CiSyncCommitConfig:
 
     @property
     def original_model_path(self) -> Path:
-        """Return the source KM bundle path for building translated KM output."""
+        """Return the source KM bundle path for locale validation."""
 
         return self._resolve_source_path(
             configured_path=self.source_km_path,
             default_path=self.tooling_repo_dir / DEFAULT_MODEL_PATH,
-        )
-
-    @property
-    def supplemental_translations_dir(self) -> Path | None:
-        """Return the resolved supplemental translation directory, if configured."""
-
-        if self.supplemental_translations_path is None:
-            return None
-        return self._resolve_source_path(
-            configured_path=self.supplemental_translations_path,
-            default_path=self.host_repo_dir,
         )
 
     def _resolve_source_path(self, configured_path: Path | None, default_path: Path) -> Path:
@@ -271,13 +235,6 @@ class CiSyncCommitConfig:
             raise CiSyncError(f"Missing original PO file: {self.original_po_path}")
         if not self.original_model_path.exists():
             raise CiSyncError(f"Missing original KM file: {self.original_model_path}")
-        if (
-            self.supplemental_translations_dir is not None
-            and not self.supplemental_translations_dir.is_dir()
-        ):
-            raise CiSyncError(
-                f"Missing supplemental translation directory: {self.supplemental_translations_dir}"
-            )
 
 
 def run_ci_sync_commit(
@@ -306,9 +263,9 @@ def run_ci_sync_commit(
     _run_sync_with_origin_restore(config, runner)
     _run_checked(
         runner,
-        _build_po_to_km_command(config),
+        _build_native_locale_validation_command(config),
         cwd=config.tooling_repo_dir,
-        description="build translated KM artifact",
+        description="validate native DSW locale",
         echo_output=True,
     )
     _run_checked(
@@ -324,7 +281,6 @@ def run_ci_sync_commit(
         echo_output=True,
     )
 
-    _mark_generated_km_as_intent_to_add(config, runner)
     if not _translation_root_has_tracked_changes(config, runner):
         print("[ci-sync] No tracked translation changes detected after sync.")
         return False
@@ -435,8 +391,8 @@ def _build_sync_command(config: CiSyncCommitConfig) -> list[str]:
     ]
 
 
-def _build_po_to_km_command(config: CiSyncCommitConfig) -> list[str]:
-    """Build the explicit PO-to-KM CLI command for one CI operation.
+def _build_native_locale_validation_command(config: CiSyncCommitConfig) -> list[str]:
+    """Build the native DSW locale validation command.
 
     Args:
         config: Sync-and-commit configuration.
@@ -446,56 +402,14 @@ def _build_po_to_km_command(config: CiSyncCommitConfig) -> list[str]:
     """
 
     return [
-        str(config.tooling_command_path("dsw-km-po-to-km")),
-        "--translated-po",
+        str(config.tooling_command_path("dsw-km-validate-locale")),
+        "--po",
         str(config.final_po_path),
-        "--original-km",
+        "--km",
         str(config.original_model_path),
-        "--out-km",
-        str(config.final_km_path),
-        "--source-lang",
-        config.source_lang,
-        "--target-lang",
+        "--target-language",
         config.target_lang,
-    ] + _build_optional_po_to_km_args(config)
-
-
-def _build_optional_po_to_km_args(config: CiSyncCommitConfig) -> list[str]:
-    """Build optional translated-KM identity and supplemental flags.
-
-    Args:
-        config: Sync-and-commit configuration.
-
-    Returns:
-        Command-line flags for identity overrides.
-    """
-
-    args: list[str] = []
-    if config.output_organization_id:
-        args.extend(["--output-organization-id", config.output_organization_id])
-    if config.output_km_id:
-        args.extend(["--output-km-id", config.output_km_id])
-    if config.output_name:
-        args.extend(["--output-name", config.output_name])
-    if config.supplemental_translations_dir is not None:
-        args.extend(
-            [
-                "--supplemental-translations-dir",
-                str(config.supplemental_translations_dir),
-            ]
-        )
-    for mapping in config.package_identity_mappings:
-        args.extend(
-            [
-                "--package-identity-mapping",
-                mapping.source_organization_id,
-                mapping.source_km_id,
-                mapping.translated_organization_id,
-                mapping.translated_km_id,
-                mapping.translated_name,
-            ]
-        )
-    return args
+    ]
 
 
 def _build_translation_test_command(config: CiSyncCommitConfig) -> list[str]:
@@ -514,25 +428,6 @@ def _build_translation_test_command(config: CiSyncCommitConfig) -> list[str]:
         "pytest",
         "tests/translation",
     ]
-
-
-def _mark_generated_km_as_intent_to_add(
-    config: CiSyncCommitConfig,
-    runner: CommandRunner,
-) -> None:
-    """Make a newly generated KM visible to tracked-only status checks.
-
-    Args:
-        config: Sync-and-commit configuration.
-        runner: Injectable subprocess runner.
-    """
-
-    _run_checked(
-        runner,
-        ["git", "add", "-N", "--", config.final_km_git_path],
-        cwd=config.host_repo_dir,
-        description="mark generated KM artifact for change detection",
-    )
 
 
 def _translation_root_has_tracked_changes(

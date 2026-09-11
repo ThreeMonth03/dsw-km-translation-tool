@@ -4,7 +4,7 @@ This repository is the automation and visualization workspace for one Common
 DSW Knowledge Model translation.
 
 The latest translation state is governed by Localize/Weblate. GitHub stores a
-reviewable mirror of that state plus generated PO/KM outputs.
+reviewable mirror of that state plus a native DSW locale PO.
 
 Operational details are split into:
 
@@ -19,7 +19,6 @@ translation-config.yml
 sources/knowledge-models/
 sources/localize/
 tree/
-supplemental/
 builds/
 reviews/
 ```
@@ -29,10 +28,8 @@ reviews/
 - `sources/knowledge-models/` stores released source KM bundles.
 - `sources/localize/` stores the latest Weblate PO snapshot.
 - `tree/` stores the generated translation tree mirrored from Weblate.
-- `supplemental/` stores translator-facing forms for KM fields that Weblate
-  does not expose. Repositories without omitted fields do not need it.
-- `builds/final_translated.po` is regenerated from the tree.
-- `builds/final_translated.km` is regenerated from the final PO.
+- `builds/final_translated.po` is regenerated from the tree and imported into
+  DSW as a Knowledge Model locale.
 - `reviews/` stores generated review outputs and workflow reports.
 
 ## Operating Model
@@ -54,8 +51,16 @@ website state into this repository:
   tooling templates rendered from this repository's config.
 - KM auto-update tracks newer published DSW Registry KM bundles when validation
   passes.
-- Supplemental forms are validated against the current KM and applied only to
-  the KM artifact. They never modify the Weblate PO mirror.
+
+## Publish to DSW
+
+After repository CI passes, download `builds/final_translated.po`. In DSW, open
+the matching source Knowledge Model version, choose its locale import action,
+enter the locale name, and upload the PO. Confirm that DSW reports the expected
+language and review a questionnaire that uses that Knowledge Model.
+
+The source `.km` under `sources/knowledge-models/` exists only for validation.
+Do not import it as a translated Knowledge Model.
 
 ## Actions Secrets
 

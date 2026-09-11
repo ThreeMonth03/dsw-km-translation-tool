@@ -23,7 +23,7 @@ when deciding where a change belongs.
 - [`tests/fixtures/translation_tree/`][translation-fixture-dir] contains the checked-in tree, final PO, and
   review diff used by translation round-trip tests.
 - [`tests/infra/`][tests-infra-dir] covers tooling, CLI, config, and automation behavior.
-- [`tests/translation/`][tests-translation-dir] covers translation-tree and PO/KM round trips.
+- [`tests/translation/`][tests-translation-dir] covers translation-tree and PO round trips.
 
 External production translation repositories usually contain:
 
@@ -50,8 +50,10 @@ These modules handle the local representation of translation data:
   translator-facing folder tree.
 - [`shared_blocks/`][shared-blocks-dir], [`sync.py`][sync-py], [`review.py`][review-py]: synchronize repeated strings,
   rebuild generated PO files, and produce review diffs.
-- [`knowledge_model_service.py`][knowledge-model-service-py]: applies translated PO content back into a KM
-  bundle.
+- [`knowledge_model_service.py`][knowledge-model-service-py]: validates PO
+  references and source strings against a KM bundle.
+- `native_locale.py` validates gettext syntax, the locale language, and DSW KM
+  references before a PO is published for native locale import.
 
 Keep translator-facing Markdown stable. If a parser change affects field order,
 folder names, or shared-block behavior, add focused tests before updating
@@ -70,15 +72,15 @@ These modules connect the translation repository to the Weblate website:
 - [`weblate_checks.py`][weblate-checks-py]: reports Weblate units matching quality-check queries
   such as `has:check` without changing translations.
 - [`alignment_status.py`][alignment-status-py]: verifies that Weblate, the checked-in Localize PO,
-  the translation tree, the final PO, and the final KM are mutually aligned.
+  the translation tree, and the final PO are mutually aligned.
 - [`localize_tree_sync.py`][localize-tree-sync-py]: force-refreshes `tree/` from the latest Weblate PO.
 - [`github_translation_contributions.py`][github-translation-contributions-py] and
   [`weblate_upload.py`][weblate-upload-py]: report reviewed GitHub translation
   edits and upload safe post-merge imports to Weblate.
 - [`translation_format.py`][translation-format-py]: compares source and
   translated Markdown structure before GitHub contributions can be imported.
-- [`ci_sync.py`][ci-sync-py], [`repository_ci_sync.py`][repository-ci-sync-py]: rebuild the translation tree, final PO,
-  and final KM, then make Git sync commits.
+- [`ci_sync.py`][ci-sync-py], [`repository_ci_sync.py`][repository-ci-sync-py]: rebuild the translation tree and
+  native locale PO, validate them, then make Git sync commits.
 - [`translation_repository_bootstrap.py`][translation-repository-bootstrap-py]: scaffolds a new translation
   repository and hydrates it from Registry/Weblate inputs without committing or
   pushing.
@@ -105,10 +107,6 @@ These modules connect the translation repository to the Weblate website:
   decide whether a law applies or perform structural KM edits.
 - `translation_repository_build.py` rebuilds Git-authoritative translation
   outputs without network or Weblate access.
-- `knowledge_model_support/rewrite.py` preserves package-coordinate boundaries
-  when translating mixed-lineage bundles. Every non-root source coordinate
-  requires an explicit, one-to-one translated identity mapping; flattening
-  unrelated version lines is rejected.
 - [`translation_repository_scaffold.py`][translation-repository-scaffold-py]: renders, checks, and
   refreshes managed translation repository docs and workflows without changing
   repository config or translations.
@@ -159,7 +157,7 @@ website edits are not controlled by the GitHub concurrency group.
 - If a change affects Localize/Weblate download or GitHub import conflict
   policy, it belongs in the Localize sync layer and must be reflected in the
   runbook.
-- If a change affects tree format, shared strings, generated PO, or KM output,
+- If a change affects tree format, shared strings, or the native locale PO,
   it belongs in the PO/KM/tree layer and needs round-trip tests.
 - If a translation repository needs a new workflow behavior, add it to the
   external template first, then use scaffold sync to render it into the target

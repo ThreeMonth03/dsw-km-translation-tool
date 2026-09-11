@@ -54,7 +54,6 @@ def test_git_source_sync_validates_commit_and_rebuilds(
     assert result.source_km_path.read_bytes() == model_path.read_bytes()
     assert result.carried_translation_count > 0
     assert result.build_result.final_po_path.is_file()
-    assert result.build_result.final_km_path.is_file()
 
 
 def test_git_source_sync_rebuilds_shared_blocks_when_groups_change(

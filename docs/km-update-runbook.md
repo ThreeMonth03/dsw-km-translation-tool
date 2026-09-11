@@ -23,8 +23,8 @@ published KM, the workflow:
 - downloads the new KM bundle using `DSW_REGISTRY_TOKEN`;
 - updates `translation-config.yml` and the conventional source KM path;
 - downloads the current Weblate PO without uploading anything to Weblate;
-- rebuilds `tree/`, `builds/final_translated.po`, and
-  `builds/final_translated.km`;
+- rebuilds `tree/` and `builds/final_translated.po`;
+- validates the PO for native DSW Knowledge Model locale import;
 - validates config, runs translation tests, and checks repository alignment;
 - commits and pushes to the tracking branch only after those steps pass.
 
@@ -85,7 +85,6 @@ sources/knowledge-models/
 sources/localize/zh_Hant/latest.po
 tree/
 builds/final_translated.po
-builds/final_translated.km
 reviews/
 ```
 

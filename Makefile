@@ -12,7 +12,6 @@ DSW_KM_EXPORT_TREE := $(VENV_BIN)/dsw-km-export-tree
 DSW_KM_INIT_SOURCE_REPO := $(VENV_BIN)/dsw-km-init-source-repo
 DSW_KM_INIT_TRANSLATION_REPO := $(VENV_BIN)/dsw-km-init-translation-repo
 DSW_KM_IMPORT_GITHUB_TRANSLATIONS := $(VENV_BIN)/dsw-km-import-github-translations
-DSW_KM_PO_TO_KM := $(VENV_BIN)/dsw-km-po-to-km
 DSW_KM_PREPARE_RELEASE := $(VENV_BIN)/dsw-km-prepare-release
 DSW_KM_PULL_BUNDLE := $(VENV_BIN)/dsw-km-pull-bundle
 DSW_KM_PULL_LOCALIZE_PO := $(VENV_BIN)/dsw-km-pull-localize-po
@@ -32,6 +31,7 @@ DSW_KM_SYNC_SHARED_STRINGS := $(VENV_BIN)/dsw-km-sync-shared-strings
 DSW_KM_TREE_TO_PO := $(VENV_BIN)/dsw-km-tree-to-po
 DSW_KM_UPSTREAM_SMOKE := $(VENV_BIN)/dsw-km-upstream-smoke
 DSW_KM_VALIDATE_CONFIG := $(VENV_BIN)/dsw-km-validate-config
+DSW_KM_VALIDATE_LOCALE := $(VENV_BIN)/dsw-km-validate-locale
 DSW_KM_VALIDATE_RELEASE := $(VENV_BIN)/dsw-km-validate-release
 DSW_KM_WORKFLOW := $(VENV_BIN)/dsw-km-workflow
 
@@ -42,14 +42,12 @@ TARGET_LANG ?= zh_Hant
 OUTPUT_ROOT ?= translation/$(TARGET_LANG)
 TREE_DIR ?= $(OUTPUT_ROOT)/tree
 FINAL_PO ?= $(OUTPUT_ROOT)/builds/final_translated.po
-FINAL_KM ?= $(OUTPUT_ROOT)/builds/final_translated.km
 REPORT ?= $(OUTPUT_ROOT)/reports/final_report.json
 TREE_JSON ?= $(OUTPUT_ROOT)/reports/tree_snapshot.json
 REVIEW_DIFF ?= $(OUTPUT_ROOT)/reviews/final_translated.diff
 OUTLINE_MD ?= $(TREE_DIR)/outline.md
 SHARED_BLOCKS_OUTLINE_MD ?= $(TREE_DIR)/shared_blocks_outline.md
 REVIEW_FLAGS ?=
-PO_TO_KM_FLAGS ?=
 STATUS_LIMIT ?= 5
 SYNC_GROUP ?= shared-block
 LOCALIZE_PO ?= sources/localize/zh_Hant/latest.po
@@ -101,7 +99,7 @@ DOCS_BUILD ?= docs/sphinx/_build/html
 .PHONY: repo-github-translations repo-import-github-translations
 .PHONY: repo-init repo-sync repo-sync-branch repo-km-status repo-km-pull repo-km-update upstream-smoke
 .PHONY: export-tree export-tree-force status localize-status sync sync-watch
-.PHONY: tree-to-po po-to-km review-po validate workflow
+.PHONY: tree-to-po review-po validate workflow
 
 venv: $(VENV_PYTHON)
 
@@ -120,7 +118,7 @@ help:
 	'  repo-validate      Validate translation-config.yml' \
 	'  repo-status        Report checked-in Weblate PO health' \
 	'  repo-checks        Query Weblate quality checks' \
-	'  repo-align         Verify Weblate/tree/final PO/final KM alignment' \
+	'  repo-align         Verify Weblate/tree/final PO alignment' \
 	'  repo-scaffold-check Verify managed docs and workflows match their templates' \
 	'  repo-scaffold-sync Writer: refresh managed docs and workflows only' \
 	'  repo-sync-shared-strings Writer: expand canonical shared translations into the tree' \
@@ -189,7 +187,6 @@ help-all:
 	'  sync               Sync shared strings and refresh $(FINAL_PO)' \
 	'  sync-watch         Watch editable inputs with watchdog' \
 	'  tree-to-po         Build $(FINAL_PO) from $(TREE_DIR)' \
-	'  po-to-km           Build $(FINAL_KM) from $(FINAL_PO) + $(MODEL)' \
 	'  review-po          Review how $(FINAL_PO) differs from $(PO)' \
 	'  validate           Validate $(FINAL_PO) against $(MODEL)' \
 	'  workflow           Run the optional end-to-end smoke workflow'
@@ -493,15 +490,6 @@ tree-to-po: venv
 		--source-lang $(SOURCE_LANG) \
 		--target-lang $(TARGET_LANG)
 
-po-to-km: venv
-	$(DSW_KM_PO_TO_KM) \
-		--translated-po $(FINAL_PO) \
-		--original-km $(MODEL) \
-		--out-km $(FINAL_KM) \
-		--source-lang $(SOURCE_LANG) \
-		--target-lang $(TARGET_LANG) \
-		$(PO_TO_KM_FLAGS)
-
 review-po: venv
 	$(DSW_KM_REVIEW_PO) \
 		--original-po $(PO) \
@@ -512,12 +500,11 @@ review-po: venv
 		--target-lang $(TARGET_LANG)
 
 validate: venv
-	$(DSW_KM_EXPORT_TREE) \
+	$(DSW_KM_VALIDATE_LOCALE) \
 		--po $(FINAL_PO) \
-		--json $(MODEL) \
-		--report-out $(REPORT) \
-		--source-lang $(SOURCE_LANG) \
-		--target-lang $(TARGET_LANG)
+		--km $(MODEL) \
+		--target-language $(TARGET_LANG) \
+		--report $(REPORT)
 
 workflow: venv
 	$(DSW_KM_WORKFLOW) \

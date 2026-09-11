@@ -31,7 +31,6 @@ def prepare_translation_repo_fixture(
     latest_po = repo_root / "sources" / "localize" / "zh_Hant" / "latest.po"
     source_km = repo_root / "sources" / "knowledge-models" / "dsw-root-2.7.0" / "dsw-root-2.7.0.km"
     final_po = repo_root / "builds" / "final_translated.po"
-    final_km = repo_root / "builds" / "final_translated.km"
     config_path = repo_root / "translation-config.yml"
 
     latest_po.parent.mkdir(parents=True, exist_ok=True)
@@ -50,19 +49,10 @@ def prepare_translation_repo_fixture(
         original_po_path=str(latest_po),
         out_po_path=str(final_po),
     )
-    workflow.build_km_from_po(
-        translated_po_path=str(final_po),
-        original_model_path=str(source_km),
-        out_model_path=str(final_km),
-        output_organization_id="dsw",
-        output_km_id="root-zh-hant",
-        output_name="Common DSW Knowledge Model (zh-Hant)",
-    )
-
     config_path.write_text(
         "\n".join(
             [
-                "schema_version: 1",
+                "schema_version: 2",
                 "knowledge_model:",
                 "  organization_id: dsw",
                 "  km_id: root",
@@ -73,9 +63,6 @@ def prepare_translation_repo_fixture(
                 "  source_language: en",
                 "  target_language: zh_Hant",
                 "  target_language_label: zh-Hant",
-                "  translated_organization_id: dsw",
-                "  translated_km_id: root-zh-hant",
-                "  translated_name: Common DSW Knowledge Model (zh-Hant)",
                 "branches:",
                 "  tracking_branch: master",
                 "tooling:",
@@ -100,7 +87,7 @@ def test_alignment_status_report_accepts_aligned_repository(
     model_path: Path,
     workflow,
 ) -> None:
-    """Verify the report passes when Localize, tree, PO, and KM are aligned."""
+    """Verify the report passes when Localize, tree, and PO are aligned."""
 
     repo_root = prepare_translation_repo_fixture(
         workspace=workspace,
@@ -119,10 +106,9 @@ def test_alignment_status_report_accepts_aligned_repository(
     )
 
     assert report.aligned is True
-    assert [check.matched for check in report.checks] == [True, True, True]
+    assert [check.matched for check in report.checks] == [True, True]
     assert not (artifact_dir / "weblate-latest.po").exists()
     assert (artifact_dir / "tree-rebuilt.po").exists()
-    assert (artifact_dir / "final-po-rebuilt.km").exists()
     markdown = render_alignment_status_markdown(report)
     assert "Status: **aligned**" in markdown
     assert "| Weblate download matches checked-in latest PO | pass |" in markdown
@@ -150,7 +136,7 @@ def test_alignment_status_report_flags_weblate_mismatch(
     )
 
     assert report.aligned is False
-    assert [check.matched for check in report.checks] == [False, True, True]
+    assert [check.matched for check in report.checks] == [False, True]
     markdown = render_alignment_status_markdown(report)
     assert "Status: **not aligned**" in markdown
     assert "Run the Localize pull/sync workflow" in markdown
@@ -183,7 +169,7 @@ def test_alignment_status_writes_json(
     data = json.loads(json_path.read_text(encoding="utf-8"))
     assert data["aligned"] is True
     assert data["version"] == "2.7.0"
-    assert len(data["checks"]) == 3
+    assert len(data["checks"]) == 2
     assert data["checks"][0]["name"] == "Weblate download matches checked-in latest PO"
 
 
