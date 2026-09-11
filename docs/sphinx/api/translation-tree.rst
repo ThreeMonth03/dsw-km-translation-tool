@@ -14,8 +14,17 @@ exist for CLI wiring and tests; use the internal change guide before changing
 those lower-level paths.
 
 .. autoclass:: dsw_km_translation_tool.workflow.TranslationWorkflowService
-   :members: export_tree, validate_po_against_model, build_po_from_tree, build_km_from_po, collect_status, sync_shared_strings, review_po_changes
+   :members: export_tree, validate_po_against_model, build_po_from_tree, collect_status, sync_shared_strings, review_po_changes
    :exclude-members: __init__, __new__
+   :show-inheritance:
+
+Native Locale Validation
+------------------------
+
+.. autofunction:: dsw_km_translation_tool.native_locale.validate_native_locale
+
+.. autoclass:: dsw_km_translation_tool.native_locale.NativeLocaleValidationResult
+   :members:
    :show-inheritance:
 
 Tree Repository

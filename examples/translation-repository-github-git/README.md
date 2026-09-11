@@ -15,13 +15,12 @@ The complete source commit and bundle path are pinned in
 `tree/**/translation.md`. `sources/`, `builds/`, and generated tree metadata are
 maintained by the DSW KM Translation Tool.
 
-{{PACKAGE_IDENTITY_GUIDANCE}}
-For a local meeting build, import `builds/final_translated.km`. Do not import
-the version-looking file under `sources/knowledge-models/`: that is the pinned
-source-language input. Pull-request CI also publishes a 14-day
-`{{TRANSLATED_ASSET_STEM}}-<commit SHA>` review artifact. Versioned, long-term
+Import `builds/final_translated.po` into the source Knowledge Model through
+DSW's locale import. The `.km` file under `sources/knowledge-models/` is used
+only to validate locale references. Pull-request CI also publishes a 14-day
+`{{LOCALE_ASSET_STEM}}-<commit SHA>` review artifact. Versioned, long-term
 downloads are GitHub Release assets named
-`{{TRANSLATED_ASSET_STEM}}-<version>.km`.
+`{{LOCALE_ASSET_STEM}}-<version>.po`.
 
 CI checks out the exact source commit, synchronizes its KM, rebuilds every
 derived artifact, and requires a clean Git diff. Use this mode for a mutable

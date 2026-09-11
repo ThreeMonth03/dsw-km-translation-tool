@@ -1,4 +1,4 @@
-"""Read-only alignment checks for Localize, tree, PO, and KM artifacts."""
+"""Read-only alignment checks for Localize, tree, and native locale PO artifacts."""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from .localize_sync import Downloader, _download_url
+from .native_locale import validate_native_locale
 from .translation_repository_config import (
     load_translation_repository_config,
     require_localize_config,
@@ -72,11 +73,11 @@ def build_alignment_status_report(
 ) -> AlignmentStatusReport:
     """Build a read-only alignment report for one translation repository.
 
-    The report verifies three contracts:
+    The report verifies two alignment contracts and validates the final locale:
 
     - the checked-in Localize PO matches the latest Weblate download;
     - the checked-in tree rebuilds to the checked-in final PO;
-    - the checked-in final PO rebuilds to the checked-in final KM.
+    - the checked-in final PO is valid for the configured KM and language.
 
     Args:
         repo_root: Translation repository root.
@@ -100,13 +101,11 @@ def build_alignment_status_report(
     checked_in_tree_dir = resolved_repo_root / paths.translation_tree_dir
     checked_in_final_po = resolved_repo_root / paths.final_po_path
     checked_in_source_km = resolved_repo_root / paths.source_km_path
-    checked_in_final_km = resolved_repo_root / paths.final_km_path
 
     _require_file(checked_in_localize_po)
     _require_directory(checked_in_tree_dir)
     _require_file(checked_in_final_po)
     _require_file(checked_in_source_km)
-    _require_file(checked_in_final_km)
 
     download = downloader or _download_url
     localize_bytes = download(localize.download_url)
@@ -120,7 +119,6 @@ def build_alignment_status_report(
         generated_root = Path(tmpdir)
         downloaded_localize_po = generated_root / "weblate-latest.po"
         rebuilt_po = generated_root / "tree-rebuilt.po"
-        rebuilt_km = generated_root / "final-po-rebuilt.km"
 
         downloaded_localize_po.write_bytes(localize_bytes)
         workflow.build_po_from_tree(
@@ -128,19 +126,10 @@ def build_alignment_status_report(
             original_po_path=str(checked_in_localize_po),
             out_po_path=str(rebuilt_po),
         )
-        workflow.build_km_from_po(
-            translated_po_path=str(checked_in_final_po),
-            original_model_path=str(checked_in_source_km),
-            out_model_path=str(rebuilt_km),
-            output_organization_id=repository_config.translation.translated_organization_id,
-            output_km_id=repository_config.translation.translated_km_id,
-            output_name=repository_config.translation.translated_name,
-            package_identity_mappings=(repository_config.translation.package_identity_mappings),
-            supplemental_translations_dir=(
-                str(repo_root / repository_config.translation.supplemental_directory)
-                if repository_config.translation.supplemental_directory
-                else None
-            ),
+        validate_native_locale(
+            po_path=checked_in_final_po,
+            km_path=checked_in_source_km,
+            target_language=repository_config.translation.target_language,
         )
 
         checks = (
@@ -152,7 +141,7 @@ def build_alignment_status_report(
                 actual_path=checked_in_localize_po,
                 guidance=(
                     "Run the Localize pull/sync workflow, then commit the refreshed "
-                    "sources/localize snapshot, tree, final PO, and final KM."
+                    "sources/localize snapshot, tree, and final PO."
                 ),
             ),
             _build_file_check(
@@ -165,21 +154,12 @@ def build_alignment_status_report(
                     "Run the tree-to-PO sync workflow and commit builds/final_translated.po."
                 ),
             ),
-            _build_file_check(
-                name="Final PO rebuilds checked-in final KM",
-                expected_label="Final PO rebuilt KM",
-                expected_path=rebuilt_km,
-                actual_label="Repository final KM",
-                actual_path=checked_in_final_km,
-                guidance="Run PO-to-KM generation with translation-config.yml metadata.",
-            ),
         )
 
         if artifact_dir is not None:
             _write_alignment_artifacts(
                 artifact_dir=artifact_dir,
                 rebuilt_po=rebuilt_po,
-                rebuilt_km=rebuilt_km,
             )
 
     return AlignmentStatusReport(
@@ -303,10 +283,8 @@ def _write_alignment_artifacts(
     *,
     artifact_dir: Path,
     rebuilt_po: Path,
-    rebuilt_km: Path,
 ) -> None:
     """Copy generated comparison files into a persistent artifact directory."""
 
     artifact_dir.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(rebuilt_po, artifact_dir / rebuilt_po.name)
-    shutil.copyfile(rebuilt_km, artifact_dir / rebuilt_km.name)

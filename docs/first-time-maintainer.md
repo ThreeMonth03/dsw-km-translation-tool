@@ -10,7 +10,7 @@ This tooling turns that website state into files that can be reviewed, tested,
 and committed in Git:
 
 ```text
-Localize/Weblate PO -> tree/ -> final PO -> translated KM -> Git commit
+Localize/Weblate PO -> tree/ -> native locale PO -> Git commit
 ```
 
 The tooling repository contains reusable code, tests, workflow templates, and
@@ -62,7 +62,7 @@ full ownership map. If the change goes into support packages, use
 
 | Change | Start With | Tests |
 | --- | --- | --- |
-| Translation tree, final PO, or final KM output | [Architecture](architecture.md) | [`tests/translation/`][tests-translation] |
+| Translation tree or native locale PO | [Architecture](architecture.md) | [`tests/translation/`][tests-translation] |
 | Shared strings | [Architecture](architecture.md) | shared-string tests under [`tests/translation/`][tests-translation] |
 | Weblate download, merge, or sync commits | [Architecture](architecture.md) | Localize and CI tests under [`tests/infra/`][tests-infra] |
 | Translation repository config | [Architecture](architecture.md) | config tests under [`tests/infra/`][tests-infra] |

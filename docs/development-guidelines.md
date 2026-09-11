@@ -26,8 +26,7 @@ Local generated state stays out of normal tooling commits:
 - local `translation/` workspaces
 
 Translation round-trip fixtures keep the checked-in tree, final PO, and review
-diff. KM bundles are rebuilt by tests and workflows instead of stored in the
-fixture tree.
+diff. The source KM fixture validates locale references and source strings.
 
 Dedicated translation repositories may commit generated `tree/`, `builds/`, and
 `reviews/` outputs because those files are the automation and visualization
@@ -44,7 +43,7 @@ workspace for translators and maintainers.
 - Add or update tests under [`tests/infra/`][tests-infra-dir] when a helper makes a Git, Weblate,
   config, or merge decision.
 - Add or update tests under [`tests/translation/`][tests-translation-dir] when a change affects
-  translator-facing tree files or PO/KM output.
+  translator-facing tree files or PO output.
 - Update docs in the same commit as behavior changes.
 - Update Sphinx pages or docstrings when stable package APIs change.
 

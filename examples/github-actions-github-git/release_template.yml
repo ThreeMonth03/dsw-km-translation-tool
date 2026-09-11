@@ -71,7 +71,7 @@ jobs:
         run: |
           version="$(
             python -c \
-              'import json; print(json.load(open("translation-repo/builds/final_translated.km"))["version"])'
+              'import yaml; print(yaml.safe_load(open("translation-repo/translation-config.yml"))["knowledge_model"]["version"])'
           )"
           if [[ "$GITHUB_REF_NAME" != "v${version}" ]]; then
             printf 'Tag %s does not match KM version %s\n' \
@@ -84,22 +84,18 @@ jobs:
           version="${GITHUB_REF_NAME#v}"
           assets="$RUNNER_TEMP/release-assets"
           mkdir -p "$assets"
-          cp translation-repo/builds/final_translated.km \
-            "$assets/{{TRANSLATED_ASSET_STEM}}-${version}.km"
-          cp translation-repo/builds/final_translated.km \
-            "$assets/{{TRANSLATED_ASSET_STEM}}.km"
           cp translation-repo/builds/final_translated.po \
-            "$assets/{{TRANSLATED_ASSET_STEM}}-${version}.po"
+            "$assets/{{LOCALE_ASSET_STEM}}-${version}.po"
+          cp translation-repo/builds/final_translated.po \
+            "$assets/{{LOCALE_ASSET_STEM}}.po"
           cp translation-repo/translation-config.yml \
             "$assets/translation-config.yml"
           (
             cd "$assets"
-            sha256sum "{{TRANSLATED_ASSET_STEM}}-${version}.km" \
-              > "{{TRANSLATED_ASSET_STEM}}-${version}.km.sha256"
-            sha256sum "{{TRANSLATED_ASSET_STEM}}.km" \
-              > "{{TRANSLATED_ASSET_STEM}}.km.sha256"
-            sha256sum "{{TRANSLATED_ASSET_STEM}}-${version}.po" \
-              > "{{TRANSLATED_ASSET_STEM}}-${version}.po.sha256"
+            sha256sum "{{LOCALE_ASSET_STEM}}-${version}.po" \
+              > "{{LOCALE_ASSET_STEM}}-${version}.po.sha256"
+            sha256sum "{{LOCALE_ASSET_STEM}}.po" \
+              > "{{LOCALE_ASSET_STEM}}.po.sha256"
           )
 
       - name: Publish GitHub release
@@ -112,12 +108,10 @@ jobs:
             prerelease+=(--prerelease)
           fi
           gh release create "$GITHUB_REF_NAME" \
-            "$RUNNER_TEMP/release-assets/{{TRANSLATED_ASSET_STEM}}-${version}.km" \
-            "$RUNNER_TEMP/release-assets/{{TRANSLATED_ASSET_STEM}}-${version}.km.sha256" \
-            "$RUNNER_TEMP/release-assets/{{TRANSLATED_ASSET_STEM}}.km" \
-            "$RUNNER_TEMP/release-assets/{{TRANSLATED_ASSET_STEM}}.km.sha256" \
-            "$RUNNER_TEMP/release-assets/{{TRANSLATED_ASSET_STEM}}-${version}.po" \
-            "$RUNNER_TEMP/release-assets/{{TRANSLATED_ASSET_STEM}}-${version}.po.sha256" \
+            "$RUNNER_TEMP/release-assets/{{LOCALE_ASSET_STEM}}-${version}.po" \
+            "$RUNNER_TEMP/release-assets/{{LOCALE_ASSET_STEM}}-${version}.po.sha256" \
+            "$RUNNER_TEMP/release-assets/{{LOCALE_ASSET_STEM}}.po" \
+            "$RUNNER_TEMP/release-assets/{{LOCALE_ASSET_STEM}}.po.sha256" \
             "$RUNNER_TEMP/release-assets/translation-config.yml" \
             --repo "$GITHUB_REPOSITORY" \
             --verify-tag \

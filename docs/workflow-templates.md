@@ -25,7 +25,7 @@ in that config rather than hard-coding them into workflow steps.
 | [`localize_auto_sync_template.yml`][auto-sync-template] | Translation repository | Yes | None | Pull Weblate into Git and rebuild outputs on trusted scheduled runs. |
 | [`github_translation_import_template.yml`][github-import-template] | Translation repository | Yes | `LOCALIZE_API_TOKEN` | After merge, import accepted GitHub translation edits to Weblate, then sync Weblate back to Git. |
 | [`localize_status_report_template.yml`][status-template] | Translation repository | No | Optional `LOCALIZE_API_TOKEN` | Report Weblate PO health and website-side checks. |
-| [`localize_alignment_report_template.yml`][alignment-template] | Translation repository | No | None | Verify Weblate, tree, final PO, and final KM outputs still match. |
+| [`localize_alignment_report_template.yml`][alignment-template] | Translation repository | No | None | Verify Weblate, tree, and final PO outputs still match. |
 | [`km_version_auto_update_template.yml`][km-update-template] | Translation repository | Yes | `DSW_REGISTRY_TOKEN` | Move to a newer published KM only after validation passes. |
 
 ## Rendered Values

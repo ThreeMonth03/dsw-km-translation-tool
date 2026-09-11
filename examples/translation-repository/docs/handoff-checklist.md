@@ -39,7 +39,7 @@ Configure these secrets in this repository:
 | `localize_auto_sync.yml` | Scheduled | Git | Mirrors Weblate; commits only when tracked files changed |
 | `github_translation_import.yml` | Push to the tracking branch, manual | Weblate, then Git if sync changes follow | Imports accepted GitHub translation edits after merge; fails on conflicts |
 | `localize_status_report.yml` | Scheduled, manual | No | Reports empty translations, review-state counts, and Weblate checks |
-| `localize_alignment_report.yml` | Scheduled, manual | No | Verifies Weblate PO, checked-in PO, tree, final PO, and final KM alignment |
+| `localize_alignment_report.yml` | Scheduled, manual | No | Verifies Weblate PO, checked-in PO, tree, and final PO alignment |
 | `km_version_auto_update.yml` | Scheduled, manual | Git | No-ops when current; updates only after validation passes |
 | `validate_translation_config.yml` | Push, PR, manual | No | Validates config and scaffold; reports PR translation conflicts, formatting, and shared blocks |
 

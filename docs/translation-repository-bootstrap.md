@@ -13,7 +13,7 @@ repository:
 - downloads the configured KM bundle from the DSW Registry;
 - downloads the current Localize/Weblate PO;
 - expands the PO/KM pair into `tree/`;
-- builds `builds/final_translated.po` and `builds/final_translated.km`;
+- builds and validates `builds/final_translated.po` for native DSW locale import;
 - writes review output under `reviews/`.
 
 It does not commit, push, configure GitHub secrets, or upload translations to
@@ -46,27 +46,6 @@ and package ID, and generates an empty catalog from the KM. Later catalog
 updates carry a translation only when its UUID, field, and source text are
 unchanged. `dsw-km-init-translation-repo --source-km` remains available for
 offline or migration bootstraps.
-
-## Fields Missing from Weblate
-
-Use supplemental translations only when the source KM contains a user-facing
-field that is absent from the upstream PO catalog. Add its directory to
-`translation-config.yml`:
-
-```yaml
-translation:
-  supplemental_directory: supplemental
-```
-
-Store each entry at `supplemental/<entity-uuid>/translation.md`. The file uses
-the same Source and Translation blocks as files under `tree/`. Translators edit
-only the Translation block.
-
-Supplemental forms are not copied into Weblate or the generated PO. Every KM
-build validates their UUID, field, and source text against the current KM, then
-applies them after the Weblate translations. A field that later appears in the
-upstream PO is rejected as a duplicate so it can be moved back to the normal
-Weblate workflow.
 
 Use bootstrap only to create a repository. To refresh docs and workflows in an
 existing repository, use the scaffold commands below.

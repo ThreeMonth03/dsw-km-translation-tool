@@ -22,7 +22,7 @@ The sync writer:
 1. Downloads the latest Weblate PO.
 2. Refreshes `tree/` from that PO.
 3. Rebuilds `builds/final_translated.po`.
-4. Rebuilds `builds/final_translated.km`.
+4. Validates the PO for DSW's native Knowledge Model locale import.
 5. Refreshes review outputs.
 6. Commits and pushes only when tracked artifacts changed.
 
@@ -66,7 +66,7 @@ import, sync, or KM update when a later run starts.
 - `localize_status_report.yml` reports empty entries, review-state counts, and
   Weblate `has:check` items.
 - `localize_alignment_report.yml` verifies that Weblate PO, checked-in PO,
-  `tree/`, final PO, and final KM match.
+  `tree/`, and the final PO match.
 
 ## Translation Quality States
 

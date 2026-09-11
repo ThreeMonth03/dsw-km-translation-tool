@@ -20,6 +20,7 @@ from .localize_sync import (
     is_retryable_localize_download_error,
     pull_localize_po,
 )
+from .native_locale import validate_native_locale
 from .translation_repository_config import (
     TranslationRepositoryConfig,
     load_translation_repository_config,
@@ -47,7 +48,6 @@ class UpstreamSmokeResult:
     localize_source: str | None = None
     localize_fallback_reason: str | None = None
     final_po_path: str | None = None
-    final_km_path: str | None = None
     km_bundle_changed: bool = False
     km_bundle_initialized: bool = False
     localize_po_changed: bool = False
@@ -113,7 +113,6 @@ def run_upstream_smoke(
     latest_po_path = resolved_work_dir / paths.localize_latest_po_path
     tree_dir = resolved_work_dir / paths.translation_tree_dir
     final_po_path = resolved_work_dir / paths.final_po_path
-    final_km_path = resolved_work_dir / paths.final_km_path
 
     km_result = pull_km_bundle(
         config_path=config_path,
@@ -153,14 +152,10 @@ def run_upstream_smoke(
         shared_blocks_outline_out_path=str(tree_dir / "shared_blocks_outline.md"),
         group_by="shared-block",
     )
-    workflow.build_km_from_po(
-        translated_po_path=str(final_po_path),
-        original_model_path=str(source_km_path),
-        out_model_path=str(final_km_path),
-        output_organization_id=updated_config.translation.translated_organization_id,
-        output_km_id=updated_config.translation.translated_km_id,
-        output_name=updated_config.translation.translated_name,
-        package_identity_mappings=updated_config.translation.package_identity_mappings,
+    validate_native_locale(
+        po_path=final_po_path,
+        km_path=source_km_path,
+        target_language=updated_config.translation.target_language,
     )
 
     alignment = build_alignment_status_report(
@@ -183,7 +178,6 @@ def run_upstream_smoke(
         localize_source=localize_source,
         localize_fallback_reason=localize_fallback_reason,
         final_po_path=str(final_po_path),
-        final_km_path=str(final_km_path),
         km_bundle_changed=km_result.changed,
         km_bundle_initialized=km_result.initialized,
         localize_po_changed=localize_result.changed,
@@ -314,7 +308,6 @@ def render_upstream_smoke_markdown(result: UpstreamSmokeResult) -> str:
         f"| Localize source | {_format_value(result.localize_source)} |",
         f"| Localize fallback reason | {_format_value(result.localize_fallback_reason)} |",
         f"| Final PO | {_format_value(result.final_po_path)} |",
-        f"| Final KM | {_format_value(result.final_km_path)} |",
         f"| KM bundle changed | {'yes' if result.km_bundle_changed else 'no'} |",
         f"| Localize PO changed | {'yes' if result.localize_po_changed else 'no'} |",
         f"| Alignment | {'aligned' if result.alignment_aligned else 'not checked'} |",

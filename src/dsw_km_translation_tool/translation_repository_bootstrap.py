@@ -12,6 +12,7 @@ from .km_catalog import build_catalog_from_km
 from .km_registry import KmRegistryError
 from .localize_sync import Downloader as LocalizeDownloader
 from .localize_sync import pull_localize_po
+from .native_locale import validate_native_locale
 from .translation_repository_config import (
     load_translation_repository_config,
     version_paths,
@@ -39,7 +40,6 @@ class TranslationRepositoryBootstrapResult:
     localize_po_path: Path | None = None
     tree_dir: Path | None = None
     final_po_path: Path | None = None
-    final_km_path: Path | None = None
     skipped_reason: str | None = None
 
 
@@ -283,7 +283,6 @@ def _generate_translation_outputs(
     km_version = config.knowledge_model.version
     tree_dir = repo_root / paths.translation_tree_dir
     final_po_path = repo_root / paths.final_po_path
-    final_km_path = repo_root / paths.final_km_path
 
     workflow = TranslationWorkflowService(
         source_lang=config.translation.source_language,
@@ -309,19 +308,10 @@ def _generate_translation_outputs(
         generated_po_path=str(final_po_path),
         diff_out_path=str(repo_root / paths.review_diff_path),
     )
-    workflow.build_km_from_po(
-        translated_po_path=str(final_po_path),
-        original_model_path=str(source_km_path),
-        out_model_path=str(final_km_path),
-        output_organization_id=config.translation.translated_organization_id,
-        output_km_id=config.translation.translated_km_id,
-        output_name=config.translation.translated_name,
-        package_identity_mappings=config.translation.package_identity_mappings,
-        supplemental_translations_dir=(
-            str(repo_root / config.translation.supplemental_directory)
-            if config.translation.supplemental_directory
-            else None
-        ),
+    validate_native_locale(
+        po_path=final_po_path,
+        km_path=source_km_path,
+        target_language=config.translation.target_language,
     )
 
     _extend_existing_artifacts(
@@ -332,7 +322,6 @@ def _generate_translation_outputs(
             source_po_path,
             tree_dir,
             final_po_path,
-            final_km_path,
             repo_root / paths.review_diff_path,
         ),
     )
@@ -348,7 +337,6 @@ def _generate_translation_outputs(
         localize_po_path=localize_po_path,
         tree_dir=tree_dir,
         final_po_path=final_po_path,
-        final_km_path=final_km_path,
     )
 
 

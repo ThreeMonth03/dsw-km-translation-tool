@@ -98,8 +98,6 @@ def main() -> None:
         print(f"  KM version : {result.km_version}")
     print(f"  Written    : {len(result.written_files)}")
     print(f"  Skipped    : {len(result.skipped_files)}")
-    if result.final_km_path:
-        print(f"  Final KM   : {result.final_km_path}")
 
 
 if __name__ == "__main__":

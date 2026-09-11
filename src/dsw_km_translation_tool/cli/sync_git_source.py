@@ -51,7 +51,6 @@ def main() -> None:
     print(f"SHA-256: {result.sha256}")
     print(f"Catalog entries: {result.catalog_entry_count}")
     print(f"Carried translations: {result.carried_translation_count}")
-    print(f"Translated KM: {result.build_result.final_km_path}")
 
 
 if __name__ == "__main__":

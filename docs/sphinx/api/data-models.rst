@@ -86,10 +86,6 @@ Workflow Models
    :members:
    :show-inheritance:
 
-.. autoclass:: dsw_km_translation_tool.data_models.workflow.KmBuildResult
-   :members:
-   :show-inheritance:
-
 Sync Models
 -----------
 

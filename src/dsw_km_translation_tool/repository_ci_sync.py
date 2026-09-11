@@ -30,9 +30,6 @@ def build_repository_ci_sync_config(
     commit_message: str = DEFAULT_SYNC_COMMIT_MESSAGE,
     source_po_path: Path | None = None,
     source_km_path: Path | None = None,
-    output_organization_id: str | None = None,
-    output_km_id: str | None = None,
-    output_name: str | None = None,
     restore_source_ref: str | None = None,
 ) -> CiSyncCommitConfig:
     """Build sync automation config from a translation repository config.
@@ -52,9 +49,6 @@ def build_repository_ci_sync_config(
         commit_message: Commit message used when sync changes are detected.
         source_po_path: Optional PO source override.
         source_km_path: Optional KM source override.
-        output_organization_id: Optional translated KM organization override.
-        output_km_id: Optional translated KM ID override.
-        output_name: Optional translated KM display name override.
         restore_source_ref: Optional git ref used for recovery restores. Defaults
             to ``origin/<tracking branch>``.
 
@@ -78,13 +72,6 @@ def build_repository_ci_sync_config(
         commit_message=commit_message,
         source_po_path=source_po_path or paths.source_po_path,
         source_km_path=source_km_path or paths.source_km_path,
-        output_organization_id=(
-            output_organization_id or repository_config.translation.translated_organization_id
-        ),
-        output_km_id=output_km_id or repository_config.translation.translated_km_id,
-        output_name=output_name or repository_config.translation.translated_name,
-        supplemental_translations_path=(repository_config.translation.supplemental_directory),
-        package_identity_mappings=(repository_config.translation.package_identity_mappings),
         restore_source_ref=restore_source_ref or f"origin/{branch}",
     )
 

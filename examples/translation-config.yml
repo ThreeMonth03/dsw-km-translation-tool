@@ -15,9 +15,6 @@ translation:
   source_language: en
   target_language: zh_Hant
   target_language_label: zh-Hant
-  translated_organization_id: dsw
-  translated_km_id: root-zh-hant
-  translated_name: Common DSW Knowledge Model (zh-Hant)
 
 branches:
   tracking_branch: master

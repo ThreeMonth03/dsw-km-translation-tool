@@ -11,6 +11,7 @@ requires-python = ">=3.13"
 license = "BSD-3-Clause"
 dependencies = [
     "dsw-models @ git+https://github.com/ds-wizard/engine-tools.git@v4.27.0#subdirectory=packages/dsw-models",
+    "Babel>=2,<3",
     "markdown-it-py>=3,<4",
     "pydantic>=2,<3",
     "PyYAML>=6,<7",
@@ -37,7 +38,6 @@ dsw-km-export-tree = "dsw_km_translation_tool.cli.po_json_tree:main"
 dsw-km-init-translation-repo = "dsw_km_translation_tool.cli.init_translation_repository:main"
 dsw-km-init-source-repo = "dsw_km_translation_tool.cli.init_km_source_repository:main"
 dsw-km-import-github-translations = "dsw_km_translation_tool.cli.import_github_translations:main"
-dsw-km-po-to-km = "dsw_km_translation_tool.cli.po_to_km:main"
 dsw-km-prepare-release = "dsw_km_translation_tool.cli.prepare_km_release:main"
 dsw-km-pull-bundle = "dsw_km_translation_tool.cli.pull_km_bundle:main"
 dsw-km-pull-localize-po = "dsw_km_translation_tool.cli.pull_localize_po:main"
@@ -58,6 +58,7 @@ dsw-km-tree-to-po = "dsw_km_translation_tool.cli.tree_to_po:main"
 dsw-km-upstream-smoke = "dsw_km_translation_tool.cli.upstream_smoke:main"
 dsw-km-validate-config = "dsw_km_translation_tool.cli.validate_translation_config:main"
 dsw-km-validate-legal-mapping = "dsw_km_translation_tool.cli.validate_legal_mapping:main"
+dsw-km-validate-locale = "dsw_km_translation_tool.cli.validate_native_locale:main"
 dsw-km-validate-release = "dsw_km_translation_tool.cli.validate_km_release:main"
 dsw-km-workflow = "dsw_km_translation_tool.cli.translate_workflow:main"
 
