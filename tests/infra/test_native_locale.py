@@ -25,7 +25,7 @@ def test_native_locale_accepts_valid_po(
     )
 
     assert result.catalog_language == "zh_Hant"
-    assert result.total_messages > 0
+    assert result.total_messages == 1466
     assert result.translated_messages > 0
     assert result.model_report["missingEntities"] == 0
     assert result.model_report["missingFields"] == 0

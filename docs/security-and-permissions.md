@@ -23,6 +23,7 @@ workflow.
 | [Localize status report][localize-status-template] | `contents: read` | optional `LOCALIZE_API_TOKEN` | No |
 | [Localize alignment report][localize-alignment-template] | `contents: read` | none | No |
 | [KM version auto update][km-auto-update-template] | `contents: write` | `DSW_REGISTRY_TOKEN` only when a newer KM exists | Writes Git only after validation |
+| Native locale release | `contents: write` | none | Publishes assets for a pushed locale tag; no DSW or Weblate writes |
 
 The workflows that write the tracking branch or Weblate share the
 `translation-state-master` concurrency group with `cancel-in-progress: false`.

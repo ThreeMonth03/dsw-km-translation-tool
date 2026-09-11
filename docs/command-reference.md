@@ -81,8 +81,23 @@ Validate a generated PO directly before importing it into DSW:
 
 The command is read-only unless `--report` is supplied. It checks gettext
 syntax, the exact PO `Language` header, and every UUID, field, and source string
-against the source KM. A successful check produces a native locale PO; it does
-not create a translated KM package.
+against the source KM. It validates an existing PO; it does not generate a PO
+or create a translated KM package. It does not contact a DSW server.
+
+Prepare native locale release assets without publishing them:
+
+```shell
+.venv/bin/dsw-km-prepare-locale-release \
+  --repo-root /path/to/translation-repo \
+  --tooling-repo . \
+  --tag km-2.7.0-zh_Hant-r1 \
+  --out /tmp/native-locale-release
+```
+
+The command requires clean tracked files, a full `tooling.ref` commit SHA,
+the matching tooling checkout, and a reproducible rebuild. The output directory
+must not exist. It writes PO assets, checksums, and provenance only; see
+[Releases](releases.md) for the publication workflow and tag conventions.
 
 ## GitHub-only source and translation repositories
 

@@ -14,6 +14,7 @@ durable design and operating procedures live here.
 | Change code safely | [Development Guidelines](development-guidelines.md) |
 | Operate Localize/Weblate-to-Git sync | [Localize Sync Runbook](localize-sync-runbook.md) |
 | Accept GitHub PR translation contributions | [Localize Sync Runbook](localize-sync-runbook.md) |
+| Publish a native PO or tooling release | [Releases](releases.md) |
 | Create a new translation repository | [Translation Repository Bootstrap](translation-repository-bootstrap.md) |
 | Review or refresh translation repository workflows | [Workflow Templates](workflow-templates.md) |
 | Check repository/Weblate build alignment | [Localize Sync Runbook](localize-sync-runbook.md) |

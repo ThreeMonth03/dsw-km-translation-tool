@@ -7,6 +7,8 @@ Use these notes for repository operation:
 
 | Need | Read |
 | --- | --- |
+| Translate using only a browser and review the PO | [Contributing Translations](contributing.md) |
+| Publish a versioned native locale PO | [Publishing a Locale](maintenance-runbook.md#publishing-a-locale) |
 | Repository layout and ownership | [Maintainer Guide](maintainer-guide.md) |
 | Routine checks and manual workflow runs | [Maintenance Runbook](maintenance-runbook.md) |
 | Weblate-first sync policy | [Sync Policy](sync-policy.md) |

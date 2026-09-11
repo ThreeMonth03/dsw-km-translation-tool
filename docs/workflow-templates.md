@@ -58,17 +58,23 @@ current secret list and placement.
 workflow that writes Weblate. It runs after reviewed changes reach `master`,
 imports only safe GitHub translation edits, and fails with a report if Weblate
 changed the same entries differently or the translation lost source Markdown
-formatting, including boundary whitespace. It also rejects canonical shared
-translations that were not expanded into every referenced tree field and
-verifies that Weblate applied every uploaded entry.
+formatting, including boundary whitespace. It resolves canonical shared edits,
+rejects competing field edits, and verifies that Weblate applied every uploaded
+entry. Detected translation edits trigger a final sync even if Weblate already
+contains the proposed text.
 
 `validate_translation_config_template.yml` compares pull-request translation
 changes against the base commit recorded by the pull-request event. It checks
 Markdown and boundary-whitespace formatting, Weblate conflicts, and shared
 translation consistency, then uploads a field-level report. The workflow has
 read-only repository permission, receives no secrets, and never modifies the
-pull-request branch. Contributors expand canonical shared-block edits locally
-before pushing them.
+pull-request branch. It builds and uploads a native PO preview in its temporary
+checkout, without requiring translators to commit generated output changes.
+
+`examples/github-actions-common/release_template.yml` is shared by all source
+profiles. It validates a clean, tagged checkout against the pinned tooling and
+source before publishing native PO assets, checksums, and provenance. See
+[Releases](releases.md) for locale revision tags and tooling releases.
 
 `localize_auto_sync_template.yml` is a schedule-only writer. It never executes
 for pull requests or processes pull-request-controlled content with write

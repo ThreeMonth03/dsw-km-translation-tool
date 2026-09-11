@@ -126,6 +126,13 @@ KM Registry and Bundle Sync
 
 .. autofunction:: dsw_km_translation_tool.km_latest_sync.write_km_latest_sync_markdown
 
+Native Locale Releases
+----------------------
+
+.. autofunction:: dsw_km_translation_tool.locale_release.prepare_locale_release
+
+.. autofunction:: dsw_km_translation_tool.locale_release.locale_revision
+
 Upstream Smoke
 --------------
 

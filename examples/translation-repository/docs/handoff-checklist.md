@@ -4,7 +4,7 @@ Use this page when handing repository maintenance to another maintainer.
 
 ## Operating Model
 
-- Translate in Localize/Weblate.
+- Translate in Localize/Weblate or submit a reviewed Markdown pull request.
 - Let GitHub Actions mirror Weblate into this repository.
 - Review generated `tree/`, `builds/`, and `reviews/` files in Git.
 - Use workflow reports to diagnose drift before editing repository files.
@@ -42,6 +42,7 @@ Configure these secrets in this repository:
 | `localize_alignment_report.yml` | Scheduled, manual | No | Verifies Weblate PO, checked-in PO, tree, and final PO alignment |
 | `km_version_auto_update.yml` | Scheduled, manual | Git | No-ops when current; updates only after validation passes |
 | `validate_translation_config.yml` | Push, PR, manual | No | Validates config and scaffold; reports PR translation conflicts, formatting, and shared blocks |
+| `release.yml` | Locale tag push | GitHub Release | Publishes verified native PO assets and provenance |
 
 ## Routine Check
 

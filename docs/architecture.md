@@ -98,6 +98,9 @@ These modules connect the translation repository to the Weblate website:
   checksums, and Git tag/version alignment.
 - `km_release_history.py` resolves and downloads the previous GitHub Release,
   then delegates immutable-history validation to `km_release.py`.
+- `locale_release.py` rebuilds a pinned translation checkout and prepares native
+  PO assets with checksums and provenance. Locale revision tags are independent
+  of the source KM's release tags.
 - `km_source_repository_scaffold.py` renders a source KM repository whose
   branches are mutable but whose tags and published KM packages are immutable.
 - `legal_review/` generates keyword-based legal-review candidates, validates

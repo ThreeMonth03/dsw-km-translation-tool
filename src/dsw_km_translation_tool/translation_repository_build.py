@@ -10,6 +10,7 @@ from .translation_repository_config import (
     load_translation_repository_config,
     version_paths,
 )
+from .translation_repository_shared_sync import sync_translation_repository_shared_strings
 from .workflow import TranslationWorkflowService
 
 
@@ -71,6 +72,8 @@ def build_translation_repository(
         source_lang=config.translation.source_language,
         target_lang=config.translation.target_language,
     )
+    if preserve_existing_translations and (tree_dir / "shared_blocks").is_dir():
+        sync_translation_repository_shared_strings(repo_root=root, config_path=config_path)
     context = workflow.export_tree(
         po_path=str(source_po),
         model_path=str(source_km),

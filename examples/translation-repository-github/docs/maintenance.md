@@ -44,6 +44,19 @@ After CI passes, import `builds/final_translated.po` into the matching source
 Knowledge Model with DSW's locale import. Do not import the source `.km` as a
 translated package.
 
+## Publish a Locale
+
+Push a tag `km-<source KM version>-{{TARGET_LANGUAGE}}-r<revision>` on the clean,
+validated tracking branch. Increment the translation revision for each
+publication; the source KM version does not need to change. `tooling.ref` must
+be a full commit SHA. The release workflow verifies the pinned source release,
+rebuilds the PO, and requires a clean Git diff.
+
+The new GitHub Release becomes Latest and contains a versioned PO, stable PO
+alias, config, provenance manifest, release notes, and `SHA256SUMS`. Download
+all assets and run `sha256sum -c SHA256SUMS` to verify them. Import only the PO
+into DSW; never overwrite an existing release to publish a correction.
+
 ## Future Weblate cutover
 
 If the DSW team later creates an official component, import the checked-in PO

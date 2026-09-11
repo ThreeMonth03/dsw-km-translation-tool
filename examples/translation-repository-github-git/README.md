@@ -20,7 +20,7 @@ DSW's locale import. The `.km` file under `sources/knowledge-models/` is used
 only to validate locale references. Pull-request CI also publishes a 14-day
 `{{LOCALE_ASSET_STEM}}-<commit SHA>` review artifact. Versioned, long-term
 downloads are GitHub Release assets named
-`{{LOCALE_ASSET_STEM}}-<version>.po`.
+`{{LOCALE_ASSET_STEM}}-<KM version>-r<revision>.po`.
 
 CI checks out the exact source commit, refreshes the source KM snapshot,
 rebuilds the translation tree and native locale PO, and requires a clean Git

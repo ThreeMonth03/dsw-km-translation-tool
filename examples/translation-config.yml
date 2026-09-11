@@ -21,7 +21,7 @@ branches:
 
 tooling:
   repository: ThreeMonth03/dsw-km-translation-tool
-  ref: master
+  ref: REPLACE_WITH_COMMIT_SHA
 
 localize:
   download_url: https://localize.ds-wizard.org/download/knowledge-models/common-dsw-knowledge-model/zh_Hant/

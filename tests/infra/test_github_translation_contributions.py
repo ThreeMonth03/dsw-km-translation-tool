@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -112,12 +113,16 @@ def test_github_translation_report_rejects_broken_markdown(workspace: Path) -> N
     )
 
 
-def test_github_translation_report_rejects_unsynced_shared_blocks(
+def test_github_translation_report_accepts_canonical_only_edits(
     workspace: Path,
 ) -> None:
-    """Verify canonical shared edits must be expanded into their tree fields."""
+    """Translators edit canonical Markdown without rebuilding generated fields."""
 
-    repo, base_ref, head_ref, latest_po = prepare_shared_block_error_case(workspace)
+    repo = initialize_translation_repo(workspace)
+    commit_translation(repo, "base tree", "舊翻譯")
+    base_ref = commit_shared_translation(repo, "base shared", "舊翻譯")
+    head_ref = commit_shared_translation(repo, "canonical edit", "GitHub 新翻譯")
+    latest_po = write_latest_po(workspace / "latest.po", "舊翻譯")
 
     report = build_github_translation_report(
         repo_root=repo,
@@ -126,10 +131,23 @@ def test_github_translation_report_rejects_unsynced_shared_blocks(
         latest_po_path=latest_po,
     )
 
-    assert report.has_translation_changes is False
-    assert report.has_shared_block_errors is True
-    assert len(report.shared_block_issues) == 1
-    assert "Run shared-string sync" in report.shared_block_issues[0].message
+    assert report.has_translation_changes is True
+    assert report.has_shared_block_errors is False
+    assert report.importable_entries == 1
+    assert report.decisions[0].github == "GitHub 新翻譯"
+
+    # A second edit can arrive before the first merge's expanded fields sync.
+    second_ref = commit_shared_translation(repo, "second canonical edit", "再更新翻譯")
+    latest_po = write_latest_po(workspace / "latest.po", "GitHub 新翻譯")
+    second = build_github_translation_report(
+        repo_root=repo,
+        base_ref=head_ref,
+        head_ref=second_ref,
+        latest_po_path=latest_po,
+    )
+    assert second.has_shared_block_errors is False
+    assert second.importable_entries == 1
+    assert second.decisions[0].base == "GitHub 新翻譯"
 
 
 def test_github_translation_report_accepts_synced_shared_blocks(
@@ -182,6 +200,24 @@ def test_write_import_po_contains_only_importable_entries(workspace: Path) -> No
     assert f"#: github:{TEST_UUID}:title" in text
     assert 'msgid "Source title"' in text
     assert 'msgstr "GitHub 新翻譯"' in text
+
+    # A shared Weblate message is uploaded once with all UUID references.
+    second = replace(report.decisions[0], uuid="22222222-2222-4222-8222-222222222222")
+    shared_report = replace(report, decisions=(*report.decisions, second))
+    shared_po = write_import_po(
+        report=shared_report,
+        output_path=workspace / "shared.po",
+        language="zh_Hant",
+    ).read_text(encoding="utf-8")
+    assert shared_po.count('msgid "Source title"') == 1
+    assert f"github:{second.uuid}:title" in shared_po
+    conflicting = replace(second, github="不同翻譯")
+    with pytest.raises(GitHubTranslationContributionError, match="same Weblate message"):
+        write_import_po(
+            report=replace(report, decisions=(*report.decisions, conflicting)),
+            output_path=workspace / "conflict.po",
+            language="zh_Hant",
+        )
 
 
 def test_report_github_translations_cli_writes_outputs(
@@ -331,11 +367,11 @@ def test_report_github_translations_cli_fails_on_conflicts(
     assert "importable_entries=0" in outputs
 
 
-def test_report_github_translations_cli_fails_on_unsynced_shared_blocks(
+def test_report_github_translations_cli_fails_on_competing_shared_edits(
     monkeypatch,
     workspace: Path,
 ) -> None:
-    """Verify a translation PR cannot pass with a stale expanded tree."""
+    """Conflicting canonical and field edits must be resolved explicitly."""
 
     repo, base_ref, head_ref, latest_po = prepare_shared_block_error_case(workspace)
     write_config(repo / "translation-config.yml")
@@ -368,11 +404,11 @@ def test_report_github_translations_cli_fails_on_unsynced_shared_blocks(
         ],
     )
 
-    with pytest.raises(SystemExit, match="shared blocks out of sync"):
+    with pytest.raises(SystemExit, match="shared-block conflicts"):
         report_github_translations.main()
 
     outputs = github_output.read_text(encoding="utf-8")
-    assert "has_translation_changes=false" in outputs
+    assert "has_translation_changes=true" in outputs
     assert "has_shared_block_errors=true" in outputs
 
 
@@ -624,12 +660,17 @@ def prepare_markdown_error_case(workspace: Path) -> tuple[Path, str, str, Path]:
 
 
 def prepare_shared_block_error_case(workspace: Path) -> tuple[Path, str, str, Path]:
-    """Create a Git fixture whose canonical shared edit was not expanded."""
+    """Create a Git fixture with competing canonical and tree field edits."""
 
     repo = initialize_translation_repo(workspace)
     commit_translation(repo, "base tree", "舊翻譯")
     base_ref = commit_shared_translation(repo, "base shared", "舊翻譯")
-    head_ref = commit_shared_translation(repo, "unsynced shared", "GitHub 新翻譯")
+    head_ref = commit_shared_translation(
+        repo,
+        "competing edits",
+        "GitHub 新翻譯",
+        tree_target="另一種翻譯",
+    )
     latest_po = write_latest_po(workspace / "latest.po", "舊翻譯")
     return repo, base_ref, head_ref, latest_po
 

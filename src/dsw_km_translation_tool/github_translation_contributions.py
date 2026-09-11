@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import re
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path, PurePosixPath
 
 from .command import CommandRunner, default_command_runner, make_checked_runner
@@ -13,7 +13,7 @@ from .po_support.render import PoSectionRenderer
 from .po_support.state import PoEntryState, parse_po_entry_states
 from .shared_block_consistency import (
     SharedBlockConsistencyIssue,
-    find_shared_block_consistency_issues,
+    resolve_shared_block_translations,
 )
 from .translation_format import compare_markdown_format
 from .tree_support.document import TranslationMarkdownDocument
@@ -187,6 +187,22 @@ def build_github_translation_report(
         target_lang=target_lang,
         runner=runner,
     )
+    shared = resolve_shared_block_translations(
+        repo_root=repo_root,
+        base_ref=base_ref,
+        head_ref=head_ref,
+        base_targets={key: entry.target for key, entry in base_entries.items()},
+        head_targets={key: entry.target for key, entry in head_entries.items()},
+        tree_path=tree_path,
+        target_lang=target_lang,
+        runner=runner,
+    )
+    base_entries = {
+        key: replace(entry, target=shared.base_targets[key]) for key, entry in base_entries.items()
+    }
+    head_entries = {
+        key: replace(entry, target=shared.head_targets[key]) for key, entry in head_entries.items()
+    }
     weblate_entries = parse_po_entry_states(latest_po_path)
     decisions = tuple(
         _build_decision(
@@ -198,21 +214,12 @@ def build_github_translation_report(
         for key in sorted(set(base_entries) | set(head_entries))
         if _target_text(base_entries.get(key)) != _target_text(head_entries.get(key))
     )
-    shared_block_issues = find_shared_block_consistency_issues(
-        repo_root=repo_root,
-        base_ref=base_ref,
-        head_ref=head_ref,
-        head_targets={key: entry.target for key, entry in head_entries.items()},
-        tree_path=tree_path,
-        target_lang=target_lang,
-        runner=runner,
-    )
     return _build_report(
         base_ref=base_ref,
         head_ref=head_ref,
         latest_po_path=latest_po_path,
         decisions=decisions,
-        shared_block_issues=shared_block_issues,
+        shared_block_issues=shared.issues,
     )
 
 
@@ -472,10 +479,19 @@ def write_import_po(
         '"Content-Type: text/plain; charset=utf-8\\n"\n',
         "\n",
     ]
+    groups: dict[str, list[GitHubTranslationDecision]] = {}
     for decision in importable:
-        lines.append(f"#: github:{decision.uuid}:{decision.field}\n")
-        lines.extend(PoSectionRenderer.format_po_string_block("msgid", decision.source))
-        lines.extend(PoSectionRenderer.format_po_string_block("msgstr", decision.github))
+        group = groups.setdefault(decision.source, [])
+        if group and group[0].github != decision.github:
+            raise GitHubTranslationContributionError(
+                f"Conflicting translations for the same Weblate message: {decision.source!r}"
+            )
+        group.append(decision)
+    for source, group in groups.items():
+        references = " ".join(f"github:{item.uuid}:{item.field}" for item in group)
+        lines.append(f"#: {references}\n")
+        lines.extend(PoSectionRenderer.format_po_string_block("msgid", source))
+        lines.extend(PoSectionRenderer.format_po_string_block("msgstr", group[0].github))
         lines.append("\n")
     path.write_text("".join(lines), encoding="utf-8")
     return path

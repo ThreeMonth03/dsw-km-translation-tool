@@ -79,7 +79,7 @@ jobs:
           --github-output "$GITHUB_OUTPUT"
 
       - name: Sync Weblate back to Git
-        if: steps.import-github-translations.outputs.uploaded == 'true'
+        if: steps.import-github-translations.outputs.has_translation_changes == 'true'
         run: >-
           tooling-repo/.venv/bin/dsw-km-sync-localize
           --host-repo "$GITHUB_WORKSPACE/translation-repo"
