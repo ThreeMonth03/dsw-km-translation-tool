@@ -23,7 +23,6 @@ from dsw_km_translation_tool.github_translation_contributions import (
 from dsw_km_translation_tool.localize_sync import pull_localize_po
 from dsw_km_translation_tool.translation_repository_config import (
     load_translation_repository_config,
-    require_localize_config,
 )
 from dsw_km_translation_tool.weblate_upload import (
     resolve_weblate_file_api_url,
@@ -68,7 +67,7 @@ def main() -> None:
     repo_root = Path(args.repo_root).resolve()
     config_path = _resolve_repo_path(repo_root, Path(args.config))
     repository_config = load_translation_repository_config(config_path)
-    localize = require_localize_config(repository_config)
+    localize = repository_config.localize
     with TemporaryDirectory(prefix="dsw-github-import-") as temp_dir:
         temp_root = Path(temp_dir)
         pull_result = pull_localize_po(

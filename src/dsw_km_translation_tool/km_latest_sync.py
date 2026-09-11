@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import urllib.parse
-from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -25,7 +24,6 @@ from .localize_sync import pull_localize_po
 from .translation_repository_config import (
     DEFAULT_REGISTRY_API_URL,
     TranslationRepositoryConfigError,
-    format_package_id,
     load_translation_repository_config,
     normalize_version,
     tracking_branch,
@@ -211,7 +209,7 @@ def _ensure_trusted_registry(api_url: str) -> None:
 
 
 def update_knowledge_model_version(config_path: Path, version: str) -> str:
-    """Replace the configured KM version and bundle path."""
+    """Replace the configured KM version; workspace paths are derived from it."""
 
     payload = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
@@ -221,10 +219,6 @@ def update_knowledge_model_version(config_path: Path, version: str) -> str:
         raise TranslationRepositoryConfigError("Expected mapping at `knowledge_model`")
     normalized = normalize_version(version)
     knowledge_model["version"] = normalized
-    knowledge_model["bundle_path"] = _source_km_path_from_config_payload(
-        knowledge_model,
-        normalized,
-    ).as_posix()
     config_path.write_text(
         yaml.safe_dump(payload, allow_unicode=True, sort_keys=False),
         encoding="utf-8",
@@ -331,7 +325,7 @@ def _run_export_tree(
         [
             str(tooling_virtualenv_command_path(tooling_repo, "dsw-km-export-tree")),
             "--po",
-            str(repo_root / paths.localize_latest_po_path),
+            str(repo_root / paths.source_po_path),
             "--json",
             str(repo_root / paths.source_km_path),
             "--out-dir",
@@ -369,7 +363,7 @@ def _run_sync_build_and_tests(
             "--tree-dir",
             str(repo_root / paths.translation_tree_dir),
             "--original-po",
-            str(repo_root / paths.localize_latest_po_path),
+            str(repo_root / paths.source_po_path),
             "--out-po",
             str(repo_root / paths.final_po_path),
             "--diff-out",
@@ -501,26 +495,6 @@ def _resolve_repo_path(repo_root: Path, path: Path) -> Path:
     if path.is_absolute():
         return path.resolve()
     return (repo_root / path).resolve()
-
-
-def _source_km_path_from_config_payload(
-    knowledge_model: Mapping[str, object],
-    version: str,
-) -> Path:
-    organization_id = str(knowledge_model.get("organization_id", "")).strip()
-    km_id = str(knowledge_model.get("km_id", "")).strip()
-    if not organization_id or not km_id:
-        raise TranslationRepositoryConfigError(
-            "knowledge_model.organization_id and knowledge_model.km_id are required"
-        )
-    normalized = normalize_version(version)
-    package_id = format_package_id(
-        organization_id=organization_id,
-        km_id=km_id,
-        version=normalized,
-    )
-    source_slug = package_id.replace(":", "-")
-    return Path("sources") / "knowledge-models" / source_slug / f"{source_slug}.km"
 
 
 def _format_value(value: object | None) -> str:

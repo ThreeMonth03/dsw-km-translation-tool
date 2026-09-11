@@ -13,7 +13,6 @@ from .http_auth import bearer_authorization_header
 from .localize_sync import Downloader, _download_url
 from .translation_repository_config import (
     load_translation_repository_config,
-    require_localize_config,
 )
 
 _MAX_WEBLATE_PAGES = 1000
@@ -179,7 +178,7 @@ def resolve_weblate_units_api_url(
 
     resolved_config_path = config_path if config_path.is_absolute() else repo_root / config_path
     repository_config = load_translation_repository_config(resolved_config_path)
-    localize = require_localize_config(repository_config)
+    localize = repository_config.localize
     parsed_url = urllib.parse.urlparse(localize.download_url)
     path_parts = [part for part in parsed_url.path.split("/") if part]
     try:

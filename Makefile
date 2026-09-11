@@ -5,14 +5,9 @@ BOOTSTRAP_PYTHON ?= python3
 PYTHON ?= $(VENV_PYTHON)
 PIP := $(PYTHON) -m pip
 DSW_KM_DISCOVER_VERSIONS := $(VENV_BIN)/dsw-km-discover-versions
-DSW_KM_BUILD_TRANSLATION_REPO := $(VENV_BIN)/dsw-km-build-translation-repo
-DSW_KM_BUILD_LEGAL_DRAFT := $(VENV_BIN)/dsw-km-build-legal-draft
-DSW_KM_CATALOG_FROM_KM := $(VENV_BIN)/dsw-km-catalog-from-km
 DSW_KM_EXPORT_TREE := $(VENV_BIN)/dsw-km-export-tree
-DSW_KM_INIT_SOURCE_REPO := $(VENV_BIN)/dsw-km-init-source-repo
 DSW_KM_INIT_TRANSLATION_REPO := $(VENV_BIN)/dsw-km-init-translation-repo
 DSW_KM_IMPORT_GITHUB_TRANSLATIONS := $(VENV_BIN)/dsw-km-import-github-translations
-DSW_KM_PREPARE_RELEASE := $(VENV_BIN)/dsw-km-prepare-release
 DSW_KM_PULL_BUNDLE := $(VENV_BIN)/dsw-km-pull-bundle
 DSW_KM_PULL_LOCALIZE_PO := $(VENV_BIN)/dsw-km-pull-localize-po
 DSW_KM_REPORT_ALIGNMENT := $(VENV_BIN)/dsw-km-report-alignment
@@ -23,8 +18,6 @@ DSW_KM_REVIEW_PO := $(VENV_BIN)/dsw-km-review-po
 DSW_KM_SCAFFOLD := $(VENV_BIN)/dsw-km-scaffold
 DSW_KM_STATUS := $(VENV_BIN)/dsw-km-status
 DSW_KM_SYNC_LATEST_KM := $(VENV_BIN)/dsw-km-sync-latest-km
-DSW_KM_SYNC_GITHUB_RELEASE := $(VENV_BIN)/dsw-km-sync-github-release
-DSW_KM_SYNC_GIT_SOURCE := $(VENV_BIN)/dsw-km-sync-git-source
 DSW_KM_SYNC_LOCALIZE := $(VENV_BIN)/dsw-km-sync-localize
 DSW_KM_SYNC_REPOSITORY_SHARED_STRINGS := $(VENV_BIN)/dsw-km-sync-repository-shared-strings
 DSW_KM_SYNC_SHARED_STRINGS := $(VENV_BIN)/dsw-km-sync-shared-strings
@@ -32,7 +25,6 @@ DSW_KM_TREE_TO_PO := $(VENV_BIN)/dsw-km-tree-to-po
 DSW_KM_UPSTREAM_SMOKE := $(VENV_BIN)/dsw-km-upstream-smoke
 DSW_KM_VALIDATE_CONFIG := $(VENV_BIN)/dsw-km-validate-config
 DSW_KM_VALIDATE_LOCALE := $(VENV_BIN)/dsw-km-validate-locale
-DSW_KM_VALIDATE_RELEASE := $(VENV_BIN)/dsw-km-validate-release
 DSW_KM_WORKFLOW := $(VENV_BIN)/dsw-km-workflow
 
 PO ?= tests/fixtures/source_inputs/common_dsw_zh_Hant.po
@@ -72,13 +64,6 @@ UPSTREAM_SMOKE_JSON ?= $(UPSTREAM_SMOKE_DIR)/upstream_smoke_report.json
 UPSTREAM_SMOKE_MD ?= $(UPSTREAM_SMOKE_DIR)/upstream_smoke_report.md
 TRANSLATION_REPO_DIR ?=
 NEW_TRANSLATION_REPO_DIR ?=
-NEW_SOURCE_REPO_DIR ?=
-SOURCE_ORGANIZATION_ID ?=
-SOURCE_KM_ID ?=
-SOURCE_KM_NAME ?=
-SOURCE_INITIAL_PARENT_PACKAGE_ID ?=
-SOURCE_TOOLING_REPOSITORY ?= ThreeMonth03/dsw-km-translation-tool
-SOURCE_TOOLING_REF ?= master
 TRANSLATION_CONFIG ?= translation-config.yml
 TRANSLATION_CONFIG_TEMPLATE ?= examples/translation-config.yml
 TRACKING_BRANCH ?= master
@@ -89,12 +74,10 @@ SPHINXOPTS ?= -W --keep-going
 DOCS_SOURCE ?= docs/sphinx
 DOCS_BUILD ?= docs/sphinx/_build/html
 
-.PHONY: help help-all require-translation-repo require-new-translation-repo require-source-repo-dir require-new-source-repo require-target-branch
+.PHONY: help help-all require-translation-repo require-new-translation-repo require-target-branch
 .PHONY: venv install-dev install-hooks check compile format format-check lint
 .PHONY: test test-infra test-translation docs docs-clean
 .PHONY: repo-validate repo-pull-po repo-status repo-checks repo-align
-.PHONY: source-repo-init source-repo-prepare source-repo-validate
-.PHONY: repo-github-source-check repo-github-source-sync
 .PHONY: repo-scaffold-check repo-scaffold-sync repo-sync-shared-strings
 .PHONY: repo-github-translations repo-import-github-translations
 .PHONY: repo-init repo-sync repo-sync-branch repo-km-status repo-km-pull repo-km-update upstream-smoke
@@ -124,10 +107,6 @@ help:
 	'  repo-sync-shared-strings Writer: expand canonical shared translations into the tree' \
 	'  repo-github-translations Report GitHub translation changes against Weblate' \
 	'  repo-init          Initialize a new translation repo; set NEW_TRANSLATION_REPO_DIR=/path' \
-	'  source-repo-init   Initialize a source KM repo; use the packaged CLI for identity arguments' \
-	'  source-repo-prepare Generate release-manifest.yml from an exported KM' \
-	'  source-repo-validate Validate a source KM release repository' \
-	'  repo-github-source-sync Writer: fetch the pinned GitHub KM release and rebuild' \
 	'  repo-sync          Writer: pull Weblate, rebuild outputs, commit/push if changed' \
 	'  repo-import-github-translations Writer: import accepted GitHub translations to Weblate' \
 	'  repo-km-status     Report whether the Registry has a newer KM' \
@@ -168,11 +147,6 @@ help-all:
 	'  repo-sync-shared-strings Writer: expand canonical shared translations into the tree' \
 	'  repo-github-translations Report GitHub translation changes against Weblate' \
 	'  repo-init          Initialize NEW_TRANSLATION_REPO_DIR from templates and upstream inputs' \
-	'  source-repo-init   Initialize NEW_SOURCE_REPO_DIR from source KM templates' \
-	'  source-repo-prepare Generate release-manifest.yml in NEW_SOURCE_REPO_DIR' \
-	'  source-repo-validate Validate KM history and release metadata in NEW_SOURCE_REPO_DIR' \
-	'  repo-github-source-check Verify a checked-in GitHub source release' \
-	'  repo-github-source-sync Writer: fetch a pinned GitHub release and rebuild outputs' \
 	'  repo-sync          Writer: sync Weblate to Git in TRANSLATION_REPO_DIR' \
 	'  repo-sync-branch   Writer: sync Weblate to TARGET_BRANCH for PR repair' \
 	'  repo-import-github-translations Writer: import merged GitHub translations to Weblate' \
@@ -200,24 +174,6 @@ require-translation-repo:
 require-new-translation-repo:
 	@if [ -z "$(NEW_TRANSLATION_REPO_DIR)" ]; then \
 		printf '%s\n' 'Set NEW_TRANSLATION_REPO_DIR=/path/to/new-translation-repo' >&2; \
-		exit 2; \
-	fi
-
-require-new-source-repo:
-	@if [ -z "$(NEW_SOURCE_REPO_DIR)" ] || \
-		[ -z "$(SOURCE_ORGANIZATION_ID)" ] || \
-		[ -z "$(SOURCE_KM_ID)" ] || \
-		[ -z "$(SOURCE_KM_NAME)" ] || \
-		[ -z "$(SOURCE_INITIAL_PARENT_PACKAGE_ID)" ]; then \
-		printf '%s\n' \
-			'Set NEW_SOURCE_REPO_DIR, SOURCE_ORGANIZATION_ID, SOURCE_KM_ID,' \
-			'SOURCE_KM_NAME, and SOURCE_INITIAL_PARENT_PACKAGE_ID.' >&2; \
-		exit 2; \
-	fi
-
-require-source-repo-dir:
-	@if [ -z "$(NEW_SOURCE_REPO_DIR)" ]; then \
-		printf '%s\n' 'Set NEW_SOURCE_REPO_DIR=/path/to/source-km-repository' >&2; \
 		exit 2; \
 	fi
 
@@ -341,38 +297,6 @@ repo-init: venv require-new-translation-repo
 		--repo-root "$(NEW_TRANSLATION_REPO_DIR)" \
 		--tooling-repo "$(CURDIR)" \
 		--config-template "$(TRANSLATION_CONFIG_TEMPLATE)"
-
-source-repo-validate: venv require-source-repo-dir
-	$(DSW_KM_VALIDATE_RELEASE) \
-		--repo-root "$(NEW_SOURCE_REPO_DIR)" \
-		--allow-unreleased
-
-source-repo-prepare: venv require-source-repo-dir
-	$(DSW_KM_PREPARE_RELEASE) \
-		--repo-root "$(NEW_SOURCE_REPO_DIR)"
-
-source-repo-init: venv require-new-source-repo
-	$(DSW_KM_INIT_SOURCE_REPO) \
-		--repo-root "$(NEW_SOURCE_REPO_DIR)" \
-		--tooling-repo "$(CURDIR)" \
-		--organization-id "$(SOURCE_ORGANIZATION_ID)" \
-		--km-id "$(SOURCE_KM_ID)" \
-		--name "$(SOURCE_KM_NAME)" \
-		--initial-parent-package-id "$(SOURCE_INITIAL_PARENT_PACKAGE_ID)" \
-		--tooling-repository "$(SOURCE_TOOLING_REPOSITORY)" \
-		--tooling-ref "$(SOURCE_TOOLING_REF)"
-
-repo-github-source-check: venv require-translation-repo
-	$(DSW_KM_SYNC_GITHUB_RELEASE) \
-		--repo-root "$(TRANSLATION_REPO_DIR)" \
-		--config "$(TRANSLATION_CONFIG)" \
-		--check \
-		--allow-unreleased
-
-repo-github-source-sync: venv require-translation-repo
-	$(DSW_KM_SYNC_GITHUB_RELEASE) \
-		--repo-root "$(TRANSLATION_REPO_DIR)" \
-		--config "$(TRANSLATION_CONFIG)"
 
 repo-sync: venv require-translation-repo
 	$(DSW_KM_SYNC_LOCALIZE) \

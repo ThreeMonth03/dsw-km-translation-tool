@@ -14,7 +14,7 @@ and Weblate PO still build with this tool.
 The templates assume the translation repository also has a
 `translation-config.yml` shaped like
 [`examples/translation-config.yml`][example-translation-config]. Keep repository
-names, branch names, KM bundle paths, language metadata, and Localize metadata
+names, branch names, KM coordinates, language metadata, and Localize metadata
 in that config rather than hard-coding them into workflow steps.
 
 ## Which Template to Use
@@ -71,8 +71,7 @@ read-only repository permission, receives no secrets, and never modifies the
 pull-request branch. It builds and uploads a native PO preview in its temporary
 checkout, without requiring translators to commit generated output changes.
 
-`examples/github-actions-common/release_template.yml` is shared by all source
-profiles. It validates a clean, tagged checkout against the pinned tooling and
+`examples/github-actions/release_template.yml` publishes native PO locales. It validates a clean, tagged checkout against the pinned tooling and
 source before publishing native PO assets, checksums, and provenance. See
 [Releases](releases.md) for locale revision tags and tooling releases.
 

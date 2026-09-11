@@ -6,10 +6,10 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
+from .path_safety import reject_symlink_path
 from .translation_repository_config import (
     TranslationRepositoryConfig,
     load_translation_repository_config,
-    version_paths,
 )
 
 
@@ -44,13 +44,6 @@ WORKFLOW_TEMPLATE_SUFFIX = "_template.yml"
 WORKFLOW_TARGET_SUFFIX = ".yml"
 TRANSLATION_REPOSITORY_TEMPLATE_DIR = Path("examples") / "translation-repository"
 GITHUB_ACTIONS_TEMPLATE_DIR = Path("examples") / "github-actions"
-GITHUB_TRANSLATION_REPOSITORY_TEMPLATE_DIR = Path("examples") / "translation-repository-github"
-GITHUB_TRANSLATION_ACTIONS_TEMPLATE_DIR = Path("examples") / "github-actions-github"
-GITHUB_GIT_TRANSLATION_REPOSITORY_TEMPLATE_DIR = (
-    Path("examples") / "translation-repository-github-git"
-)
-GITHUB_GIT_TRANSLATION_ACTIONS_TEMPLATE_DIR = Path("examples") / "github-actions-github-git"
-COMMON_ACTIONS_TEMPLATE_DIR = Path("examples") / "github-actions-common"
 TEMPLATE_TOKEN_RE = re.compile(r"(?<!\$)\{\{(?P<name>[^{}]+)\}\}")
 
 
@@ -65,17 +58,7 @@ def render_translation_repository_scaffold(
     values = _template_values(config)
     rendered: list[RenderedScaffoldFile] = []
 
-    if config.workflow.mode == "github" and config.workflow.source == "git":
-        repository_template_dir = GITHUB_GIT_TRANSLATION_REPOSITORY_TEMPLATE_DIR
-        workflow_template_dir = GITHUB_GIT_TRANSLATION_ACTIONS_TEMPLATE_DIR
-    elif config.workflow.mode == "github":
-        repository_template_dir = GITHUB_TRANSLATION_REPOSITORY_TEMPLATE_DIR
-        workflow_template_dir = GITHUB_TRANSLATION_ACTIONS_TEMPLATE_DIR
-    else:
-        repository_template_dir = TRANSLATION_REPOSITORY_TEMPLATE_DIR
-        workflow_template_dir = GITHUB_ACTIONS_TEMPLATE_DIR
-
-    repository_template_root = tooling_root / repository_template_dir
+    repository_template_root = tooling_root / TRANSLATION_REPOSITORY_TEMPLATE_DIR
     _require_directory(repository_template_root, "translation repository template directory")
     for source in sorted(repository_template_root.rglob("*")):
         if source.is_file():
@@ -87,12 +70,9 @@ def render_translation_repository_scaffold(
                 )
             )
 
-    workflow_template_root = tooling_root / workflow_template_dir
+    workflow_template_root = tooling_root / GITHUB_ACTIONS_TEMPLATE_DIR
     _require_directory(workflow_template_root, "GitHub Actions template directory")
-    common_root = tooling_root / COMMON_ACTIONS_TEMPLATE_DIR
-    _require_directory(common_root, "common GitHub Actions template directory")
     workflow_sources = sorted(workflow_template_root.glob(f"*{WORKFLOW_TEMPLATE_SUFFIX}"))
-    workflow_sources += sorted(common_root.glob(f"*{WORKFLOW_TEMPLATE_SUFFIX}"))
     for source in workflow_sources:
         target_name = source.name.removesuffix(WORKFLOW_TEMPLATE_SUFFIX) + WORKFLOW_TARGET_SUFFIX
         rendered.append(
@@ -114,18 +94,13 @@ def check_translation_repository_scaffold(
 ) -> TranslationRepositoryScaffoldResult:
     """Report managed files that differ from their rendered templates."""
 
-    target_root, rendered, obsolete = _load_scaffold(
+    target_root, rendered = _load_scaffold(
         repo_root=repo_root,
         tooling_repo=tooling_repo,
         config_path=config_path,
     )
-    changed = (
-        tuple(
-            item.path
-            for item in rendered
-            if not _file_matches(target_root / item.path, item.content)
-        )
-        + obsolete
+    changed = tuple(
+        item.path for item in rendered if not _file_matches(target_root / item.path, item.content)
     )
     return TranslationRepositoryScaffoldResult(
         repo_root=target_root,
@@ -142,15 +117,12 @@ def sync_translation_repository_scaffold(
 ) -> TranslationRepositoryScaffoldResult:
     """Update managed docs and workflows without changing repository config."""
 
-    target_root, rendered, obsolete = _load_scaffold(
+    target_root, rendered = _load_scaffold(
         repo_root=repo_root,
         tooling_repo=tooling_repo,
         config_path=config_path,
     )
     changed: list[Path] = []
-    for path in obsolete:
-        (target_root / path).unlink()
-        changed.append(path)
     for item in rendered:
         target = target_root / item.path
         if _file_matches(target, item.content):
@@ -171,7 +143,7 @@ def _load_scaffold(
     repo_root: Path,
     tooling_repo: Path,
     config_path: Path,
-) -> tuple[Path, tuple[RenderedScaffoldFile, ...], tuple[Path, ...]]:
+) -> tuple[Path, tuple[RenderedScaffoldFile, ...]]:
     target_root = repo_root.resolve()
     resolved_config = config_path if config_path.is_absolute() else target_root / config_path
     config = load_translation_repository_config(resolved_config)
@@ -179,28 +151,12 @@ def _load_scaffold(
         tooling_repo=tooling_repo,
         config=config,
     )
-    expected = {item.path for item in rendered}
-    managed: set[Path] = set()
-    for directory in (
-        TRANSLATION_REPOSITORY_TEMPLATE_DIR,
-        GITHUB_TRANSLATION_REPOSITORY_TEMPLATE_DIR,
-        GITHUB_GIT_TRANSLATION_REPOSITORY_TEMPLATE_DIR,
-    ):
-        template_root = tooling_repo / directory
-        managed.update(
-            path.relative_to(template_root) for path in template_root.rglob("*") if path.is_file()
-        )
-    for directory in (
-        GITHUB_ACTIONS_TEMPLATE_DIR,
-        GITHUB_TRANSLATION_ACTIONS_TEMPLATE_DIR,
-        GITHUB_GIT_TRANSLATION_ACTIONS_TEMPLATE_DIR,
-        COMMON_ACTIONS_TEMPLATE_DIR,
-    ):
-        for path in (tooling_repo / directory).glob(f"*{WORKFLOW_TEMPLATE_SUFFIX}"):
-            name = path.name.removesuffix(WORKFLOW_TEMPLATE_SUFFIX) + WORKFLOW_TARGET_SUFFIX
-            managed.add(Path(".github/workflows") / name)
-    obsolete = tuple(sorted(path for path in managed - expected if (target_root / path).is_file()))
-    return target_root, rendered, obsolete
+    try:
+        for item in rendered:
+            reject_symlink_path(target_root / item.path, target_root)
+    except ValueError as error:
+        raise TranslationRepositoryScaffoldError(str(error)) from error
+    return target_root, rendered
 
 
 def _render_file(
@@ -223,30 +179,11 @@ def _render_file(
 
 def _template_values(config: TranslationRepositoryConfig) -> dict[str, str]:
     return {
-        "WORKFLOW_MODE": config.workflow.mode,
-        "WORKFLOW_SOURCE": config.workflow.source,
         "TARGET_LANGUAGE_LABEL": config.translation.target_language_label,
         "TOOLING_REPOSITORY": config.tooling.repository,
         "TOOLING_REF": config.tooling.ref,
         "TRACKING_BRANCH": config.branches.tracking_branch,
-        "SOURCE_REPOSITORY": config.knowledge_model.upstream_repository,
-        "SOURCE_REF": config.knowledge_model.upstream_ref or "UNRELEASED",
-        "SOURCE_BUNDLE_PATH": (
-            config.knowledge_model.upstream_bundle_path.as_posix()
-            if config.knowledge_model.upstream_bundle_path
-            else ""
-        ),
-        "SOURCE_VERSION": config.knowledge_model.version,
-        "SOURCE_KM_ID": (
-            f"{config.knowledge_model.organization_id}:{config.knowledge_model.km_id}"
-        ),
-        "SOURCE_KM_PATH": version_paths(config).source_km_path.as_posix(),
-        "SOURCE_PO_PATH": version_paths(config).source_po_path.as_posix(),
         "TARGET_LANGUAGE": config.translation.target_language,
-        "LOCALE_ASSET_STEM": (
-            f"{config.knowledge_model.organization_id}-{config.knowledge_model.km_id}-"
-            f"{config.translation.target_language}-locale"
-        ),
     }
 
 

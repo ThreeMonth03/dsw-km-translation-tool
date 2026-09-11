@@ -2,23 +2,20 @@
 
 from __future__ import annotations
 
-import json
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
 from .km_bundle_sync import BundleDownloader, pull_km_bundle
-from .km_catalog import build_catalog_from_km
 from .km_registry import KmRegistryError
 from .localize_sync import Downloader as LocalizeDownloader
 from .localize_sync import pull_localize_po
-from .native_locale import validate_native_locale
+from .translation_repository_build import build_translation_repository
 from .translation_repository_config import (
     load_translation_repository_config,
     version_paths,
 )
 from .translation_repository_scaffold import render_translation_repository_scaffold
-from .workflow import TranslationWorkflowService
 
 
 class TranslationRepositoryBootstrapError(RuntimeError):
@@ -37,7 +34,6 @@ class TranslationRepositoryBootstrapResult:
     km_version: str | None = None
     source_km_path: Path | None = None
     source_po_path: Path | None = None
-    localize_po_path: Path | None = None
     tree_dir: Path | None = None
     final_po_path: Path | None = None
     skipped_reason: str | None = None
@@ -57,8 +53,6 @@ def bootstrap_translation_repository(
     skip_without_token: bool = False,
     bundle_downloader: BundleDownloader | None = None,
     localize_downloader: LocalizeDownloader | None = None,
-    source_km_input: Path | None = None,
-    source_po_input: Path | None = None,
 ) -> TranslationRepositoryBootstrapResult:
     """Create and optionally hydrate a translation repository checkout.
 
@@ -76,9 +70,6 @@ def bootstrap_translation_repository(
         bundle_downloader: Optional injectable KM bundle downloader for tests.
         localize_downloader: Optional injectable Localize/Weblate PO downloader
             for tests.
-        source_km_input: Local source KM used to hydrate GitHub-only repos.
-        source_po_input: Optional local PO seed. When omitted in GitHub-only
-            mode, a new empty catalog is generated from ``source_km_input``.
 
     Returns:
         Bootstrap result with written files and generated artifact paths.
@@ -128,23 +119,6 @@ def bootstrap_translation_repository(
             hydrated=False,
         )
 
-    if config.workflow.mode == "github":
-        if source_km_input is None:
-            raise TranslationRepositoryBootstrapError(
-                "Hydrating a GitHub-only translation repository requires --source-km."
-            )
-        try:
-            return _hydrate_github_translation_repository(
-                repo_root=target_root,
-                config_path=config_path,
-                source_km_input=source_km_input,
-                source_po_input=source_po_input,
-                written=written,
-                skipped=skipped,
-            )
-        except (OSError, ValueError) as error:
-            raise TranslationRepositoryBootstrapError(str(error)) from error
-
     if not registry_token.strip():
         if skip_without_token:
             return TranslationRepositoryBootstrapResult(
@@ -186,143 +160,32 @@ def _hydrate_translation_repository(
     config = load_translation_repository_config(config_path)
     paths = version_paths(config)
 
-    bundle_result = pull_km_bundle(
+    pull_km_bundle(
         config_path=config_path,
         repo_root=repo_root,
         token=registry_token,
         downloader=bundle_downloader,
     )
-    localize_result = pull_localize_po(
+    pull_localize_po(
         config_path=config_path,
         repo_root=repo_root,
         downloader=localize_downloader,
     )
 
-    latest_po_path = repo_root / paths.source_po_path
-    source_km_path = repo_root / paths.source_km_path
-    return _generate_translation_outputs(
+    build = build_translation_repository(
         repo_root=repo_root,
         config_path=config_path,
-        source_km_path=source_km_path,
-        source_po_path=latest_po_path,
-        written=written,
-        skipped=skipped,
-        localize_po_path=latest_po_path,
-        extra_written=(bundle_result.target_path, localize_result.latest_po_path),
-    )
-
-
-def _hydrate_github_translation_repository(
-    *,
-    repo_root: Path,
-    config_path: Path,
-    source_km_input: Path,
-    source_po_input: Path | None,
-    written: list[Path],
-    skipped: list[Path],
-) -> TranslationRepositoryBootstrapResult:
-    config = load_translation_repository_config(config_path)
-    paths = version_paths(config)
-    source_km_path = repo_root / paths.source_km_path
-    source_po_path = repo_root / paths.source_po_path
-    _require_file(source_km_input, "source KM input")
-    _copy_file(
-        source=source_km_input,
-        target=source_km_path,
-        overwrite=True,
-        written=written,
-        skipped=skipped,
-    )
-    bundle_payload = json.loads(source_km_path.read_text(encoding="utf-8"))
-    actual_package_id = bundle_payload.get("id") if isinstance(bundle_payload, dict) else None
-    if actual_package_id != paths.package_id:
-        raise TranslationRepositoryBootstrapError(
-            "Source KM identity does not match translation-config.yml: "
-            f"expected {paths.package_id!r}, got {actual_package_id!r}"
-        )
-    if source_po_input is not None:
-        _require_file(source_po_input, "source PO input")
-        _copy_file(
-            source=source_po_input,
-            target=source_po_path,
-            overwrite=True,
-            written=written,
-            skipped=skipped,
-        )
-    else:
-        result = build_catalog_from_km(
-            km_path=source_km_path,
-            output_path=source_po_path,
-            target_language=config.translation.target_language,
-        )
-        written.append(result.output_path)
-
-    return _generate_translation_outputs(
-        repo_root=repo_root,
-        config_path=config_path,
-        source_km_path=source_km_path,
-        source_po_path=source_po_path,
-        written=written,
-        skipped=skipped,
-    )
-
-
-def _generate_translation_outputs(
-    *,
-    repo_root: Path,
-    config_path: Path,
-    source_km_path: Path,
-    source_po_path: Path,
-    written: list[Path],
-    skipped: list[Path],
-    localize_po_path: Path | None = None,
-    extra_written: tuple[Path, ...] = (),
-) -> TranslationRepositoryBootstrapResult:
-    config = load_translation_repository_config(config_path)
-    paths = version_paths(config)
-    km_version = config.knowledge_model.version
-    tree_dir = repo_root / paths.translation_tree_dir
-    final_po_path = repo_root / paths.final_po_path
-
-    workflow = TranslationWorkflowService(
-        source_lang=config.translation.source_language,
-        target_lang=config.translation.target_language,
-    )
-    workflow.export_tree(
-        po_path=str(source_po_path),
-        model_path=str(source_km_path),
-        out_dir=str(tree_dir),
         preserve_existing_translations=False,
     )
-    workflow.sync_shared_strings(
-        tree_dir=str(tree_dir),
-        original_po_path=str(source_po_path),
-        out_po_path=str(final_po_path),
-        outline_out_path=str(tree_dir / "outline.md"),
-        shared_blocks_root_path=str(tree_dir / "shared_blocks"),
-        shared_blocks_outline_out_path=str(tree_dir / "shared_blocks_outline.md"),
-        group_by="shared-block",
-    )
-    workflow.review_po_changes(
-        original_po_path=str(source_po_path),
-        generated_po_path=str(final_po_path),
-        diff_out_path=str(repo_root / paths.review_diff_path),
-    )
-    validate_native_locale(
-        po_path=final_po_path,
-        km_path=source_km_path,
-        target_language=config.translation.target_language,
-    )
-
     _extend_existing_artifacts(
         written,
         (
-            *extra_written,
-            source_km_path,
-            source_po_path,
-            tree_dir,
-            final_po_path,
+            build.source_km_path,
+            build.source_po_path,
+            build.tree_dir,
+            build.final_po_path,
             repo_root / paths.review_diff_path,
+            repo_root / paths.validation_report_path,
         ),
     )
     return TranslationRepositoryBootstrapResult(
@@ -331,12 +194,11 @@ def _generate_translation_outputs(
         written_files=tuple(written),
         skipped_files=tuple(skipped),
         hydrated=True,
-        km_version=km_version,
-        source_km_path=source_km_path,
-        source_po_path=source_po_path,
-        localize_po_path=localize_po_path,
-        tree_dir=tree_dir,
-        final_po_path=final_po_path,
+        km_version=config.knowledge_model.version,
+        source_km_path=build.source_km_path,
+        source_po_path=build.source_po_path,
+        tree_dir=build.tree_dir,
+        final_po_path=build.final_po_path,
     )
 
 

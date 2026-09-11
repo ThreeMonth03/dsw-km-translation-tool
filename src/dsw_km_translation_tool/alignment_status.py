@@ -13,7 +13,6 @@ from .localize_sync import Downloader, _download_url
 from .native_locale import validate_native_locale
 from .translation_repository_config import (
     load_translation_repository_config,
-    require_localize_config,
     version_paths,
 )
 from .workflow import TranslationWorkflowService
@@ -93,11 +92,11 @@ def build_alignment_status_report(
     resolved_repo_root = repo_root.resolve()
     resolved_config_path = _resolve_repo_path(resolved_repo_root, config_path)
     repository_config = load_translation_repository_config(resolved_config_path)
-    localize = require_localize_config(repository_config)
+    localize = repository_config.localize
     version = repository_config.knowledge_model.version
     paths = version_paths(repository_config)
 
-    checked_in_localize_po = resolved_repo_root / paths.localize_latest_po_path
+    checked_in_localize_po = resolved_repo_root / paths.source_po_path
     checked_in_tree_dir = resolved_repo_root / paths.translation_tree_dir
     checked_in_final_po = resolved_repo_root / paths.final_po_path
     checked_in_source_km = resolved_repo_root / paths.source_km_path

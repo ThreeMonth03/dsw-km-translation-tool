@@ -65,7 +65,7 @@ branch.
 ## KM and Config Updates
 
 Normal Weblate sync does not refresh `translation-config.yml`. The KM
-auto-update workflow may update only the active KM version and bundle path after
+auto-update workflow may update only the active KM version after
 the newer KM bundle and Weblate mirror have been downloaded, the translation
 tree and locale PO have been rebuilt, and validation and alignment checks pass.
 Other settings, such as branch names, Weblate URLs, and tooling refs, are
@@ -89,8 +89,7 @@ make repo-align TRANSLATION_REPO_DIR="$TRANSLATION_REPO_DIR"
 
 After the tooling repository changes its managed docs or workflow templates,
 pin `tooling.ref` to the reviewed tool release's full commit SHA, check out that
-commit locally, and refresh with `make repo-scaffold-sync`. The command also
-removes known managed files from inactive workflow profiles. It never changes
+commit locally, and refresh with `make repo-scaffold-sync`. It never changes
 `translation-config.yml`, translation artifacts, or custom unmanaged files.
 
 `make repo-sync-shared-strings` updates only canonical shared-block context
