@@ -42,6 +42,10 @@ def test_scaffold_sync_is_idempotent_and_preserves_config(
         repo_root=target_repo,
         tooling_repo=repo_root,
     ).aligned
+    workflow = target_repo / ".github/workflows/validate_translation_config.yml"
+    workflow_text = workflow.read_text(encoding="utf-8")
+    assert "dsw-km-build-translation-repo" in workflow_text
+    assert "git diff --exit-code" in workflow_text
 
     second_sync = sync_translation_repository_scaffold(
         repo_root=target_repo,
