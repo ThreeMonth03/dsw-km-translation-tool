@@ -41,7 +41,7 @@ Configure these secrets in this repository:
 | `localize_status_report.yml` | Scheduled, manual | No | Reports empty translations, review-state counts, and Weblate checks |
 | `localize_alignment_report.yml` | Scheduled, manual | No | Verifies Weblate PO, checked-in PO, tree, and final PO alignment |
 | `km_version_auto_update.yml` | Scheduled, manual | Git | No-ops when current; updates only after validation passes |
-| `validate_translation_config.yml` | Push, PR, manual, daily | Test DSW only | Validates config, scaffold and PR edits; reports official POT coverage and checks browser import |
+| `validate_translation_config.yml` | Push, PR, manual, daily | Test DSW only | Validates config, scaffold and PR edits; reports source gaps and PO coverage; checks browser import |
 | `release.yml` | Locale tag push | GitHub Release | Publishes verified native PO assets and provenance |
 
 ## Routine Check
@@ -50,7 +50,8 @@ Configure these secrets in this repository:
 2. Check the latest `localize_alignment_report.yml` run.
 3. Check the latest `localize_status_report.yml` run.
 4. Check the latest `km_version_auto_update.yml` run.
-5. If a report failed, download its artifact before changing files.
+5. Check the latest `validate_translation_config.yml` source and native locale reports.
+6. If a report failed, download its artifact before changing files.
 
 See [Maintenance Runbook](maintenance-runbook.md) for commands.
 
@@ -72,6 +73,7 @@ See [Maintenance Runbook](maintenance-runbook.md) for commands.
 | Config validation failed | `translation-config.yml` and `validate_translation_config.yml` log |
 | Translation PR failed | `github-translation-report` artifact |
 | Native import failed or coverage is incomplete | `native-dsw-review` artifact |
+| Shared source POT differs | `source-catalog/source-catalog.md` in `native-dsw-review` |
 
 ## Local Maintenance
 

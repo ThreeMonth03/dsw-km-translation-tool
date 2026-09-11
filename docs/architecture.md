@@ -57,6 +57,8 @@ These modules handle the local representation of translation data:
 - `locale_coverage.py` compares the PO with an official DSW-exported POT.
   `tests/native_locale/` tests import and language switching in disposable
   official containers; it never connects to production DSW.
+- `source_catalog.py` snapshots Weblate's public upstream POT for read-only
+  source comparison. It never updates the shared catalog or language PO files.
 
 Keep translator-facing Markdown stable. If a parser change affects field order,
 folder names, or shared-block behavior, add focused tests before updating
