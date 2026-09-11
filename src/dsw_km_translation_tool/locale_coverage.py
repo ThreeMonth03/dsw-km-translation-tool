@@ -35,6 +35,17 @@ def _entry(message: Message) -> dict[str, object]:
     }
 
 
+def _read_official_pot(path: Path, package_id: str, source_language: str) -> Catalog:
+    pot = _read_catalog(path)
+    if dict(pot.mime_headers).get("Project-Id-Version", "").strip() != package_id:
+        raise LocaleCoverageError("Official POT does not identify the configured KM package")
+    if pot.locale_identifier != source_language:
+        raise LocaleCoverageError(f"POT Language header does not match {source_language!r}")
+    if not any(message.id for message in pot):
+        raise LocaleCoverageError("Official POT contains no translatable messages")
+    return pot
+
+
 def compare_locale_coverage(
     *,
     pot_path: Path,
@@ -50,17 +61,12 @@ def compare_locale_coverage(
     Partial locales are importable, but must never be reported as complete.
     """
 
-    pot = _read_catalog(pot_path)
+    pot = _read_official_pot(pot_path, package_id, source_language)
     po = _read_catalog(po_path)
-    if dict(pot.mime_headers).get("Project-Id-Version", "").strip() != package_id:
-        raise LocaleCoverageError("Official POT does not identify the configured KM package")
-    for name, catalog, language in (("POT", pot, source_language), ("PO", po, target_language)):
-        if catalog.locale_identifier != language:
-            raise LocaleCoverageError(f"{name} Language header does not match {language!r}")
+    if po.locale_identifier != target_language:
+        raise LocaleCoverageError(f"PO Language header does not match {target_language!r}")
     expected = {_key(message): message for message in pot if message.id}
     actual = {_key(message): message for message in po if message.id}
-    if not expected:
-        raise LocaleCoverageError("Official POT contains no translatable messages")
 
     missing, untranslated, fuzzy, translated = [], [], [], 0
     for key, source in expected.items():
@@ -99,6 +105,89 @@ def compare_locale_coverage(
     }
 
 
+def compare_source_catalog(
+    *, pot_path: Path, upstream_pot_path: Path, package_id: str, source_language: str
+) -> dict[str, object]:
+    """Compare the official export with Weblate's shared source POT, without merging.
+
+    The repository POT may use a human-readable project name instead of package
+    coordinates. Require its version to match; retain both headers as evidence.
+    Source changes cannot safely be distinguished from removals and additions,
+    so any upstream-only entry requires maintainer review, never automatic deletion.
+    """
+    pot = _read_official_pot(pot_path, package_id, source_language)
+    upstream = _read_catalog(upstream_pot_path)
+    project = dict(upstream.mime_headers).get("Project-Id-Version", "").strip()
+    version = package_id.rsplit(":", 1)[-1]
+    if project != package_id and not project.endswith(f" {version}"):
+        raise LocaleCoverageError("Upstream POT version does not match the configured KM")
+    if upstream.locale_identifier not in (None, "", source_language):
+        raise LocaleCoverageError("Upstream POT Language header differs from the source language")
+    expected = {_key(message): message for message in pot if message.id}
+    actual = {_key(message): message for message in upstream if message.id}
+    if not actual:
+        raise LocaleCoverageError("Upstream POT contains no translatable messages")
+    missing = [_entry(message) for key, message in expected.items() if key not in actual]
+    extra = [_entry(message) for key, message in actual.items() if key not in expected]
+    return {
+        "package_id": package_id,
+        "upstream_project_id_version": project,
+        "pot_sha256": hashlib.sha256(pot_path.read_bytes()).hexdigest(),
+        "upstream_pot_sha256": hashlib.sha256(upstream_pot_path.read_bytes()).hexdigest(),
+        "status": "review-required" if extra else "additions-only" if missing else "aligned",
+        "counts": {
+            "official": len(expected),
+            "upstream": len(actual),
+            "shared": len(expected.keys() & actual.keys()),
+            "missing_upstream": len(missing),
+            "upstream_only": len(extra),
+        },
+        "missing_upstream": missing,
+        "upstream_only": extra,
+    }
+
+
+def _render_entries(entries: list[dict[str, object]]) -> list[str]:
+    lines = []
+    for entry in entries:
+        source = json.dumps(entry["msgid"], ensure_ascii=False)
+        fence = "`" * max(3, 1 + max(map(len, re.findall(r"`+", source)), default=0))
+        lines.extend([fence, source, fence, ""])
+        if entry["msgctxt"]:
+            lines.extend([f"Context: {json.dumps(entry['msgctxt'])}", ""])
+    return lines
+
+
+def render_source_catalog(report: dict[str, object], *, details: bool = True) -> str:
+    """Render an upstream review report, not a proposed translation replacement."""
+    lines = [
+        "## Weblate upstream source catalog",
+        "",
+        f"Knowledge Model: `{report['package_id']}`",
+        f"Source catalog: **{report['status']}**",
+        f"Upstream POT: {report['upstream_url']}",
+        "",
+        "| Category | Messages |",
+        "| --- | ---: |",
+        *(f"| {name} | {count} |" for name, count in report["counts"].items()),
+        "",
+        "This compares the repository POT, not live Weblate units or translation quality.",
+        "No POT, PO, Weblate settings or translations have been updated.",
+        "",
+        "Review source differences with the upstream maintainers. Any accepted POT update",
+        "still needs a PO merge in Weblate or upstream automation. All language catalogs",
+        "may gain untranslated entries; preserve existing translations and review any",
+        "changed or removed source strings before merging. Do not replace language PO files.",
+        "",
+    ]
+    if details:
+        for category in ("missing_upstream", "upstream_only"):
+            if report[category]:
+                lines.extend([f"### {category.replace('_', ' ').capitalize()}", ""])
+                lines.extend(_render_entries(report[category]))
+    return "\n".join(lines)
+
+
 def render_locale_coverage(report: dict[str, object], *, details: bool = True) -> str:
     """Render counts and, optionally, complete source strings for human review."""
 
@@ -120,10 +209,5 @@ def render_locale_coverage(report: dict[str, object], *, details: bool = True) -
             if not report[category]:
                 continue
             lines.extend([f"### {category.capitalize()}", ""])
-            for entry in report[category]:
-                source = json.dumps(entry["msgid"], ensure_ascii=False)
-                fence = "`" * max(3, 1 + max(map(len, re.findall(r"`+", source)), default=0))
-                lines.extend([fence, source, fence, ""])
-                if entry["msgctxt"]:
-                    lines.extend([f"Context: {entry['msgctxt']}", ""])
+            lines.extend(_render_entries(report[category]))
     return "\n".join(lines)

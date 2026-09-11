@@ -48,6 +48,9 @@ def test_scaffold_sync_is_idempotent_and_preserves_config(
     assert "dsw-km-build-translation-repo" in workflow_text
     assert "git diff --exit-code" not in workflow_text
     assert "Upload native locale preview" in workflow_text
+    assert 'audit-source-catalog: "true"' in workflow_text
+    release = (target_repo / ".github/workflows/release.yml").read_text(encoding="utf-8")
+    assert "audit-source-catalog" not in release
 
     second_sync = sync_translation_repository_scaffold(
         repo_root=target_repo,

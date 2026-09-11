@@ -63,11 +63,28 @@ import, sync, or KM update when a later run starts.
 - `validate_translation_config.yml` validates repository configuration and
   scaffold state. On pull requests, it also compares the exact head and base
   commits and uploads the GitHub translation report and a native PO preview.
-  Generated PO/review changes need not be committed by translators.
+  Daily native verification also compares the official DSW POT with Weblate's
+  shared repository POT. Generated PO/review changes need not be committed by translators.
 - `localize_status_report.yml` reports empty entries, review-state counts, and
   Weblate `has:check` items.
 - `localize_alignment_report.yml` verifies that Weblate PO, checked-in PO,
   `tree/`, and the final PO match.
+
+## Shared Source Catalog
+
+The official Weblate upstream repository owns the shared POT. This repository
+does not maintain a separate canonical POT or upload new source strings.
+The `native-dsw-review` artifact includes `source-catalog/source-catalog.md`,
+the upstream POT snapshot and its exact commit. The audit checks the configured
+KM version and reports missing or differing sources without changing any language.
+
+Report confirmed extraction gaps through an upstream PR. Official maintainers
+review the source change and arrange the POT-to-PO merge for existing languages.
+An updated POT alone does not ensure Weblate's language catalogs are updated.
+New sources can add untranslated entries for all languages; unchanged sources
+must retain existing translations. Source edits and removals require review.
+Once official Weblate PO exports include the new entries, normal sync brings
+them into this repository. No translation work is added locally ahead of upstream.
 
 ## Translation Quality States
 

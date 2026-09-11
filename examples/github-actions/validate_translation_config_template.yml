@@ -124,3 +124,4 @@ jobs:
         uses: ./tooling-repo/.github/actions/native-locale
         with:
           translation-repository: ${{ github.workspace }}/translation-repo
+          audit-source-catalog: "true"

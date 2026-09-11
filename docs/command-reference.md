@@ -83,6 +83,20 @@ It cannot detect source messages absent from the PO. Use
 [Native Locale Verification](native-locale-verification.md) to compare against
 an official POT and test browser import in an isolated DSW instance.
 
+Audit the shared Weblate source catalog using an already exported official POT:
+
+```shell
+.venv/bin/dsw-km-report-source-catalog \
+  --repo-root /path/to/translation-repo \
+  --official-pot /tmp/native-dsw-review/official.pot \
+  --out /tmp/upstream-source-review
+```
+
+Use a new output directory. The command reads the public upstream repository
+configured by `localize.repository` and writes a snapshot and reports only.
+It does not upload to Weblate, edit translations or create a pull request.
+Source differences produce warnings; invalid inputs and download failures fail.
+
 Prepare native locale release assets without publishing them:
 
 ```shell

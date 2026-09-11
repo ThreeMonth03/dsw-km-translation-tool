@@ -29,6 +29,9 @@ Native import checks create isolated DSW containers bound only to loopback,
 using disposable test users. They remove containers and volumes afterwards.
 No production DSW URL, account or token is used. Artifacts contain PO coverage
 and screenshots, not authentication state.
+The upstream source audit reads the configured public GitHub repository without
+credentials and retains a POT snapshot for review. It does not execute upstream
+code, push commits, create PRs or change Weblate source strings or settings.
 
 ## Actions Secrets
 

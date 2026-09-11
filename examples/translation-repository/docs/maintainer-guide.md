@@ -47,6 +47,8 @@ website state into this repository:
   imported to Weblate only after merge when they do not conflict with Weblate
   edits to the same entries.
 - Read-only reports check Weblate status and repository alignment.
+- Daily native verification reports shared POT source gaps separately from
+  translation coverage; see [Shared Source Catalog](sync-policy.md#shared-source-catalog).
 - Config validation also checks that managed docs and workflows match the
   tooling templates rendered from this repository's config.
 - KM auto-update tracks newer published DSW Registry KM bundles when validation

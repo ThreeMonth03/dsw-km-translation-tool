@@ -7,6 +7,9 @@ inputs:
   artifact-name:
     description: Name of the downloadable coverage and screenshot artifact.
     default: native-dsw-review
+  audit-source-catalog:
+    description: Compare the live upstream POT during operational checks, not reproducible releases.
+    default: "false"
 runs:
   using: composite
   steps:
@@ -27,6 +30,18 @@ runs:
           args+=(--repo-root "$TRANSLATION_REPOSITORY")
         fi
         .venv/bin/python tests/native_locale/check.py "${args[@]}" --out "$RUNNER_TEMP/native-dsw-review"
+    - name: Audit Weblate upstream source catalog
+      if: ${{ inputs.audit-source-catalog == 'true' }}
+      shell: bash
+      working-directory: ${{ github.action_path }}/../../..
+      env:
+        TRANSLATION_REPOSITORY: ${{ inputs.translation-repository }}
+      run: |
+        .venv/bin/dsw-km-report-source-catalog \
+          --repo-root "$TRANSLATION_REPOSITORY" \
+          --official-pot "$RUNNER_TEMP/native-dsw-review/official.pot" \
+          --out "$RUNNER_TEMP/native-dsw-review/source-catalog" \
+          --summary "$GITHUB_STEP_SUMMARY"
     - name: Upload coverage and browser screenshots
       if: always()
       uses: actions/upload-artifact@v7
