@@ -42,6 +42,7 @@ Trigger read-only reports:
 ```shell
 gh workflow run localize_status_report.yml --ref master
 gh workflow run localize_alignment_report.yml --ref master
+gh workflow run validate_translation_config.yml --ref master
 ```
 
 Trigger KM auto-update immediately:
@@ -123,6 +124,10 @@ uncommitted generated changes. It publishes the versioned PO, a stable PO
 alias, `translation-config.yml`, `manifest.json`, release notes, and
 `SHA256SUMS`. The manifest records the source KM checksum, translation commit,
 tooling commit, and message counts. The successful release becomes **Latest**.
+Before publishing, CI imports the PO in disposable official DSW containers and
+checks language switching. Import or rendering errors block publication.
+Official POT coverage gaps produce a warning and are listed in the
+`native-dsw-review` artifact; an importable partial locale can still be released.
 
 Download all assets and run `sha256sum -c SHA256SUMS` to verify them. DSW needs
 only the PO. Use a new revision tag for corrections; do not replace existing
@@ -135,6 +140,9 @@ release assets.
   generated files with the checked-in files.
 - Native locale validation failed: compare `sources/localize/*/latest.po` with
   `builds/final_translated.po`, then inspect the reported KM reference.
+- Native DSW acceptance failed: download `native-dsw-review` for the result and
+  browser failure screenshot. An incomplete coverage warning is separate from
+  an import or rendering failure; inspect `coverage.md` for missing source text.
 - KM auto-update failed before downloading a bundle: check `DSW_REGISTRY_TOKEN`.
 - KM auto-update failed after rebuilding the translation tree and locale PO:
   inspect the validation or alignment error.

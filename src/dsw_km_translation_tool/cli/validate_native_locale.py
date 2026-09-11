@@ -46,7 +46,9 @@ def main() -> None:
             json.dumps(result.to_dict(), ensure_ascii=False, indent=2) + "\n",
             encoding="utf-8",
         )
-    print("Native DSW locale is valid.")
+    print(
+        "PO syntax, language and KM references are valid; coverage and server import are separate checks."
+    )
     print(f"Language: {result.catalog_language}")
     print(f"Messages: {result.total_messages}")
     print(f"Translated: {result.translated_messages}")

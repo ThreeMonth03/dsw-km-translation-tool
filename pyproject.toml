@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dsw-km-translation-tool"
-version = "0.3.1"
+version = "0.4.0"
 description = "Tooling for DSW Knowledge Model translation maintenance."
 readme = "readme.md"
 requires-python = ">=3.13"
@@ -19,6 +19,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+browser = ["playwright==1.61.0"]
 dev = [
     "pre-commit>=4,<5",
     "pytest>=8,<9",

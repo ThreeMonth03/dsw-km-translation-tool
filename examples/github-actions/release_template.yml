@@ -18,6 +18,7 @@ env:
 jobs:
   release:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout translation repository
         uses: actions/checkout@v5
@@ -57,6 +58,11 @@ jobs:
           --tooling-repo tooling-repo
           --tag "$RELEASE_TAG"
           --out "$RUNNER_TEMP/locale-release"
+
+      - name: Verify native DSW import and render translations
+        uses: ./tooling-repo/.github/actions/native-locale
+        with:
+          translation-repository: ${{ github.workspace }}/translation-repo
 
       - name: Publish GitHub release
         env:

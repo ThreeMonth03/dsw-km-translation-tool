@@ -11,6 +11,7 @@ that workflow:
 
 - mirror Weblate PO exports into a Git translation tree
 - build and validate native DSW Knowledge Model locale PO files
+- report official POT coverage and verify PO import in disposable DSW browsers
 - validate translation repository configuration
 - report Weblate PO health and output alignment
 - update to a newer published source KM after validation passes
@@ -32,6 +33,7 @@ Common references:
 - [KM Update Runbook](docs/km-update-runbook.md)
 - [Translation Repository Bootstrap](docs/translation-repository-bootstrap.md)
 - [Command Reference](docs/command-reference.md)
+- [Native Locale Verification](docs/native-locale-verification.md)
 - [Development Guidelines](docs/development-guidelines.md)
 
 ## Setup

@@ -41,7 +41,7 @@ Configure these secrets in this repository:
 | `localize_status_report.yml` | Scheduled, manual | No | Reports empty translations, review-state counts, and Weblate checks |
 | `localize_alignment_report.yml` | Scheduled, manual | No | Verifies Weblate PO, checked-in PO, tree, and final PO alignment |
 | `km_version_auto_update.yml` | Scheduled, manual | Git | No-ops when current; updates only after validation passes |
-| `validate_translation_config.yml` | Push, PR, manual | No | Validates config and scaffold; reports PR translation conflicts, formatting, and shared blocks |
+| `validate_translation_config.yml` | Push, PR, manual, daily | Test DSW only | Validates config, scaffold and PR edits; reports official POT coverage and checks browser import |
 | `release.yml` | Locale tag push | GitHub Release | Publishes verified native PO assets and provenance |
 
 ## Routine Check
@@ -71,6 +71,7 @@ See [Maintenance Runbook](maintenance-runbook.md) for commands.
 | KM update failed | `km-version-auto-update` artifact |
 | Config validation failed | `translation-config.yml` and `validate_translation_config.yml` log |
 | Translation PR failed | `github-translation-report` artifact |
+| Native import failed or coverage is incomplete | `native-dsw-review` artifact |
 
 ## Local Maintenance
 

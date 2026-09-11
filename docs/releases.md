@@ -29,8 +29,12 @@ The successful release becomes Latest. Never replace an existing tag or asset
 to correct a translation; increment the locale revision.
 
 The PO is imported into the matching source KM through DSW's native **Import
-locale** action, available since DSW 4.33. CI checks gettext syntax, language,
-and KM references locally; it does not perform a server-side DSW import.
+locale** action, available since DSW 4.33. Before publishing, CI checks syntax,
+language and KM references, then imports the PO in a disposable official DSW
+instance. It verifies the PO round trip and source/translated language switching.
+Import or rendering failures block publication. Incomplete official POT coverage
+produces a warning and a detailed report; partial translations remain releasable.
+See [Native Locale Verification](native-locale-verification.md).
 
 Pull-request PO artifacts are temporary review downloads, not formal releases
 or hosted DSW previews.

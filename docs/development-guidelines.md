@@ -70,6 +70,11 @@ Before pushing tooling changes:
 make check
 ```
 
+For native locale or workflow changes, also run
+[Native Locale Verification](native-locale-verification.md). This separate
+Docker/browser acceptance check runs in CI and before release publication;
+`make check` remains the fast, offline test suite.
+
 When you need to verify current upstream services and data shape, run:
 
 ```shell

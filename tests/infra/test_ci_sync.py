@@ -494,7 +494,7 @@ def test_ci_sync_commit_prints_sync_and_translation_test_logs(
             subprocess.CompletedProcess(
                 ["validate-locale"],
                 0,
-                stdout="Native DSW locale is valid.\n",
+                stdout="PO syntax, language and KM references are valid.\n",
                 stderr="",
             ),
             subprocess.CompletedProcess(
@@ -512,6 +512,6 @@ def test_ci_sync_commit_prints_sync_and_translation_test_logs(
     captured = capsys.readouterr()
     assert committed is False
     assert "Shared String Sync" in captured.out
-    assert "Native DSW locale is valid." in captured.out
+    assert "PO syntax, language and KM references are valid." in captured.out
     assert "tests/translation/test_output_mapping.py" in captured.out
     assert "translation-warning" in captured.out

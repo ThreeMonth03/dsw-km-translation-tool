@@ -29,6 +29,13 @@ Alignment Report
 
 .. autofunction:: dsw_km_translation_tool.alignment_status.write_alignment_status_markdown
 
+Official POT Coverage
+---------------------
+
+.. autofunction:: dsw_km_translation_tool.locale_coverage.compare_locale_coverage
+
+.. autofunction:: dsw_km_translation_tool.locale_coverage.render_locale_coverage
+
 Localize/Weblate Status
 -----------------------
 
