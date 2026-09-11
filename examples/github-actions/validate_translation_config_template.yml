@@ -100,3 +100,12 @@ jobs:
           tooling-repo/.venv/bin/dsw-km-scaffold check
           --repo-root "$GITHUB_WORKSPACE/translation-repo"
           --tooling-repo "$GITHUB_WORKSPACE/tooling-repo"
+
+      - name: Rebuild and validate native DSW locale
+        run: >-
+          tooling-repo/.venv/bin/dsw-km-build-translation-repo
+          --repo-root "$GITHUB_WORKSPACE/translation-repo"
+
+      - name: Verify reproducible translation outputs
+        working-directory: translation-repo
+        run: git diff --exit-code
