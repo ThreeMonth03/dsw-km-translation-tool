@@ -13,7 +13,7 @@ only your browser. You do not need to install the tooling or edit code.
    source, UUIDs, links, and Markdown formatting intact.
 4. Propose the change on a new branch and open a pull request. Explain the
    wording briefly; do not edit generated PO files or run build commands.
-5. Wait for **Validate Translation Config**. Its `github-translation-report`
+5. Wait for **KM Translation Operations**. Its `github-translation-report`
    artifact identifies formatting errors or conflicting Weblate edits.
 
 CI expands canonical shared translations in its temporary checkout. If you
@@ -24,8 +24,17 @@ field and keep the edit in the canonical shared block.
 
 Open the pull request's Actions run and download `native-locale-<head SHA>`
 from **Artifacts**. It contains `final_translated.po` and a review diff, retained
-for 14 days. Import the PO into the matching KM version in a test DSW instance
-to review a questionnaire. This artifact is not a hosted DSW preview.
+for 14 days. This artifact is not a hosted DSW preview.
+
+To review the translation in a test DSW instance running DSW 4.33 or newer:
+
+1. Open the matching source Knowledge Model version under **Knowledge Models**.
+2. Open **Locales → Import**, enter a display name, and upload the PO.
+3. Create or open a test project that uses that Knowledge Model version.
+4. In the project's **Settings**, select `{{TARGET_LANGUAGE}}` under **Language**
+   and save. Importing a locale does not switch existing projects to it.
+5. Open **Questionnaire** and review the changed questions. Switch **Language**
+   back to the source language to compare the original text.
 
 CI validates the PO and its source references locally; it does not upload the
 locale to DSW. Fork and same-repository pull requests both run without secrets

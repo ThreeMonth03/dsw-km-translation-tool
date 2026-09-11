@@ -18,6 +18,22 @@ EXPECTED_TOOLING_REPOSITORY = "ThreeMonth03/dsw-km-translation-tool"
 EXPECTED_TOOLING_REF = "REPLACE_WITH_COMMIT_SHA"
 
 
+def test_contributor_guide_names_the_translation_workflow(repo_root: Path) -> None:
+    """Keep the contributor-facing CI name aligned with the rendered workflow."""
+
+    config = load_translation_repository_config(repo_root / "examples" / "translation-config.yml")
+    files = {
+        item.path: item.content
+        for item in render_translation_repository_scaffold(tooling_repo=repo_root, config=config)
+    }
+    workflow = yaml.load(
+        files[Path(".github/workflows/validate_translation_config.yml")],
+        Loader=yaml.BaseLoader,
+    )
+
+    assert f"**{workflow['name']}**" in files[Path("docs/contributing.md")]
+
+
 def test_native_locale_release_is_tagged_and_pinned(repo_root: Path) -> None:
     workflow, text = load_rendered_workflow(repo_root, "release_template.yml")
     assert workflow["on"]["push"]["tags"] == ["km-*-r*"]
