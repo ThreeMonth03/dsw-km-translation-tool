@@ -76,6 +76,12 @@ releases. Coverage warnings and real screenshots are available in
 `native-dsw-review`; import and rendering errors fail the workflow. See
 [Native Locale Verification](native-locale-verification.md).
 
+Translation operations also enable `audit-source-catalog` on the native-locale
+action. It compares the exported POT with the configured public upstream POT,
+retaining a source report and immutable snapshot in the same artifact. Source
+differences warn; fetch or validation failures fail the audit. Locale releases
+leave this live-source audit disabled and verify only their pinned inputs.
+
 `examples/github-actions/release_template.yml` publishes native PO locales. It validates a clean, tagged checkout against the pinned tooling and
 source before publishing native PO assets, checksums, and provenance. See
 [Releases](releases.md) for locale revision tags and tooling releases.

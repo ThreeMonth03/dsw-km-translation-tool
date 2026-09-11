@@ -1,11 +1,12 @@
 # Native Locale Verification
 
-Three checks answer different questions:
+These checks answer different questions:
 
 | Check | What it proves |
 | --- | --- |
 | PO validation | Catalog syntax, language and existing KM references are valid |
 | Official POT coverage | Which official DSW source messages are missing, empty, fuzzy or extra in the PO |
+| Upstream source catalog | Whether Weblate's shared repository POT includes the official source messages for the configured KM version |
 | Browser acceptance | Official DSW imports the PO, returns the same file and renders a translated chapter after language switching |
 
 A PO can pass import validation while leaving some official source messages in
@@ -20,6 +21,8 @@ the `native-dsw-review` artifact. It includes:
 
 - `coverage.md` and `coverage.json`: counts and the full missing source strings.
 - `official.pot`: the template exported by DSW for this exact source KM.
+- `source-catalog/`: upstream POT snapshot, commit, checksums and source difference
+  reports in `source-catalog.md` and `source-catalog.json`.
 - `locale-imported.png` and `questionnaire-*.png`: real browser screenshots.
 - `result.json`: test outcome, input PO checksum and DSW image versions.
 - `failure.png`, when a browser check fails.
@@ -33,11 +36,50 @@ The check runs for translation pull requests, tracking-branch pushes, manual
 runs and daily scheduled verification. The daily run also checks updates made
 by automation, whose Git pushes do not start another Actions workflow.
 Both tooling and locale release workflows run acceptance before publishing.
+Only **KM Translation Operations** enables the live upstream source audit;
+releases validate their pinned inputs without depending on today's upstream POT.
 
 Import, download, malformed POT and browser failures fail CI. Missing, empty,
 fuzzy or extra entries make coverage **incomplete** and emit a warning, without
 blocking a usable partial locale. This check reports gaps; it does not change
 translations, upload to Weblate, or maintain an exceptions list.
+
+## Source Catalog Updates
+
+The source audit reads `messages.pot` from the default branch of the public
+GitHub repository configured by `localize.repository`. It fetches a temporary
+bare snapshot without executing upstream code and records the exact commit.
+The upstream POT version must match the configured KM; an empty, invalid or
+wrong-version POT fails the audit. An unset repository is reported as
+**not-configured**, never as complete coverage.
+
+Read `source-catalog/source-catalog.md` in the Actions artifact:
+
+- **aligned**: both POTs contain the same gettext message identities.
+- **additions-only**: the official export contains sources absent from upstream.
+- **review-required**: upstream also contains sources absent from the official
+  export. Review source edits, removals or a different source model before proceeding.
+
+Source differences emit warnings. Download or validation errors fail the source
+audit separately from browser acceptance. The audit checks the repository POT,
+not the live Weblate units: even an aligned POT may still need merging into the
+language PO files before translators see new entries.
+
+For a confirmed extraction gap, submit one upstream PR with the extraction fix,
+tests and regenerated POT. Reuse that PR for follow-up findings rather than
+opening duplicates on every scheduled run. Official maintainers decide whether
+to accept it and configure Weblate's
+[Update PO files to match POT](https://docs.weblate.org/en/latest/admin/addons.html#update-po-files-to-match-pot-msgmerge)
+add-on or equivalent upstream automation. POT updates alone do not guarantee
+existing language PO files are refreshed.
+
+Before an upstream merge, verify that unchanged message/context pairs preserve
+every language's translations and review flags. New sources can add untranslated
+entries to every language and lower completion percentages. Changed or removed
+sources require explicit review. Do not replace language files with an empty POT.
+Our scheduled jobs do not upload source strings, change Weblate settings, open
+upstream PRs automatically or maintain a separate canonical POT. After the
+official PO catalogs update, normal Weblate-to-Git sync picks up the new entries.
 
 ## Run Locally
 

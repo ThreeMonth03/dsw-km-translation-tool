@@ -13,6 +13,11 @@ Scheduled automation pulls from Weblate into Git and uses download-only access.
 The only Git-to-Weblate path is the guarded post-merge GitHub translation import
 workflow.
 
+The source-catalog audit reads the public upstream POT without credentials or
+executing upstream code. It writes review artifacts only. Shared-source updates
+require an upstream PR accepted by the official maintainers; our automation does
+not upload POT files, add Weblate source strings or change component settings.
+
 ## Required Workflow Permissions
 
 | Workflow | GitHub permission | Secrets | Writes translations? |

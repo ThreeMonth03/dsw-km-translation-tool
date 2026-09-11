@@ -21,6 +21,7 @@ Check read-only reports:
 ```shell
 gh run list --workflow localize_status_report.yml --branch master --limit 5
 gh run list --workflow localize_alignment_report.yml --branch master --limit 5
+gh run list --workflow validate_translation_config.yml --branch master --limit 5
 ```
 
 Check KM auto-update:
@@ -143,6 +144,12 @@ release assets.
 - Native DSW acceptance failed: download `native-dsw-review` for the result and
   browser failure screenshot. An incomplete coverage warning is separate from
   an import or rendering failure; inspect `coverage.md` for missing source text.
+- Upstream source catalog differs: inspect `source-catalog/source-catalog.md`
+  in `native-dsw-review`. `additions-only` means the official export contains
+  sources missing from the shared POT; `review-required` also reports upstream-only
+  sources. Follow the [shared source policy](sync-policy.md#shared-source-catalog).
+  An audit failure can indicate a download problem or mismatched KM version;
+  it does not mean existing translations have been removed.
 - KM auto-update failed before downloading a bundle: check `DSW_REGISTRY_TOKEN`.
 - KM auto-update failed after rebuilding the translation tree and locale PO:
   inspect the validation or alignment error.

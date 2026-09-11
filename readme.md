@@ -12,6 +12,7 @@ that workflow:
 - mirror Weblate PO exports into a Git translation tree
 - build and validate native DSW Knowledge Model locale PO files
 - report official POT coverage and verify PO import in disposable DSW browsers
+- audit Weblate's shared source POT without changing any language's translations
 - validate translation repository configuration
 - report Weblate PO health and output alignment
 - update to a newer published source KM after validation passes

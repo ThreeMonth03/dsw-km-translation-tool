@@ -36,6 +36,15 @@ Official POT Coverage
 
 .. autofunction:: dsw_km_translation_tool.locale_coverage.render_locale_coverage
 
+Upstream Source Catalog
+-----------------------
+
+.. autofunction:: dsw_km_translation_tool.locale_coverage.compare_source_catalog
+
+.. autofunction:: dsw_km_translation_tool.locale_coverage.render_source_catalog
+
+.. autofunction:: dsw_km_translation_tool.source_catalog.audit_source_catalog
+
 Localize/Weblate Status
 -----------------------
 

@@ -37,6 +37,11 @@ Missing, empty, fuzzy and extra entries are listed separately. An **incomplete**
 warning does not block an importable partial locale; a green workflow does not
 mean every official string has been translated.
 
+If a missing string is also listed in `source-catalog/source-catalog.md`, it is
+absent from Weblate's shared source POT. Ask a maintainer to follow the
+[shared source update process](sync-policy.md#shared-source-catalog); do not add
+ad hoc PO entries or create new translation folders for it.
+
 To review the translation in a test DSW instance running DSW 4.33 or newer:
 
 1. Open the matching source Knowledge Model version under **Knowledge Models**.
