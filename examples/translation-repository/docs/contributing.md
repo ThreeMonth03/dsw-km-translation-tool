@@ -29,7 +29,7 @@ for 14 days. This artifact is not a hosted DSW preview.
 To review the translation in a test DSW instance running DSW 4.33 or newer:
 
 1. Open the matching source Knowledge Model version under **Knowledge Models**.
-2. Choose **Import locale**, enter a display name, and upload the PO.
+2. Open **Locales → Import**, enter a display name, and upload the PO.
 3. Create or open a test project that uses that Knowledge Model version.
 4. In the project's **Settings**, select `{{TARGET_LANGUAGE}}` under **Language**
    and save. Importing a locale does not switch existing projects to it.
