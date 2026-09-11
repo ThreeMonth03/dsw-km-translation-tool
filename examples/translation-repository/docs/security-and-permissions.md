@@ -12,7 +12,7 @@ permissions for this repository.
 | `localize_status_report.yml` | `contents: read` | optional `LOCALIZE_API_TOKEN` | nothing |
 | `localize_alignment_report.yml` | `contents: read` | none | nothing |
 | `km_version_auto_update.yml` | `contents: write` | `DSW_REGISTRY_TOKEN` only when a newer KM exists | tracking branch only after validation |
-| `validate_translation_config.yml` | `contents: read` | none | nothing |
+| `validate_translation_config.yml` | `contents: read` | none | disposable test DSW only; no repository or production writes |
 | `release.yml` | `contents: write` | none | GitHub Release assets for a pushed locale tag |
 
 The workflows that write `master` or Weblate share the
@@ -25,6 +25,10 @@ read-only repository permission and no secrets. It compares the exact pull
 request head with its recorded base commit, uploads the translation report,
 and builds a PO preview in its temporary checkout. Canonical shared edits are
 expanded automatically. It never writes to the branch or Weblate.
+Native import checks create isolated DSW containers bound only to loopback,
+using disposable test users. They remove containers and volumes afterwards.
+No production DSW URL, account or token is used. Artifacts contain PO coverage
+and screenshots, not authentication state.
 
 ## Actions Secrets
 

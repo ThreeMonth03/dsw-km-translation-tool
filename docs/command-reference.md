@@ -79,6 +79,9 @@ The command is read-only unless `--report` is supplied. It checks gettext
 syntax, the exact PO `Language` header, and every UUID, field, and source string
 against the source KM. It validates an existing PO; it does not generate a PO
 or create a translated KM package. It does not contact a DSW server.
+It cannot detect source messages absent from the PO. Use
+[Native Locale Verification](native-locale-verification.md) to compare against
+an official POT and test browser import in an isolated DSW instance.
 
 Prepare native locale release assets without publishing them:
 

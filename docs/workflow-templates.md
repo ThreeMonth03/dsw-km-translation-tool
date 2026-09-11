@@ -70,6 +70,11 @@ translation consistency, then uploads a field-level report. The workflow has
 read-only repository permission, receives no secrets, and never modifies the
 pull-request branch. It builds and uploads a native PO preview in its temporary
 checkout, without requiring translators to commit generated output changes.
+It then runs the pinned tooling's native-locale action in disposable official
+DSW containers. The same check runs daily, on manual runs, and before locale
+releases. Coverage warnings and real screenshots are available in
+`native-dsw-review`; import and rendering errors fail the workflow. See
+[Native Locale Verification](native-locale-verification.md).
 
 `examples/github-actions/release_template.yml` publishes native PO locales. It validates a clean, tagged checkout against the pinned tooling and
 source before publishing native PO assets, checksums, and provenance. See

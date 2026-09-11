@@ -54,6 +54,9 @@ These modules handle the local representation of translation data:
   references and source strings against a KM bundle.
 - `native_locale.py` validates gettext syntax, the locale language, and DSW KM
   references before a PO is published for native locale import.
+- `locale_coverage.py` compares the PO with an official DSW-exported POT.
+  `tests/native_locale/` tests import and language switching in disposable
+  official containers; it never connects to production DSW.
 
 Keep translator-facing Markdown stable. If a parser change affects field order,
 folder names, or shared-block behavior, add focused tests before updating

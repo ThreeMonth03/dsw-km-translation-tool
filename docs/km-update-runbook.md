@@ -96,7 +96,7 @@ Pay special attention to:
 - newly review-marked translations reported by Weblate.
 
 Merge a manual branch only after it produces aligned outputs. After merge,
-trigger the scheduled sync and alignment report once manually to verify the
-production branch.
+run `localize_alignment_report.yml` manually and check the next scheduled
+`localize_auto_sync.yml` run. The sync writer has no manual trigger.
 
 [makefile]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/Makefile

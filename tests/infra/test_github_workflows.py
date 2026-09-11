@@ -45,6 +45,15 @@ def test_native_locale_release_is_tagged_and_pinned(repo_root: Path) -> None:
     assert "--verify-tag --latest" in text
     assert "secrets." not in text
     assert "dsw-km-import-github-translations" not in text
+    steps = workflow["jobs"]["release"]["steps"]
+    native = next(
+        i for i, step in enumerate(steps) if step.get("uses", "").endswith("/native-locale")
+    )
+    publish = next(
+        i for i, step in enumerate(steps) if step.get("name") == "Publish GitHub release"
+    )
+    assert native < publish
+    assert "continue-on-error" not in steps[native]
 
 
 def load_workflow_yaml(path: Path) -> dict[str, object]:
@@ -281,6 +290,33 @@ def test_validate_translation_config_template_is_read_only(repo_root: Path) -> N
     assert "tooling-repo/src/" not in workflow_text
     assert "DSW_REGISTRY_TOKEN" not in workflow_text
     assert "contents: write" not in workflow_text
+    assert workflow["on"]["schedule"][0]["cron"] == "45 3 * * *"
+    assert "uses: ./tooling-repo/.github/actions/native-locale" in workflow_text
+    assert "secrets." not in workflow_text
+
+
+def test_native_locale_action_is_isolated_and_retains_failure_artifacts(repo_root: Path) -> None:
+    action = load_workflow_yaml(repo_root / ".github/actions/native-locale/action.yml")
+    upload = action["runs"]["steps"][-1]
+    assert upload["if"] == "always()"
+    assert upload["with"]["retention-days"] == "14"
+    compose = load_workflow_yaml(repo_root / "tests/native_locale/compose.yml")
+    for service in compose["services"].values():
+        assert not service["image"].endswith(":latest")
+        for port in service.get("ports", []):
+            assert port.startswith("127.0.0.1:${DSW_TEST_")
+    docs = (repo_root / "docs/km-update-runbook.md").read_text()
+    assert "The sync writer has no manual trigger" in docs
+
+
+def test_tooling_ci_and_release_run_native_acceptance(repo_root: Path) -> None:
+    for filename in ("unittest.yml", "release.yml"):
+        workflow = load_workflow_yaml(repo_root / ".github/workflows" / filename)
+        assert any(
+            step.get("uses") == "./.github/actions/native-locale"
+            for job in workflow["jobs"].values()
+            for step in job["steps"]
+        )
 
 
 def test_workflow_templates_render_non_default_tracking_branch(repo_root: Path) -> None:

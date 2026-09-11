@@ -88,6 +88,7 @@ def test_native_locale_cli_writes_report(
     )
 
     assert result.returncode == 0, result.stderr or result.stdout
-    assert "Native DSW locale is valid." in result.stdout
+    assert "PO syntax, language and KM references are valid" in result.stdout
+    assert "coverage and server import are separate checks" in result.stdout
     report = json.loads(report_path.read_text(encoding="utf-8"))
     assert report["catalog_language"] == "zh_Hant"

@@ -7,6 +7,8 @@ on:
     branches:
       - "{{TRACKING_BRANCH}}"
   workflow_dispatch:
+  schedule:
+    - cron: "45 3 * * *"
 
 permissions:
   contents: read
@@ -18,6 +20,7 @@ env:
 jobs:
   validate-translation-config:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Checkout translation operations repository
@@ -116,3 +119,8 @@ jobs:
           path: |
             translation-repo/builds/final_translated.po
             translation-repo/reviews/final_translated.diff
+
+      - name: Verify native DSW import and render translations
+        uses: ./tooling-repo/.github/actions/native-locale
+        with:
+          translation-repository: ${{ github.workspace }}/translation-repo

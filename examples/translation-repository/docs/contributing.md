@@ -26,6 +26,17 @@ Open the pull request's Actions run and download `native-locale-<head SHA>`
 from **Artifacts**. It contains `final_translated.po` and a review diff, retained
 for 14 days. This artifact is not a hosted DSW preview.
 
+Download `native-dsw-review` from the same run for actual DSW screenshots and
+`coverage.md`. CI imports the PO in a temporary official DSW instance and checks
+source/translated language switching. The screenshots cover a translated
+chapter title, not every changed question. Review other changes interactively
+using the steps below.
+
+The coverage report compares the PO with a freshly exported official POT.
+Missing, empty, fuzzy and extra entries are listed separately. An **incomplete**
+warning does not block an importable partial locale; a green workflow does not
+mean every official string has been translated.
+
 To review the translation in a test DSW instance running DSW 4.33 or newer:
 
 1. Open the matching source Knowledge Model version under **Knowledge Models**.
@@ -36,9 +47,9 @@ To review the translation in a test DSW instance running DSW 4.33 or newer:
 5. Open **Questionnaire** and review the changed questions. Switch **Language**
    back to the source language to compare the original text.
 
-CI validates the PO and its source references locally; it does not upload the
-locale to DSW. Fork and same-repository pull requests both run without secrets
-or branch write access.
+CI uses disposable test data and removes its DSW containers after the check.
+It does not access production DSW or publish a live website. Fork and
+same-repository pull requests both run without secrets or branch write access.
 
 After merge, automation checks Weblate again, imports safe edits, and refreshes
 the generated files. A conflicting edit needs maintainer review; automation

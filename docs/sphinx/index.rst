@@ -67,6 +67,7 @@ For implementation helpers below these facades, use the
    maintainer/translation-repository-bootstrap
    maintainer/workflow-templates
    maintainer/releases
+   maintainer/native-locale-verification
    maintainer/security-and-permissions
    maintainer/internal-change-guide
    maintainer/repository-transfer-checklist

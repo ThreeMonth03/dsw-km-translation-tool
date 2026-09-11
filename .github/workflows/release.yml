@@ -10,6 +10,7 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
         with:
@@ -26,6 +27,8 @@ jobs:
         run: make install-dev BOOTSTRAP_PYTHON=python
       - name: Validate tooling
         run: make check
+      - name: Verify native DSW locale workflow
+        uses: ./.github/actions/native-locale
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
