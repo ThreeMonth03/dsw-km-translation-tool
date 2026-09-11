@@ -68,6 +68,22 @@ Set `TRANSLATION_REPO_DIR` before running these targets.
 | `make repo-km-status` | Report files only | Check whether the Registry has a newer KM |
 | `make repo-km-update` | Guarded Git writer | Update to a newer published KM after validation passes |
 
+## Native Locale Validation
+
+Validate a generated PO directly before importing it into DSW:
+
+```shell
+.venv/bin/dsw-km-validate-locale \
+  --po /path/to/translation-repo/builds/final_translated.po \
+  --km /path/to/source.km \
+  --target-language zh_Hant
+```
+
+The command is read-only unless `--report` is supplied. It checks gettext
+syntax, the exact PO `Language` header, and every UUID, field, and source string
+against the source KM. A successful check produces a native locale PO; it does
+not create a translated KM package.
+
 ## GitHub-only source and translation repositories
 
 Create an append-only source KM repository:

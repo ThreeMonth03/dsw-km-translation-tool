@@ -15,7 +15,10 @@ Once initialized, translators edit only Translation blocks in
 maintained by the DSW KM Translation Tool.
 
 CI verifies that the checked-in source KM is byte-for-byte identical to the
-pinned GitHub Release asset.
+pinned GitHub Release asset. The publishable artifact is
+`builds/final_translated.po`; import it into the matching source Knowledge Model
+with DSW's locale import. The source `.km` is retained only for validation and
+is not a translated Knowledge Model.
 
 See [docs/maintenance.md](docs/maintenance.md) for bootstrap, update, and release
 commands.

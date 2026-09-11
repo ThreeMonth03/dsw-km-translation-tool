@@ -22,7 +22,8 @@ component:
 - scaffold an append-only source KM release repository
 - generate release manifests and validate immutable package history
 - generate a deterministic PO catalog directly from a KM
-- synchronize a pinned GitHub KM Release and rebuild a Git-managed translation tree
+- synchronize a pinned GitHub KM Release and rebuild a Git-managed translation
+  tree and native locale PO
 
 ## Documentation
 

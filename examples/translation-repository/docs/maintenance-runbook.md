@@ -66,9 +66,10 @@ branch.
 
 Normal Weblate sync does not refresh `translation-config.yml`. The KM
 auto-update workflow may update only the active KM version and bundle path after
-the newer KM bundle, Weblate mirror, rebuild, validation, and alignment checks
-all pass. Other settings, such as branch names, Weblate URLs, and tooling refs,
-are maintained manually.
+the newer KM bundle and Weblate mirror have been downloaded, the translation
+tree and locale PO have been rebuilt, and validation and alignment checks pass.
+Other settings, such as branch names, Weblate URLs, and tooling refs, are
+maintained manually.
 
 ## Local Checks
 
@@ -105,8 +106,8 @@ update.
 - Native locale validation failed: compare `sources/localize/*/latest.po` with
   `builds/final_translated.po`, then inspect the reported KM reference.
 - KM auto-update failed before downloading a bundle: check `DSW_REGISTRY_TOKEN`.
-- KM auto-update failed after rebuilding: inspect the validation or alignment
-  error.
+- KM auto-update failed after rebuilding the translation tree and locale PO:
+  inspect the validation or alignment error.
 - A translation PR failed Markdown validation: download the
   `github-translation-report` artifact and restore the missing emphasis, link,
   list, code, or boundary-whitespace formatting.
