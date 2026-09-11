@@ -52,8 +52,8 @@ downloads Weblate again and fails unless every expected entry is present.
 - `github_translation_import.yml` imports accepted GitHub translation edits to
   Weblate after merge, then syncs Weblate back to Git when an upload occurred.
 - `km_version_auto_update.yml` updates to a newer published KM only after the
-  bundle download, Weblate mirror, rebuild, validation, and alignment checks
-  pass.
+  bundle and Weblate mirror have been downloaded, the translation tree and
+  locale PO have been rebuilt, and validation and alignment checks pass.
 
 These writer workflows share a concurrency group and do not cancel an active
 import, sync, or KM update when a later run starts.

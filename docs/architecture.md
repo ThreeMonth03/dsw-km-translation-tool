@@ -144,8 +144,8 @@ belong in [Localize Sync Runbook](localize-sync-runbook.md).
   workflows.
 
 Keep GitHub Actions as orchestration. Branch selection, recovery, GitHub
-translation import decisions, KM generation, and commit decisions belong in
-Python helpers. Use
+translation import decisions, source-KM generation, locale-PO generation, and
+commit decisions belong in Python helpers. Use
 [Workflow Templates](workflow-templates.md) when rendering or updating templates
 in translation repositories. Workflows that write the tracking branch or
 Weblate share one concurrency group and do not cancel an active writer.

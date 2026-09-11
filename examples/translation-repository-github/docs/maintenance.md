@@ -22,7 +22,8 @@ tooling-repo/.venv/bin/dsw-km-sync-github-release --repo-root .
 
 The command downloads the exact `knowledge_model.upstream_ref` GitHub Release,
 verifies its `.sha256` sidecar and package ID, creates an empty Git-managed
-catalog, and builds the editable tree. No manual asset download is needed.
+catalog, and builds the editable tree and native locale PO. No manual asset
+download is needed.
 
 For a source KM update, change `upstream_ref`, `version`, and `bundle_path`
 together in a pull-request branch, then run the same command. Translations are
@@ -38,6 +39,10 @@ tooling-repo/.venv/bin/dsw-km-build-translation-repo --repo-root .
 
 Commit the tree, catalog, review report, and build outputs together. Pull
 requests rebuild them and fail if the checkout is not reproducible.
+
+After CI passes, import `builds/final_translated.po` into the matching source
+Knowledge Model with DSW's locale import. Do not import the source `.km` as a
+translated package.
 
 ## Future Weblate cutover
 

@@ -22,10 +22,10 @@ only to validate locale references. Pull-request CI also publishes a 14-day
 downloads are GitHub Release assets named
 `{{LOCALE_ASSET_STEM}}-<version>.po`.
 
-CI checks out the exact source commit, synchronizes its KM, rebuilds every
-derived artifact, and requires a clean Git diff. Use this mode for a mutable
-review branch; switch to an immutable GitHub Release dependency when the source
-KM is formally released.
+CI checks out the exact source commit, refreshes the source KM snapshot,
+rebuilds the translation tree and native locale PO, and requires a clean Git
+diff. Use this mode for a mutable review branch; switch to an immutable GitHub
+Release dependency when the source KM is formally released.
 
 See [docs/maintenance.md](docs/maintenance.md) for bootstrap, update, and
 release-cutover commands.
