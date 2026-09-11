@@ -52,7 +52,7 @@ def prepare_translation_repo_fixture(
     config_path.write_text(
         "\n".join(
             [
-                "schema_version: 1",
+                "schema_version: 2",
                 "knowledge_model:",
                 "  organization_id: dsw",
                 "  km_id: root",

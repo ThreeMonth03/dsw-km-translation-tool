@@ -137,8 +137,8 @@ def load_translation_repository_config(path: str | Path) -> TranslationRepositor
     if not isinstance(payload, dict):
         raise TranslationRepositoryConfigError("translation-config.yml must contain a mapping")
 
-    schema_version = _optional_int(payload, "schema_version", default=1)
-    if schema_version != 1:
+    schema_version = _require_int(payload, "schema_version")
+    if schema_version != 2:
         raise TranslationRepositoryConfigError(
             f"Unsupported translation-config.yml schema_version {schema_version!r}"
         )
@@ -415,8 +415,8 @@ def _optional_safe_path(parent: dict[str, Any], key: str) -> Path | None:
     return path
 
 
-def _optional_int(parent: dict[str, Any], key: str, default: int) -> int:
-    value = parent.get(key, default)
+def _require_int(parent: dict[str, Any], key: str) -> int:
+    value = parent.get(key)
     if not isinstance(value, int):
         raise TranslationRepositoryConfigError(f"Expected integer at `{key}`")
     return value

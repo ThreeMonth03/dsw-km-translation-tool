@@ -24,7 +24,7 @@ def write_config(
     """Write a minimal valid translation config for tests."""
 
     path.write_text(
-        f"""schema_version: 1
+        f"""schema_version: 2
 
 knowledge_model:
   organization_id: dsw
@@ -67,7 +67,7 @@ def write_github_config(
     """Write a minimal GitHub-authoritative translation config."""
 
     path.write_text(
-        f"""schema_version: 1
+        f"""schema_version: 2
 
 workflow:
   mode: github
@@ -110,7 +110,7 @@ def write_github_git_config(
     """Write a GitHub-authoritative config pinned to a Git bundle."""
 
     path.write_text(
-        f"""schema_version: 1
+        f"""schema_version: 2
 
 workflow:
   mode: github
@@ -179,6 +179,18 @@ def test_config_loader_uses_default_registry_when_omitted(workspace: Path) -> No
     config = load_translation_repository_config(config_path)
 
     assert config.registry.api_url == "https://api.registry.ds-wizard.org"
+
+
+def test_config_rejects_previous_schema(workspace: Path) -> None:
+    config_path = workspace / "translation-config.yml"
+    write_config(config_path)
+    config_path.write_text(
+        config_path.read_text(encoding="utf-8").replace("schema_version: 2", "schema_version: 1"),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(TranslationRepositoryConfigError, match="schema_version 1"):
+        load_translation_repository_config(config_path)
 
 
 def test_config_rejects_untrusted_tooling_repository(workspace: Path) -> None:

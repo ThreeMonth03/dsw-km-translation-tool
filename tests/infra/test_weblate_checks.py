@@ -25,7 +25,7 @@ def write_config(path: Path, download_url: str) -> None:
     path.write_text(
         "\n".join(
             [
-                "schema_version: 1",
+                "schema_version: 2",
                 "knowledge_model:",
                 "  organization_id: dsw",
                 "  km_id: root",
