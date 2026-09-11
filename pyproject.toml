@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dsw-km-translation-tool"
-version = "0.1.0"
+version = "0.2.0"
 description = "Tooling for DSW Knowledge Model translation maintenance."
 readme = "readme.md"
 requires-python = ">=3.13"
@@ -39,6 +39,7 @@ dsw-km-init-translation-repo = "dsw_km_translation_tool.cli.init_translation_rep
 dsw-km-init-source-repo = "dsw_km_translation_tool.cli.init_km_source_repository:main"
 dsw-km-import-github-translations = "dsw_km_translation_tool.cli.import_github_translations:main"
 dsw-km-prepare-release = "dsw_km_translation_tool.cli.prepare_km_release:main"
+dsw-km-prepare-locale-release = "dsw_km_translation_tool.cli.prepare_locale_release:main"
 dsw-km-pull-bundle = "dsw_km_translation_tool.cli.pull_km_bundle:main"
 dsw-km-pull-localize-po = "dsw_km_translation_tool.cli.pull_localize_po:main"
 dsw-km-report-alignment = "dsw_km_translation_tool.cli.report_alignment_status:main"

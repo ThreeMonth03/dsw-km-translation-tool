@@ -52,14 +52,16 @@ The writer does not run for pull requests.
 
 The read-only validation workflow compares the exact pull-request head with
 the base commit recorded by the pull-request event. When a pull request edits
-`tree/**/translation.md`, it reports those changes and validates Weblate
+translation Markdown, it reports those changes and validates Weblate
 conflicts, shared translations, and source Markdown formatting, including
 leading and trailing whitespace. Invalid changes fail with a field-level
 `github-translation-report` artifact.
 
 The validation workflow has no secrets or write permission. It never updates
-the pull-request branch. Run `make repo-sync-shared-strings` locally and commit
-the resulting `tree/` changes whenever a canonical shared block is edited.
+the pull-request branch. It resolves canonical shared-block edits for reporting,
+then expands them in a temporary checkout to build a native PO preview.
+Translators do not need to run commands or commit generated artifacts. Download
+`native-locale-<head SHA>` from the Actions run to review the candidate PO.
 
 For a local maintainer run against a checked-out translation repository, use:
 
@@ -117,9 +119,8 @@ make repo-align TRANSLATION_REPO_DIR=/path/to/dsw-root-locales-zh_Hant
 ## PR Gate and Post-Merge Import
 
 Before merge, the read-only pull-request check fails when the checked-in
-Weblate mirror conflicts, source Markdown formatting is lost, or canonical
-`shared_blocks/` edits were not expanded into their referenced
-`translation.md` fields. After merge, the GitHub translation import workflow
+Weblate state conflicts, source Markdown formatting is lost, or individual
+field edits disagree with the canonical shared translation. After merge, the GitHub translation import workflow
 downloads the latest Weblate PO and repeats all checks before any upload. This
 post-merge validation catches Weblate changes that land after the PR check:
 
@@ -134,7 +135,8 @@ post-merge validation catches Weblate changes that land after the PR check:
 After upload, the workflow downloads Weblate again and verifies every imported
 entry. It fails if Weblate did not apply the expected content. A verified
 import then runs normal Weblate-to-Git sync so the repository returns to being
-a Weblate mirror.
+a Weblate mirror. Detected edits already present in Weblate also trigger sync,
+so stale generated fields are refreshed even when no upload is necessary.
 
 Use forward commits for sync and workflow corrections on public branches.
 

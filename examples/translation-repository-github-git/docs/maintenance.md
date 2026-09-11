@@ -40,12 +40,15 @@ Commit the tree, catalog, review report, and build outputs together. Pull
 requests rebuild them and fail if the checkout is not reproducible.
 
 Pull-request CI uploads a 14-day review artifact named
-`{{LOCALE_ASSET_STEM}}-<commit SHA>`. An immutable `v<version>` tag creates
+`{{LOCALE_ASSET_STEM}}-<commit SHA>`. An immutable
+`km-<source KM version>-{{TARGET_LANGUAGE}}-r<revision>` tag creates
 a GitHub Release containing the versioned PO, a stable
 `{{LOCALE_ASSET_STEM}}.po` alias, checksums, and the pinned
-`translation-config.yml` provenance record. Releases below `1.0.0` are marked
-as pre-releases. Workflow artifacts are for review; GitHub Releases are the
-long-term archive.
+`translation-config.yml` and `manifest.json` provenance records. Increment the
+translation revision for each publication without changing the source KM
+version. The source and tooling commits must match the config and the rebuild
+must leave tracked files unchanged. Workflow artifacts are for review; GitHub
+Releases are the long-term archive. A successful locale release becomes Latest.
 
 ## Release cutover
 

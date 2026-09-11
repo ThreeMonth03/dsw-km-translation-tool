@@ -61,7 +61,7 @@ make repo-init NEW_TRANSLATION_REPO_DIR=/path/to/new-translation-repo
 
 By default this uses [`examples/translation-config.yml`][example-config]. For a
 custom repository, copy that file, edit the KM/language/Weblate/tooling values,
-and pass it explicitly:
+replace `tooling.ref` with a full reviewed tooling commit SHA, and pass it explicitly:
 
 ```shell
 make repo-init \
@@ -105,7 +105,9 @@ make repo-scaffold-sync TRANSLATION_REPO_DIR=/path/to/translation-repo
 ```
 
 Scaffold sync reads `translation-config.yml` to render repository-specific
-values, but never modifies that config or any translation artifact.
+values, but never modifies that config or any translation artifact. It removes
+known managed files belonging only to inactive source profiles; custom files
+outside the managed inventory are preserved.
 
 ## Template Ownership
 
@@ -113,7 +115,7 @@ values, but never modifies that config or any translation artifact.
   [`examples/translation-repository/`][translation-repo-template]. Language and
   tooling values come from `translation-config.yml`.
 - GitHub Actions workflows are copied from
-  [`examples/github-actions/`][github-actions-templates].
+  the selected source profile and `examples/github-actions-common/`.
 - Workflow `TOOLING_REPOSITORY`, `TOOLING_REF`, and tracking branch values are
   rendered from `translation-config.yml`.
 - Unknown template placeholders fail the command instead of being copied into

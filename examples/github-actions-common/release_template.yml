@@ -1,0 +1,99 @@
+name: Publish Native KM Locale
+
+on:
+  push:
+    tags: ["km-*-r*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: locale-release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  TOOLING_REPOSITORY: {{TOOLING_REPOSITORY}}
+  TOOLING_REF: "{{TOOLING_REF}}"
+  SOURCE_REPOSITORY: "{{SOURCE_REPOSITORY}}"
+  SOURCE_REF: "{{SOURCE_REF}}"
+  WORKFLOW_MODE: "{{WORKFLOW_MODE}}"
+  WORKFLOW_SOURCE: "{{WORKFLOW_SOURCE}}"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout translation repository
+        uses: actions/checkout@v5
+        with:
+          path: translation-repo
+          persist-credentials: false
+
+      - name: Checkout translation tooling
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ env.TOOLING_REPOSITORY }}
+          ref: ${{ env.TOOLING_REF }}
+          path: tooling-repo
+          persist-credentials: false
+
+      - name: Checkout pinned Git source
+        if: env.WORKFLOW_MODE == 'github' && env.WORKFLOW_SOURCE == 'git'
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ env.SOURCE_REPOSITORY }}
+          ref: ${{ env.SOURCE_REF }}
+          path: source-repo
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install tooling
+        working-directory: tooling-repo
+        run: make install-dev BOOTSTRAP_PYTHON=python
+
+      - name: Check managed scaffold
+        run: >-
+          tooling-repo/.venv/bin/dsw-km-scaffold check
+          --repo-root translation-repo
+          --tooling-repo tooling-repo
+
+      - name: Synchronize pinned Git source
+        if: env.WORKFLOW_MODE == 'github' && env.WORKFLOW_SOURCE == 'git'
+        run: >-
+          tooling-repo/.venv/bin/dsw-km-sync-git-source
+          --repo-root translation-repo
+          --source-repo source-repo
+
+      - name: Verify pinned GitHub source release
+        if: env.WORKFLOW_MODE == 'github' && env.WORKFLOW_SOURCE == 'release'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          tooling-repo/.venv/bin/dsw-km-sync-github-release
+          --repo-root translation-repo
+          --check
+
+      - name: Prepare verified locale assets
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: >-
+          tooling-repo/.venv/bin/dsw-km-prepare-locale-release
+          --repo-root translation-repo
+          --tooling-repo tooling-repo
+          --tag "$RELEASE_TAG"
+          --out "$RUNNER_TEMP/locale-release"
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$RELEASE_TAG" "$RUNNER_TEMP/locale-release/"* \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag --latest \
+            --title "$RELEASE_TAG" \
+            --notes-file "$RUNNER_TEMP/locale-release/release-notes.md"

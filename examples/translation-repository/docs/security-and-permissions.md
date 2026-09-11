@@ -13,6 +13,7 @@ permissions for this repository.
 | `localize_alignment_report.yml` | `contents: read` | none | nothing |
 | `km_version_auto_update.yml` | `contents: write` | `DSW_REGISTRY_TOKEN` only when a newer KM exists | tracking branch only after validation |
 | `validate_translation_config.yml` | `contents: read` | none | nothing |
+| `release.yml` | `contents: write` | none | GitHub Release assets for a pushed locale tag |
 
 The workflows that write `master` or Weblate share the
 `translation-state-master` concurrency group with `cancel-in-progress: false`.
@@ -22,9 +23,8 @@ run.
 Pull-request validation runs in `validate_translation_config.yml` with
 read-only repository permission and no secrets. It compares the exact pull
 request head with its recorded base commit, uploads the translation report,
-and never writes to the branch or Weblate. Contributors must synchronize
-shared translations locally and commit the resulting `tree/` changes before
-the report can pass.
+and builds a PO preview in its temporary checkout. Canonical shared edits are
+expanded automatically. It never writes to the branch or Weblate.
 
 ## Actions Secrets
 

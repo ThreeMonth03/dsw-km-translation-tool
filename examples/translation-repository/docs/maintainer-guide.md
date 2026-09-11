@@ -38,12 +38,10 @@ Normal translation work happens in Localize/Weblate. Automation then mirrors the
 website state into this repository:
 
 - Scheduled sync pulls Weblate into Git.
-- Same-repository pull requests expand canonical shared-block translations into
-  their referenced tree fields before translation reporting; fork pull requests
-  remain read-only.
-- Pull requests that do not edit translation text can be refreshed from Weblate
-  before merge.
-- Pull requests that edit `tree/**/translation.md` are reported for review and
+- All pull requests resolve canonical shared-block edits in memory for reporting
+  and expand them only in a temporary checkout for the PO preview. They never
+  write to the branch or Weblate.
+- Pull requests that edit translation Markdown are reported for review and
   imported to Weblate only after merge when they do not conflict with Weblate
   edits to the same entries.
 - Read-only reports check Weblate status and repository alignment.
@@ -54,13 +52,16 @@ website state into this repository:
 
 ## Publish to DSW
 
-After repository CI passes, download `builds/final_translated.po`. In DSW, open
+Download a PO from this repository's **Releases → Latest**. In DSW, open
 the matching source Knowledge Model version, choose its locale import action,
 enter the locale name, and upload the PO. Confirm that DSW reports the expected
 language and review a questionnaire that uses that Knowledge Model.
 
 The source `.km` under `sources/knowledge-models/` exists only for validation.
 Do not import it as a translated Knowledge Model.
+
+Use [Publishing a locale](maintenance-runbook.md#publishing-a-locale) to create
+a new translation release. Pull-request artifacts are temporary review files.
 
 ## Actions Secrets
 

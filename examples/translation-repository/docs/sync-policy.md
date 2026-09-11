@@ -40,9 +40,8 @@ fails and writes a conflict report. It does not use timestamps or a
 last-writer-wins rule to choose between reviewers. Read-only pull-request and
 post-merge checks also reject translations that do not preserve source
 Markdown formatting and boundary whitespace. Canonical
-`tree/shared_blocks/*/context.md` edits must be expanded locally into every
-referenced `translation.md` field and committed to the pull-request branch.
-The reporter rejects any remaining inconsistency. After upload, the workflow
+`tree/shared_blocks/*/context.md` edits are expanded automatically for reporting
+and building; competing field edits are rejected. After upload, the workflow
 downloads Weblate again and fails unless every expected entry is present.
 
 ## Writer Workflows
@@ -50,7 +49,8 @@ downloads Weblate again and fails unless every expected entry is present.
 - `localize_auto_sync.yml` commits directly to the tracking branch on scheduled
   runs when tracked files changed.
 - `github_translation_import.yml` imports accepted GitHub translation edits to
-  Weblate after merge, then syncs Weblate back to Git when an upload occurred.
+  Weblate after merge, then syncs Weblate back to Git whenever translation edits
+  were detected, including edits already present in Weblate.
 - `km_version_auto_update.yml` updates to a newer published KM only after the
   bundle and Weblate mirror have been downloaded, the translation tree and
   locale PO have been rebuilt, and validation and alignment checks pass.
@@ -62,7 +62,8 @@ import, sync, or KM update when a later run starts.
 
 - `validate_translation_config.yml` validates repository configuration and
   scaffold state. On pull requests, it also compares the exact head and base
-  commits and uploads the GitHub translation report.
+  commits and uploads the GitHub translation report and a native PO preview.
+  Generated PO/review changes need not be committed by translators.
 - `localize_status_report.yml` reports empty entries, review-state counts, and
   Weblate `has:check` items.
 - `localize_alignment_report.yml` verifies that Weblate PO, checked-in PO,
@@ -71,3 +72,10 @@ import, sync, or KM update when a later run starts.
 ## Translation Quality States
 
 Resolve review-marked strings in Weblate. Git mirrors those states in reports.
+
+## Releases
+
+`release.yml` rebuilds a tagged, clean checkout with its pinned tooling commit.
+It requires generated files to be reproducible before publishing a PO,
+checksums, and provenance. A translation revision is independent of the source
+KM version; see [the release procedure](maintenance-runbook.md#publishing-a-locale).

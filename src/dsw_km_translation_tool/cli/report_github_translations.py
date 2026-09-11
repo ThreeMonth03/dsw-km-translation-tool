@@ -95,8 +95,8 @@ def main() -> None:
         )
     if report.has_shared_block_errors:
         raise SystemExit(
-            "GitHub translation changes leave shared blocks out of sync. "
-            "Run shared-string sync and review the report before merging."
+            "GitHub translation changes contain shared-block conflicts. "
+            "Keep the canonical translation and resolve the field edits listed in the report."
         )
 
 

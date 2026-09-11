@@ -88,8 +88,10 @@ make repo-align TRANSLATION_REPO_DIR="$TRANSLATION_REPO_DIR"
 ```
 
 After the tooling repository changes its managed docs or workflow templates,
-refresh them with `make repo-scaffold-sync`. This command reads but never
-changes `translation-config.yml` or translation artifacts.
+pin `tooling.ref` to the reviewed tool release's full commit SHA, check out that
+commit locally, and refresh with `make repo-scaffold-sync`. The command also
+removes known managed files from inactive workflow profiles. It never changes
+`translation-config.yml`, translation artifacts, or custom unmanaged files.
 
 `make repo-sync-shared-strings` updates only canonical shared-block context
 files and their referenced `tree/**/translation.md` fields. It does not commit
@@ -97,6 +99,35 @@ or push. Other writer targets such as `make repo-sync` and
 `make repo-km-update` may commit and push from the checkout where they run. Use
 them only from a disposable checkout or when you intentionally want a Git
 update.
+
+## Publishing a Locale
+
+Wait for the post-merge Weblate import and sync to finish and confirm the
+alignment report passes. The release must be built from a clean tracking
+branch, with `tooling.ref` pinned to a full commit SHA.
+
+Use a tag of the form `km-<source KM version>-<language>-r<revision>`. For
+example, the first and second translation releases for KM 2.7.0 are
+`km-2.7.0-zh_Hant-r1` and `km-2.7.0-zh_Hant-r2`. Neither requires a new KM version.
+
+```shell
+git switch {{TRACKING_BRANCH}}
+git pull --ff-only
+TAG="km-<source-version>-{{TARGET_LANGUAGE}}-r<revision>"
+git tag "$TAG"
+git push origin "$TAG"
+```
+
+Replace the angle-bracket placeholders before running these commands.
+**Publish Native KM Locale** rebuilds and validates the PO and refuses
+uncommitted generated changes. It publishes the versioned PO, a stable PO
+alias, `translation-config.yml`, `manifest.json`, release notes, and
+`SHA256SUMS`. The manifest records the source KM checksum, translation commit,
+tooling commit, and message counts. The successful release becomes **Latest**.
+
+Download all assets and run `sha256sum -c SHA256SUMS` to verify them. DSW needs
+only the PO. Use a new revision tag for corrections; do not replace existing
+release assets.
 
 ## Troubleshooting
 
@@ -111,9 +142,8 @@ update.
 - A translation PR failed Markdown validation: download the
   `github-translation-report` artifact and restore the missing emphasis, link,
   list, code, or boundary-whitespace formatting.
-- A translation PR failed shared-block validation: run
-  `make repo-sync-shared-strings TRANSLATION_REPO_DIR=/path/to/repo` locally
-  and commit the resulting `tree/` changes to the PR branch. The scheduled
-  writer never executes PR-controlled code or writes to PR branches.
+- A translation PR failed shared-block validation: keep the intended wording
+  in the canonical shared Translation block and restore competing individual
+  field edits. Use the reported file paths; no local build is required.
 - A translation PR conflicts with Weblate: resolve the reported entries before
   merging; the workflow does not choose a winner automatically.

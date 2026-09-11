@@ -14,6 +14,7 @@ from dsw_km_translation_tool.translation_repository_scaffold import (
 from tests.helpers import run_cli_command
 from tests.infra.test_translation_repository_config import (
     write_config,
+    write_github_config,
     write_github_git_config,
 )
 
@@ -45,7 +46,8 @@ def test_scaffold_sync_is_idempotent_and_preserves_config(
     workflow = target_repo / ".github/workflows/validate_translation_config.yml"
     workflow_text = workflow.read_text(encoding="utf-8")
     assert "dsw-km-build-translation-repo" in workflow_text
-    assert "git diff --exit-code" in workflow_text
+    assert "git diff --exit-code" not in workflow_text
+    assert "Upload native locale preview" in workflow_text
 
     second_sync = sync_translation_repository_scaffold(
         repo_root=target_repo,
@@ -155,10 +157,36 @@ def test_scaffold_renders_pinned_git_source_profile(
     assert "actions/upload-artifact@v4" in workflow
     assert "tw-root-tw-zh_Hant-locale-${{ github.sha }}" in workflow
     assert "gh release create" in release_workflow
-    assert "tw-root-tw-zh_Hant-locale-${version}.po" in release_workflow
-    assert "translation-config.yml" in release_workflow
+    assert "dsw-km-prepare-locale-release" in release_workflow
+    assert 'tags: ["km-*-r*"]' in release_workflow
     assert "bundle: `km/root-tw.km`" in readme
     assert check_translation_repository_scaffold(
         repo_root=target_repo,
         tooling_repo=repo_root,
     ).aligned
+
+
+def test_scaffold_removes_obsolete_profile_files_and_preserves_custom_files(
+    repo_root: Path,
+    workspace: Path,
+) -> None:
+    target = workspace / "translation-repo"
+    target.mkdir()
+    config = target / "translation-config.yml"
+    write_config(config)
+    sync_translation_repository_scaffold(repo_root=target, tooling_repo=repo_root)
+    custom = target / ".github/workflows/custom.yml"
+    custom.write_text("custom\n", encoding="utf-8")
+
+    write_github_git_config(config)
+    obsolete = Path(".github/workflows/localize_auto_sync.yml")
+    check = check_translation_repository_scaffold(repo_root=target, tooling_repo=repo_root)
+    assert obsolete in check.changed_files
+    sync_translation_repository_scaffold(repo_root=target, tooling_repo=repo_root)
+    assert not (target / obsolete).exists()
+
+    write_github_config(config)
+    sync_translation_repository_scaffold(repo_root=target, tooling_repo=repo_root)
+    assert (target / ".github/workflows/release.yml").is_file()
+    assert custom.read_text(encoding="utf-8") == "custom\n"
+    assert check_translation_repository_scaffold(repo_root=target, tooling_repo=repo_root).aligned

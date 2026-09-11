@@ -116,8 +116,8 @@ def main() -> None:
                 uploaded=False,
             )
             raise SystemExit(
-                "GitHub translation import leaves shared blocks out of sync. "
-                "Run shared-string sync before updating Weblate."
+                "GitHub translation import contains shared-block conflicts. "
+                "Resolve the canonical and field edits listed in the report before updating Weblate."
             )
         if report.importable_entries == 0:
             _write_github_translation_outputs(

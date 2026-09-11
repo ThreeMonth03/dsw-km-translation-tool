@@ -106,6 +106,13 @@ jobs:
           tooling-repo/.venv/bin/dsw-km-build-translation-repo
           --repo-root "$GITHUB_WORKSPACE/translation-repo"
 
-      - name: Verify reproducible translation outputs
-        working-directory: translation-repo
-        run: git diff --exit-code
+      - name: Upload native locale preview
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v7
+        with:
+          name: native-locale-${{ github.event.pull_request.head.sha }}
+          retention-days: 14
+          if-no-files-found: error
+          path: |
+            translation-repo/builds/final_translated.po
+            translation-repo/reviews/final_translated.diff

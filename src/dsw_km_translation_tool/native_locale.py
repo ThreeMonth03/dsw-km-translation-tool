@@ -68,7 +68,7 @@ def validate_native_locale(
         preview = "\n".join(_format_model_errors(report)[:50])
         raise NativeLocaleValidationError(f"PO validation against KM failed:\n{preview}")
 
-    messages = list(catalog)
+    messages = [message for message in catalog if message.id]
     return NativeLocaleValidationResult(
         po_path=resolved_po,
         km_path=resolved_km,

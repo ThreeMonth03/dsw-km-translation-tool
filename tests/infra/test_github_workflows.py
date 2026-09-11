@@ -16,7 +16,20 @@ from dsw_km_translation_tool.translation_repository_scaffold import (
 from tests.infra.test_translation_repository_config import write_github_config
 
 EXPECTED_TOOLING_REPOSITORY = "ThreeMonth03/dsw-km-translation-tool"
-EXPECTED_TOOLING_REF = "master"
+EXPECTED_TOOLING_REF = "REPLACE_WITH_COMMIT_SHA"
+
+
+def test_native_locale_release_is_tagged_and_pinned(repo_root: Path) -> None:
+    workflow, text = load_rendered_workflow(repo_root, "release_template.yml")
+    assert workflow["on"]["push"]["tags"] == ["km-*-r*"]
+    assert "pull_request" not in workflow["on"]
+    assert workflow["permissions"] == {"contents": "write"}
+    assert text.count("persist-credentials: false") == 3
+    assert "--tooling-repo tooling-repo" in text
+    assert "dsw-km-prepare-locale-release" in text
+    assert "--verify-tag --latest" in text
+    assert "secrets." not in text
+    assert "dsw-km-import-github-translations" not in text
 
 
 def load_workflow_yaml(path: Path) -> dict[str, object]:
@@ -116,7 +129,10 @@ def test_github_translation_import_template_is_guarded_writer(repo_root: Path) -
     assert "secrets.LOCALIZE_API_TOKEN" in workflow_text
     assert "tooling-repo/.venv/bin/dsw-km-import-github-translations" in workflow_text
     assert "tooling-repo/.venv/bin/dsw-km-sync-localize" in workflow_text
-    assert "steps.import-github-translations.outputs.uploaded == 'true'" in workflow_text
+    assert (
+        "steps.import-github-translations.outputs.has_translation_changes == 'true'"
+        in workflow_text
+    )
     assert "github-translation-import" in workflow_text
     assert "pull_request" not in workflow["on"]
     assert "DSW_REGISTRY_TOKEN" not in workflow_text
@@ -242,6 +258,9 @@ def test_validate_translation_config_template_is_read_only(repo_root: Path) -> N
     assert "tooling-repo/.venv/bin/dsw-km-scaffold check" in workflow_text
     assert "--summary" in workflow_text
     assert "dsw-km-sync-repository-shared-strings" not in workflow_text
+    assert "git diff --exit-code" not in workflow_text
+    assert "native-locale-${{ github.event.pull_request.head.sha }}" in workflow_text
+    assert "translation-repo/builds/final_translated.po" in workflow_text
     assert "dsw-km-sync-localize" not in workflow_text
     assert "dsw-km-sync-latest-km" not in workflow_text
     assert "tooling-repo/src/" not in workflow_text
