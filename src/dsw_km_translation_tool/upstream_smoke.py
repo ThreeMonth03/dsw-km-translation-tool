@@ -24,7 +24,6 @@ from .native_locale import validate_native_locale
 from .translation_repository_config import (
     TranslationRepositoryConfig,
     load_translation_repository_config,
-    require_localize_config,
     version_paths,
 )
 from .workflow import TranslationWorkflowService
@@ -110,7 +109,7 @@ def run_upstream_smoke(
     paths = version_paths(updated_config)
 
     source_km_path = resolved_work_dir / paths.source_km_path
-    latest_po_path = resolved_work_dir / paths.localize_latest_po_path
+    latest_po_path = resolved_work_dir / paths.source_po_path
     tree_dir = resolved_work_dir / paths.translation_tree_dir
     final_po_path = resolved_work_dir / paths.final_po_path
 
@@ -205,7 +204,7 @@ def _pull_localize_with_repository_fallback(
     except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as error:
         if not is_retryable_localize_download_error(error):
             raise
-        localize = require_localize_config(config)
+        localize = config.localize
         fallback_url = _github_repository_po_url(
             repository=localize.repository,
             target_language=config.translation.target_language,

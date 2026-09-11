@@ -3,22 +3,24 @@
 The tooling, source KM, and translated locale have separate release versions.
 A wording correction must not require publishing a new source KM.
 
+Translation repositories use configuration schema 3. KM and PO artifact paths
+are derived from the configured coordinates and language.
+
 ## Native Locale Releases
 
-All translation repository profiles include **Publish Native KM Locale**.
+Translation repositories include **Publish Native KM Locale**.
 Push `km-<source KM version>-<language>-r<revision>` from the validated tracking
 branch. For example, `km-2.7.0-zh_Hant-r2` publishes the second translation
 revision for the same KM as `km-2.7.0-zh_Hant-r1`.
 
 Before tagging:
 
-1. Wait for translation import/sync to finish. For Weblate repositories, confirm
+1. Wait for translation import/sync to finish and confirm
    the alignment report passes.
 2. Pin `tooling.ref` to a full reviewed commit SHA and regenerate the scaffold
    using that exact tool checkout.
 3. Confirm the source KM, editable tree, generated PO, and review outputs are
-   committed and reproducible. For GitHub-authoritative repositories, the
-   pinned source must also pass its Git or Release verification.
+   committed and reproducible against the configured Registry KM.
 
 The workflow publishes a versioned PO, stable PO alias, config, provenance
 manifest, release notes, and `SHA256SUMS`. The manifest includes source KM and

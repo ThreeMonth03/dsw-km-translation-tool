@@ -27,10 +27,6 @@ class KnowledgeModelRepositoryConfig:
 
     organization_id: str
     km_id: str
-    upstream_repository: str
-    upstream_ref: str | None
-    upstream_bundle_path: Path | None
-    bundle_path: Path | None
     version: str
 
 
@@ -41,7 +37,6 @@ class TranslationLanguageConfig:
     source_language: str
     target_language: str
     target_language_label: str
-    catalog_path: Path | None
 
 
 @dataclass(frozen=True)
@@ -68,14 +63,6 @@ class LocalizeConfig:
 
 
 @dataclass(frozen=True)
-class WorkflowConfig:
-    """Select the translation repository authority and automation profile."""
-
-    mode: str
-    source: str
-
-
-@dataclass(frozen=True)
 class RegistryConfig:
     """DSW Registry endpoint used for KM version discovery."""
 
@@ -91,7 +78,6 @@ class KmVersionWorkspacePaths:
     source_slug: str
     source_km_path: Path
     source_po_path: Path
-    localize_latest_po_path: Path
     translation_tree_dir: Path
     final_po_path: Path
     review_diff_path: Path
@@ -108,16 +94,12 @@ class TranslationRepositoryConfig:
     translation: TranslationLanguageConfig
     branches: BranchConfig
     tooling: ToolingConfig
-    workflow: WorkflowConfig
-    localize: LocalizeConfig | None
+    localize: LocalizeConfig
     registry: RegistryConfig
 
 
 VERSION_RE = re.compile(r"^v?(?P<number>\d+(?:\.\d+){1,3})$")
 DEFAULT_REGISTRY_API_URL = "https://api.registry.ds-wizard.org"
-WORKFLOW_MODES = frozenset({"weblate", "github"})
-GITHUB_SOURCE_MODES = frozenset({"release", "git"})
-GIT_COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 TRUSTED_TOOLING_REPOSITORY = "ThreeMonth03/dsw-km-translation-tool"
 GIT_REF_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]*$")
 
@@ -136,9 +118,22 @@ def load_translation_repository_config(path: str | Path) -> TranslationRepositor
     payload = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
         raise TranslationRepositoryConfigError("translation-config.yml must contain a mapping")
+    _reject_unknown_keys(
+        payload,
+        allowed={
+            "schema_version",
+            "knowledge_model",
+            "translation",
+            "branches",
+            "tooling",
+            "localize",
+            "registry",
+        },
+        section="config",
+    )
 
     schema_version = _require_int(payload, "schema_version")
-    if schema_version != 2:
+    if schema_version != 3:
         raise TranslationRepositoryConfigError(
             f"Unsupported translation-config.yml schema_version {schema_version!r}"
         )
@@ -147,19 +142,7 @@ def load_translation_repository_config(path: str | Path) -> TranslationRepositor
     translation = _load_translation_config(_require_dict(payload, "translation"))
     branches = _load_branch_config(_require_dict(payload, "branches"))
     tooling = _load_tooling_config(_require_dict(payload, "tooling"))
-    workflow = _load_workflow_config(_optional_dict(payload, "workflow"))
-    _validate_source_mode(knowledge_model=knowledge_model, workflow=workflow)
-    localize_payload = payload.get("localize")
-    if localize_payload is None:
-        if workflow.mode == "weblate":
-            raise TranslationRepositoryConfigError(
-                "`localize` is required when workflow.mode is `weblate`"
-            )
-        localize = None
-    elif isinstance(localize_payload, dict):
-        localize = _load_localize_config(localize_payload)
-    else:
-        raise TranslationRepositoryConfigError("Expected mapping at `localize`")
+    localize = _load_localize_config(_require_dict(payload, "localize"))
     registry = _load_registry_config(_optional_dict(payload, "registry"))
 
     return TranslationRepositoryConfig(
@@ -168,7 +151,6 @@ def load_translation_repository_config(path: str | Path) -> TranslationRepositor
         translation=translation,
         branches=branches,
         tooling=tooling,
-        workflow=workflow,
         localize=localize,
         registry=registry,
     )
@@ -177,14 +159,14 @@ def load_translation_repository_config(path: str | Path) -> TranslationRepositor
 def _load_knowledge_model_config(
     payload: dict[str, Any],
 ) -> KnowledgeModelRepositoryConfig:
-    bundle_path_raw = _optional_str(payload, "bundle_path")
+    _reject_unknown_keys(
+        payload,
+        allowed={"organization_id", "km_id", "version"},
+        section="knowledge_model",
+    )
     return KnowledgeModelRepositoryConfig(
-        organization_id=_require_str(payload, "organization_id"),
-        km_id=_require_str(payload, "km_id"),
-        upstream_repository=_require_str(payload, "upstream_repository"),
-        upstream_ref=_optional_str(payload, "upstream_ref"),
-        upstream_bundle_path=_optional_safe_path(payload, "upstream_bundle_path"),
-        bundle_path=Path(bundle_path_raw) if bundle_path_raw else None,
+        organization_id=_require_identifier(payload, "organization_id"),
+        km_id=_require_identifier(payload, "km_id"),
         version=normalize_version(_require_str(payload, "version")),
     )
 
@@ -193,7 +175,6 @@ def _load_translation_config(payload: dict[str, Any]) -> TranslationLanguageConf
     _reject_unknown_keys(
         payload,
         allowed={
-            "catalog_path",
             "source_language",
             "target_language",
             "target_language_label",
@@ -201,14 +182,14 @@ def _load_translation_config(payload: dict[str, Any]) -> TranslationLanguageConf
         section="translation",
     )
     return TranslationLanguageConfig(
-        source_language=_require_str(payload, "source_language"),
-        target_language=_require_str(payload, "target_language"),
+        source_language=_require_identifier(payload, "source_language"),
+        target_language=_require_identifier(payload, "target_language"),
         target_language_label=_require_str(payload, "target_language_label"),
-        catalog_path=(Path(value) if (value := _optional_str(payload, "catalog_path")) else None),
     )
 
 
 def _load_branch_config(payload: dict[str, Any]) -> BranchConfig:
+    _reject_unknown_keys(payload, allowed={"tracking_branch"}, section="branches")
     tracking = _optional_str(payload, "tracking_branch")
     if not tracking:
         raise TranslationRepositoryConfigError("branches.tracking_branch is required")
@@ -216,6 +197,7 @@ def _load_branch_config(payload: dict[str, Any]) -> BranchConfig:
 
 
 def _load_tooling_config(payload: dict[str, Any]) -> ToolingConfig:
+    _reject_unknown_keys(payload, allowed={"repository", "ref"}, section="tooling")
     repository = _require_str(payload, "repository")
     if repository != TRUSTED_TOOLING_REPOSITORY:
         raise TranslationRepositoryConfigError(
@@ -244,6 +226,7 @@ def _validate_git_ref(value: str, field: str) -> str:
 
 
 def _load_localize_config(payload: dict[str, Any]) -> LocalizeConfig:
+    _reject_unknown_keys(payload, allowed={"download_url", "repository"}, section="localize")
     return LocalizeConfig(
         download_url=_validate_https_url(
             _require_str(payload, "download_url"), "localize.download_url"
@@ -261,66 +244,17 @@ def _validate_https_url(value: str, field: str) -> str:
     return value
 
 
-def _load_workflow_config(payload: dict[str, Any]) -> WorkflowConfig:
-    mode = (_optional_str(payload, "mode") or "weblate").lower()
-    if mode not in WORKFLOW_MODES:
-        choices = ", ".join(sorted(WORKFLOW_MODES))
-        raise TranslationRepositoryConfigError(
-            f"workflow.mode must be one of: {choices}; got {mode!r}"
-        )
-    source = (_optional_str(payload, "source") or "release").lower()
-    if source not in GITHUB_SOURCE_MODES:
-        choices = ", ".join(sorted(GITHUB_SOURCE_MODES))
-        raise TranslationRepositoryConfigError(
-            f"workflow.source must be one of: {choices}; got {source!r}"
-        )
-    if mode != "github" and source != "release":
-        raise TranslationRepositoryConfigError(
-            "workflow.source `git` requires workflow.mode `github`"
-        )
-    return WorkflowConfig(mode=mode, source=source)
-
-
 def _load_registry_config(payload: dict[str, Any]) -> RegistryConfig:
+    _reject_unknown_keys(payload, allowed={"api_url"}, section="registry")
     return RegistryConfig(
         api_url=_optional_str(payload, "api_url") or DEFAULT_REGISTRY_API_URL,
     )
-
-
-def _validate_source_mode(
-    *,
-    knowledge_model: KnowledgeModelRepositoryConfig,
-    workflow: WorkflowConfig,
-) -> None:
-    if workflow.source != "git":
-        return
-    if not knowledge_model.upstream_ref or not GIT_COMMIT_RE.fullmatch(
-        knowledge_model.upstream_ref
-    ):
-        raise TranslationRepositoryConfigError(
-            "knowledge_model.upstream_ref must be a full lowercase Git commit "
-            "SHA when workflow.source is `git`"
-        )
-    if knowledge_model.upstream_bundle_path is None:
-        raise TranslationRepositoryConfigError(
-            "knowledge_model.upstream_bundle_path is required when workflow.source is `git`"
-        )
 
 
 def tracking_branch(config: TranslationRepositoryConfig) -> str:
     """Return the branch that should track the configured KM."""
 
     return config.branches.tracking_branch
-
-
-def require_localize_config(config: TranslationRepositoryConfig) -> LocalizeConfig:
-    """Return Weblate metadata or fail clearly for a GitHub-only repository."""
-
-    if config.localize is None:
-        raise TranslationRepositoryConfigError(
-            "This command requires workflow.mode `weblate` and a `localize` mapping"
-        )
-    return config.localize
 
 
 def version_paths(config: TranslationRepositoryConfig) -> KmVersionWorkspacePaths:
@@ -337,14 +271,12 @@ def version_paths(config: TranslationRepositoryConfig) -> KmVersionWorkspacePath
     )
     target_lang = config.translation.target_language
     weblate_po_path = Path("sources") / "localize" / target_lang / "latest.po"
-    source_po_path = config.translation.catalog_path or weblate_po_path
     return KmVersionWorkspacePaths(
         version=normalized,
         package_id=package_id,
         source_slug=source_slug,
         source_km_path=Path("sources") / "knowledge-models" / source_slug / f"{source_slug}.km",
-        source_po_path=source_po_path,
-        localize_latest_po_path=weblate_po_path,
+        source_po_path=weblate_po_path,
         translation_tree_dir=Path("tree"),
         final_po_path=Path("builds") / "final_translated.po",
         review_diff_path=Path("reviews") / "final_translated.diff",
@@ -405,14 +337,11 @@ def _optional_str(parent: dict[str, Any], key: str) -> str | None:
     return value.strip()
 
 
-def _optional_safe_path(parent: dict[str, Any], key: str) -> Path | None:
-    raw_value = _optional_str(parent, key)
-    if raw_value is None:
-        return None
-    path = Path(raw_value)
-    if path.is_absolute() or ".." in path.parts or raw_value != path.as_posix():
-        raise TranslationRepositoryConfigError(f"Expected safe relative POSIX path at `{key}`")
-    return path
+def _require_identifier(parent: dict[str, Any], key: str) -> str:
+    value = _require_str(parent, key)
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", value):
+        raise TranslationRepositoryConfigError(f"Expected safe identifier at `{key}`")
+    return value
 
 
 def _require_int(parent: dict[str, Any], key: str) -> int:

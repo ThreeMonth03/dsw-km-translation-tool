@@ -3,6 +3,11 @@
 Use this page when creating a new dedicated translation repository from the
 tooling repository.
 
+Use `schema_version: 3`. Artifact paths are derived from the configured KM
+organization, ID, version, and target language; do not configure a separate
+bundle or catalog path. Translation text remains governed by Weblate, including
+reviewed Markdown contributions imported after merge.
+
 ## What Bootstrap Does
 
 The bootstrap command turns an empty checkout into a working translation
@@ -18,37 +23,6 @@ repository:
 
 It does not commit, push, configure GitHub secrets, or upload translations to
 Weblate.
-
-## GitHub-only bootstrap
-
-Set `workflow.mode: github`, omit `localize`, add
-`translation.catalog_path`, and pin `knowledge_model.upstream_ref`. Scaffold
-without a source release:
-
-```shell
-.venv/bin/dsw-km-init-translation-repo \
-  --repo-root /path/to/translation-repo \
-  --tooling-repo . \
-  --config-template examples/translation-config-github.yml \
-  --scaffold-only
-```
-
-After the source KM is released, pin its GitHub tag in
-`knowledge_model.upstream_ref` and hydrate without Registry or Weblate access:
-
-```shell
-.venv/bin/dsw-km-sync-github-release \
-  --repo-root /path/to/translation-repo
-```
-
-The tool downloads the exact GitHub Release asset, checks its `.sha256` sidecar
-and package ID, and generates an empty catalog from the KM. Later catalog
-updates carry a translation only when its UUID, field, and source text are
-unchanged. `dsw-km-init-translation-repo --source-km` remains available for
-offline or migration bootstraps.
-
-Use bootstrap only to create a repository. To refresh docs and workflows in an
-existing repository, use the scaffold commands below.
 
 ## Command
 
@@ -105,8 +79,7 @@ make repo-scaffold-sync TRANSLATION_REPO_DIR=/path/to/translation-repo
 ```
 
 Scaffold sync reads `translation-config.yml` to render repository-specific
-values, but never modifies that config or any translation artifact. It removes
-known managed files belonging only to inactive source profiles; custom files
+values, but never modifies that config or any translation artifact. Custom files
 outside the managed inventory are preserved.
 
 ## Template Ownership
@@ -115,7 +88,7 @@ outside the managed inventory are preserved.
   [`examples/translation-repository/`][translation-repo-template]. Language and
   tooling values come from `translation-config.yml`.
 - GitHub Actions workflows are copied from
-  the selected source profile and `examples/github-actions-common/`.
+  [`examples/github-actions/`][github-actions-templates].
 - Workflow `TOOLING_REPOSITORY`, `TOOLING_REF`, and tracking branch values are
   rendered from `translation-config.yml`.
 - Unknown template placeholders fail the command instead of being copied into

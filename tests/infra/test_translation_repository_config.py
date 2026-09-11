@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+import yaml
 
 from dsw_km_translation_tool.repository_ci_sync import build_repository_ci_sync_config
 from dsw_km_translation_tool.translation_repository_config import (
@@ -24,13 +25,11 @@ def write_config(
     """Write a minimal valid translation config for tests."""
 
     path.write_text(
-        f"""schema_version: 2
+        f"""schema_version: 3
 
 knowledge_model:
   organization_id: dsw
   km_id: root
-  upstream_repository: https://github.com/ds-wizard/dsw-root-locales.git
-  bundle_path: sources/knowledge-models/dsw-root-2.7.0/dsw-root-2.7.0.km
   version: {version}
 
 translation:
@@ -56,92 +55,6 @@ registry:
     )
 
 
-def write_github_config(
-    path: Path,
-    *,
-    tooling_ref: str = "abc123",
-    organization_id: str = "tw",
-    km_id: str = "root-tw",
-    version: str = "0.1.0",
-) -> None:
-    """Write a minimal GitHub-authoritative translation config."""
-
-    path.write_text(
-        f"""schema_version: 2
-
-workflow:
-  mode: github
-
-knowledge_model:
-  organization_id: {organization_id}
-  km_id: {km_id}
-  upstream_repository: ThreeMonth03/dsw-root-tw
-  upstream_ref: v{version}
-  bundle_path: sources/knowledge-models/{organization_id}-{km_id}-{version}/{organization_id}-{km_id}-{version}.km
-  version: {version}
-
-translation:
-  source_language: en
-  target_language: zh_Hant
-  target_language_label: zh-Hant
-  catalog_path: sources/catalog/zh_Hant/catalog.po
-
-branches:
-  tracking_branch: main
-
-tooling:
-  repository: ThreeMonth03/dsw-km-translation-tool
-  ref: {tooling_ref}
-""",
-        encoding="utf-8",
-    )
-
-
-def write_github_git_config(
-    path: Path,
-    *,
-    source_ref: str = "1" * 40,
-    tooling_ref: str = "abc123",
-    organization_id: str = "tw",
-    km_id: str = "root-tw",
-    version: str = "0.1.0",
-    upstream_bundle_path: str = "km/root-tw.km",
-) -> None:
-    """Write a GitHub-authoritative config pinned to a Git bundle."""
-
-    path.write_text(
-        f"""schema_version: 2
-
-workflow:
-  mode: github
-  source: git
-
-knowledge_model:
-  organization_id: {organization_id}
-  km_id: {km_id}
-  upstream_repository: ThreeMonth03/dsw-root-tw
-  upstream_ref: "{source_ref}"
-  upstream_bundle_path: {upstream_bundle_path}
-  bundle_path: sources/knowledge-models/{organization_id}-{km_id}-{version}/{organization_id}-{km_id}-{version}.km
-  version: {version}
-
-translation:
-  source_language: en
-  target_language: zh_Hant
-  target_language_label: zh-Hant
-  catalog_path: sources/catalog/zh_Hant/catalog.po
-
-branches:
-  tracking_branch: main
-
-tooling:
-  repository: ThreeMonth03/dsw-km-translation-tool
-  ref: {tooling_ref}
-""",
-        encoding="utf-8",
-    )
-
-
 def test_config_loader_normalizes_version_and_paths(workspace: Path) -> None:
     """Verify that KM repository config derives the tracking branch and workspace paths."""
 
@@ -157,7 +70,7 @@ def test_config_loader_normalizes_version_and_paths(workspace: Path) -> None:
     paths = version_paths(config)
     assert paths.package_id == "dsw:root:2.7.0"
     assert paths.source_km_path == Path("sources/knowledge-models/dsw-root-2.7.0/dsw-root-2.7.0.km")
-    assert paths.localize_latest_po_path == Path("sources/localize/zh_Hant/latest.po")
+    assert paths.source_po_path == Path("sources/localize/zh_Hant/latest.po")
     assert paths.translation_tree_dir == Path("tree")
     assert paths.final_po_path == Path("builds/final_translated.po")
     assert paths.conflicts_report_path == Path("reviews/conflicts.json")
@@ -181,16 +94,68 @@ def test_config_loader_uses_default_registry_when_omitted(workspace: Path) -> No
     assert config.registry.api_url == "https://api.registry.ds-wizard.org"
 
 
-def test_config_rejects_previous_schema(workspace: Path) -> None:
+@pytest.mark.parametrize("previous", [1, 2])
+def test_config_rejects_previous_schema(workspace: Path, previous: int) -> None:
     config_path = workspace / "translation-config.yml"
     write_config(config_path)
     config_path.write_text(
-        config_path.read_text(encoding="utf-8").replace("schema_version: 2", "schema_version: 1"),
+        config_path.read_text(encoding="utf-8").replace(
+            "schema_version: 3", f"schema_version: {previous}"
+        ),
         encoding="utf-8",
     )
 
-    with pytest.raises(TranslationRepositoryConfigError, match="schema_version 1"):
+    with pytest.raises(TranslationRepositoryConfigError, match=f"schema_version {previous}"):
         load_translation_repository_config(config_path)
+
+
+@pytest.mark.parametrize(
+    "section,field",
+    [
+        (None, "workflow"),
+        ("knowledge_model", "upstream_repository"),
+        ("knowledge_model", "upstream_ref"),
+        ("knowledge_model", "upstream_bundle_path"),
+        ("knowledge_model", "bundle_path"),
+        ("translation", "catalog_path"),
+        ("branches", "unknown"),
+        ("tooling", "unknown"),
+        ("localize", "unknown"),
+        ("registry", "unknown"),
+    ],
+)
+def test_config_rejects_inactive_or_unknown_fields(
+    workspace: Path, section: str | None, field: str
+) -> None:
+    path = workspace / "translation-config.yml"
+    write_config(path)
+    payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    target = payload if section is None else payload[section]
+    target[field] = "unused"
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+    with pytest.raises(TranslationRepositoryConfigError, match="Unexpected configuration field"):
+        load_translation_repository_config(path)
+
+
+@pytest.mark.parametrize(
+    "section,field",
+    [
+        ("knowledge_model", "organization_id"),
+        ("knowledge_model", "km_id"),
+        ("translation", "source_language"),
+        ("translation", "target_language"),
+    ],
+)
+def test_config_rejects_identifiers_that_escape_artifact_paths(
+    workspace: Path, section: str, field: str
+) -> None:
+    path = workspace / "translation-config.yml"
+    write_config(path)
+    payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    payload[section][field] = "../../outside"
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+    with pytest.raises(TranslationRepositoryConfigError, match="safe identifier"):
+        load_translation_repository_config(path)
 
 
 def test_config_rejects_untrusted_tooling_repository(workspace: Path) -> None:
@@ -252,34 +217,6 @@ def test_config_rejects_unsafe_workflow_refs(workspace: Path, field: str, value:
 
     with pytest.raises(TranslationRepositoryConfigError, match="safe Git ref"):
         load_translation_repository_config(config_path)
-
-
-def test_github_config_requires_no_localize_mapping(workspace: Path) -> None:
-    config_path = workspace / "translation-config.yml"
-    write_github_config(config_path)
-
-    config = load_translation_repository_config(config_path)
-    paths = version_paths(config)
-
-    assert config.workflow.mode == "github"
-    assert config.workflow.source == "release"
-    assert config.localize is None
-    assert config.knowledge_model.upstream_ref == "v0.1.0"
-    assert paths.source_po_path == Path("sources/catalog/zh_Hant/catalog.po")
-    assert paths.source_km_path == Path(
-        "sources/knowledge-models/tw-root-tw-0.1.0/tw-root-tw-0.1.0.km"
-    )
-
-
-def test_github_git_config_requires_commit_and_bundle_path(workspace: Path) -> None:
-    config_path = workspace / "translation-config.yml"
-    write_github_git_config(config_path)
-
-    config = load_translation_repository_config(config_path)
-
-    assert config.workflow.source == "git"
-    assert config.knowledge_model.upstream_ref == "1" * 40
-    assert config.knowledge_model.upstream_bundle_path == Path("km/root-tw.km")
 
 
 @pytest.mark.parametrize(

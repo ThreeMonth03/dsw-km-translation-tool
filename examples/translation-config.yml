@@ -1,14 +1,12 @@
-schema_version: 2
+schema_version: 3
 
 # Example only. Before copying this file into a production translation
-# repository, update the KM bundle path, version, tooling
+# repository, update the KM coordinates, version, tooling
 # repository/ref, and Localize metadata for that repository.
 
 knowledge_model:
   organization_id: dsw
   km_id: root
-  upstream_repository: https://github.com/ds-wizard/dsw-root-locales.git
-  bundle_path: sources/knowledge-models/dsw-root-2.7.0/dsw-root-2.7.0.km
   version: 2.7.0
 
 translation:

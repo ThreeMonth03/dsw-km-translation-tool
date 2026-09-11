@@ -25,6 +25,8 @@ reviews/
 
 - `translation-config.yml` defines the KM, language, branch, Weblate, Registry,
   and tooling settings for this repository.
+  Configuration schema 3 derives artifact paths from KM coordinates and rejects
+  unknown fields.
 - `sources/knowledge-models/` stores released source KM bundles.
 - `sources/localize/` stores the latest Weblate PO snapshot.
 - `tree/` stores the generated translation tree mirrored from Weblate.

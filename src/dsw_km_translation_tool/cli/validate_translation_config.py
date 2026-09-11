@@ -49,18 +49,13 @@ def main() -> None:
         f"Knowledge model: {config.knowledge_model.organization_id}:{config.knowledge_model.km_id}",
         f"Target language: {config.translation.target_language}",
         f"KM version: {version}",
-        f"Workflow mode: {config.workflow.mode}",
-        f"Source mode: {config.workflow.source}",
         f"Tracking branch: {tracking_branch(config)}",
         f"Source KM path: {paths.source_km_path.as_posix()}",
         f"Source PO path: {paths.source_po_path.as_posix()}",
         f"Registry API: {config.registry.api_url}",
         f"Translation tree path: {paths.translation_tree_dir.as_posix()}",
     ]
-    if config.knowledge_model.upstream_ref:
-        lines.append(f"Source KM ref: {config.knowledge_model.upstream_ref}")
-    if config.localize:
-        lines.append(f"Localize PO URL: {config.localize.download_url}")
+    lines.append(f"Localize PO URL: {config.localize.download_url}")
     print("\n".join(lines))
     if args.summary:
         write_summary(Path(args.summary), lines)

@@ -167,9 +167,7 @@ def test_sync_latest_km_updates_validates_and_pushes_target_ref(
 
     config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     assert config["knowledge_model"]["version"] == "2.8.0"
-    assert config["knowledge_model"]["bundle_path"] == (
-        "sources/knowledge-models/dsw-root-2.8.0/dsw-root-2.8.0.km"
-    )
+    assert "bundle_path" not in config["knowledge_model"]
     assert (
         workspace / "sources/knowledge-models/dsw-root-2.8.0/dsw-root-2.8.0.km"
     ).read_bytes() == b"km 2.8"
@@ -227,7 +225,7 @@ def test_sync_latest_km_does_not_push_when_validation_fails(workspace: Path) -> 
 def test_update_knowledge_model_version_replaces_current_version(
     workspace: Path,
 ) -> None:
-    """Verify the updater replaces the current KM version and bundle path."""
+    """Verify the updater changes only the current KM version; artifact paths are derived."""
 
     config_path = workspace / "translation-config.yml"
     write_config(config_path)
@@ -237,9 +235,7 @@ def test_update_knowledge_model_version_replaces_current_version(
     assert updated == "2.9.0"
     payload = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     assert payload["knowledge_model"]["version"] == "2.9.0"
-    assert payload["knowledge_model"]["bundle_path"] == (
-        "sources/knowledge-models/dsw-root-2.9.0/dsw-root-2.9.0.km"
-    )
+    assert "bundle_path" not in payload["knowledge_model"]
 
 
 def test_km_latest_sync_report_outputs_json_and_markdown(workspace: Path) -> None:

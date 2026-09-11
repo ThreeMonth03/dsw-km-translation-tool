@@ -14,10 +14,6 @@ concurrency:
 env:
   TOOLING_REPOSITORY: {{TOOLING_REPOSITORY}}
   TOOLING_REF: "{{TOOLING_REF}}"
-  SOURCE_REPOSITORY: "{{SOURCE_REPOSITORY}}"
-  SOURCE_REF: "{{SOURCE_REF}}"
-  WORKFLOW_MODE: "{{WORKFLOW_MODE}}"
-  WORKFLOW_SOURCE: "{{WORKFLOW_SOURCE}}"
 
 jobs:
   release:
@@ -37,15 +33,6 @@ jobs:
           path: tooling-repo
           persist-credentials: false
 
-      - name: Checkout pinned Git source
-        if: env.WORKFLOW_MODE == 'github' && env.WORKFLOW_SOURCE == 'git'
-        uses: actions/checkout@v5
-        with:
-          repository: ${{ env.SOURCE_REPOSITORY }}
-          ref: ${{ env.SOURCE_REF }}
-          path: source-repo
-          persist-credentials: false
-
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
@@ -60,22 +47,6 @@ jobs:
           tooling-repo/.venv/bin/dsw-km-scaffold check
           --repo-root translation-repo
           --tooling-repo tooling-repo
-
-      - name: Synchronize pinned Git source
-        if: env.WORKFLOW_MODE == 'github' && env.WORKFLOW_SOURCE == 'git'
-        run: >-
-          tooling-repo/.venv/bin/dsw-km-sync-git-source
-          --repo-root translation-repo
-          --source-repo source-repo
-
-      - name: Verify pinned GitHub source release
-        if: env.WORKFLOW_MODE == 'github' && env.WORKFLOW_SOURCE == 'release'
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: >-
-          tooling-repo/.venv/bin/dsw-km-sync-github-release
-          --repo-root translation-repo
-          --check
 
       - name: Prepare verified locale assets
         env:

@@ -84,32 +84,11 @@ These modules connect the translation repository to the Weblate website:
 - [`translation_repository_bootstrap.py`][translation-repository-bootstrap-py]: scaffolds a new translation
   repository and hydrates it from Registry/Weblate inputs without committing or
   pushing.
-- `km_catalog.py` generates a deterministic Git-managed catalog directly from a
-  source KM, carrying translations only when UUID, field, and source text remain
-  unchanged.
-- `github_release.py` verifies versioned KM GitHub Release assets against their
-  checksum sidecars and expected DSW package identity.
-- `github_translation_source.py` checks or synchronizes the pinned release for a
-  Git-authoritative translation repository, then rebuilds derived outputs.
-- `git_translation_source.py` checks an exact local Git checkout and
-  synchronizes a configured KM bundle from an unreleased source-review commit.
-  It keeps draft commits distinct from immutable GitHub Release assets.
-- `km_release.py` validates append-only source KM history, release manifests,
-  checksums, and Git tag/version alignment.
-- `km_release_history.py` resolves and downloads the previous GitHub Release,
-  then delegates immutable-history validation to `km_release.py`.
 - `locale_release.py` rebuilds a pinned translation checkout and prepares native
   PO assets with checksums and provenance. Locale revision tags are independent
   of the source KM's release tags.
-- `km_source_repository_scaffold.py` renders a source KM repository whose
-  branches are mutable but whose tags and published KM packages are immutable.
-- `legal_review/` generates keyword-based legal-review candidates, validates
-  curated jurisdiction mappings against exact KM checksums, question UUIDs,
-  source titles, inherited text fields, and official-source metadata, and builds
-  deterministic child packages for reviewed text-only rewrites. It does not
-  decide whether a law applies or perform structural KM edits.
-- `translation_repository_build.py` rebuilds Git-authoritative translation
-  outputs without network or Weblate access.
+- `translation_repository_build.py` rebuilds native PO outputs from
+  checked-in inputs without network access, including during bootstrap.
 - [`translation_repository_scaffold.py`][translation-repository-scaffold-py]: renders, checks, and
   refreshes managed translation repository docs and workflows without changing
   repository config or translations.
@@ -141,13 +120,11 @@ belong in [Localize Sync Runbook](localize-sync-runbook.md).
 - [`examples/github-actions/validate_translation_config_template.yml`][validate-config-template] is the
   read-only config, scaffold, and pull-request translation validation workflow
   for dedicated translation repositories.
-- `examples/github-actions-github/` contains the Weblate-free translation CI
-  profile.
-- `examples/km-source-repository/` contains source KM validation and tag-release
-  workflows.
+- `examples/github-actions/release_template.yml` publishes verified native PO
+  assets and provenance from locale revision tags.
 
 Keep GitHub Actions as orchestration. Branch selection, recovery, GitHub
-translation import decisions, source-KM generation, locale-PO generation, and
+translation import decisions, locale-PO generation, and
 commit decisions belong in Python helpers. Use
 [Workflow Templates](workflow-templates.md) when rendering or updating templates
 in translation repositories. Workflows that write the tracking branch or

@@ -1,4 +1,4 @@
-"""Rebuild a Git-authoritative translation repository from checked-in inputs."""
+"""Rebuild a native locale from the checked-in KM, Weblate PO, and Markdown."""
 
 from __future__ import annotations
 
@@ -22,7 +22,6 @@ class TranslationRepositoryBuildError(RuntimeError):
 class TranslationRepositoryBuildResult:
     """Summary of one repository rebuild."""
 
-    initialized: bool
     source_km_path: Path
     source_po_path: Path
     tree_dir: Path
@@ -33,7 +32,6 @@ def build_translation_repository(
     *,
     repo_root: Path,
     config_path: Path = Path("translation-config.yml"),
-    allow_uninitialized: bool = False,
     preserve_existing_translations: bool = True,
 ) -> TranslationRepositoryBuildResult:
     """Rebuild the tree and native DSW locale PO from Git-managed inputs.
@@ -54,14 +52,6 @@ def build_translation_repository(
     final_po = root / paths.final_po_path
 
     existing_inputs = (source_km.is_file(), source_po.is_file())
-    if not any(existing_inputs) and allow_uninitialized:
-        return TranslationRepositoryBuildResult(
-            initialized=False,
-            source_km_path=source_km,
-            source_po_path=source_po,
-            tree_dir=tree_dir,
-            final_po_path=final_po,
-        )
     if not all(existing_inputs):
         missing = source_km if not source_km.is_file() else source_po
         raise TranslationRepositoryBuildError(
@@ -109,7 +99,6 @@ def build_translation_repository(
         target_language=config.translation.target_language,
     )
     return TranslationRepositoryBuildResult(
-        initialized=True,
         source_km_path=source_km,
         source_po_path=source_po,
         tree_dir=tree_dir,

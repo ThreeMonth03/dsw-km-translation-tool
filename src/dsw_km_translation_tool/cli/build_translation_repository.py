@@ -18,11 +18,6 @@ def build_argument_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--repo-root", default=".")
     parser.add_argument("--config", default="translation-config.yml")
-    parser.add_argument(
-        "--allow-uninitialized",
-        action="store_true",
-        help="Succeed when neither the source KM nor catalog has been added yet.",
-    )
     return parser
 
 
@@ -32,14 +27,10 @@ def main() -> None:
         result = build_translation_repository(
             repo_root=Path(args.repo_root),
             config_path=Path(args.config),
-            allow_uninitialized=args.allow_uninitialized,
         )
     except (OSError, ValueError, TranslationRepositoryBuildError) as error:
         raise SystemExit(f"Unable to build translation repository: {error}") from error
 
-    if not result.initialized:
-        print("Translation repository is valid but awaiting its source KM and catalog.")
-        return
     print(f"Source KM: {result.source_km_path}")
     print(f"Source catalog: {result.source_po_path}")
     print(f"Translation tree: {result.tree_dir}")

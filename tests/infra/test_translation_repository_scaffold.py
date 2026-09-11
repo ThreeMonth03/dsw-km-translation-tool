@@ -14,8 +14,6 @@ from dsw_km_translation_tool.translation_repository_scaffold import (
 from tests.helpers import run_cli_command
 from tests.infra.test_translation_repository_config import (
     write_config,
-    write_github_config,
-    write_github_git_config,
 )
 
 
@@ -30,6 +28,8 @@ def test_scaffold_sync_is_idempotent_and_preserves_config(
     config_path = target_repo / "translation-config.yml"
     write_config(config_path)
     original_config = config_path.read_bytes()
+    custom = target_repo / "custom.md"
+    custom.write_text("Custom documentation\n", encoding="utf-8")
 
     first_sync = sync_translation_repository_scaffold(
         repo_root=target_repo,
@@ -56,6 +56,23 @@ def test_scaffold_sync_is_idempotent_and_preserves_config(
 
     assert second_sync.changed_files == ()
     assert config_path.read_bytes() == original_config
+    assert custom.read_text(encoding="utf-8") == "Custom documentation\n"
+
+
+def test_scaffold_rejects_symlinked_targets_before_writing(
+    repo_root: Path, workspace: Path
+) -> None:
+    target = workspace / "translation"
+    target.mkdir()
+    write_config(target / "translation-config.yml")
+    outside = workspace / "outside"
+    outside.mkdir()
+    (outside / "README.md").write_text("Keep this\n", encoding="utf-8")
+    (target / "docs").symlink_to(outside, target_is_directory=True)
+    with pytest.raises(TranslationRepositoryScaffoldError, match="symlinked artifact path"):
+        sync_translation_repository_scaffold(repo_root=target, tooling_repo=repo_root)
+    assert (outside / "README.md").read_text(encoding="utf-8") == "Keep this\n"
+    assert not (target / "README.md").exists()
 
 
 def test_scaffold_check_reports_drift_and_sync_repairs_it(
@@ -133,60 +150,3 @@ def test_scaffold_cli_check_fails_on_drift(
     assert result.returncode == 1
     assert "Changed" in result.stdout
     assert "docs/README.md" in result.stdout
-
-
-def test_scaffold_renders_pinned_git_source_profile(
-    repo_root: Path,
-    workspace: Path,
-) -> None:
-    target_repo = workspace / "translation-repo"
-    target_repo.mkdir()
-    write_github_git_config(target_repo / "translation-config.yml")
-
-    result = sync_translation_repository_scaffold(
-        repo_root=target_repo,
-        tooling_repo=repo_root,
-    )
-
-    assert result.aligned is False
-    workflow = (target_repo / ".github/workflows/translation_ci.yml").read_text(encoding="utf-8")
-    release_workflow = (target_repo / ".github/workflows/release.yml").read_text(encoding="utf-8")
-    readme = (target_repo / "README.md").read_text(encoding="utf-8")
-    assert "dsw-km-sync-git-source" in workflow
-    assert 'SOURCE_REF: "' + "1" * 40 + '"' in workflow
-    assert "actions/upload-artifact@v4" in workflow
-    assert "tw-root-tw-zh_Hant-locale-${{ github.sha }}" in workflow
-    assert "gh release create" in release_workflow
-    assert "dsw-km-prepare-locale-release" in release_workflow
-    assert 'tags: ["km-*-r*"]' in release_workflow
-    assert "bundle: `km/root-tw.km`" in readme
-    assert check_translation_repository_scaffold(
-        repo_root=target_repo,
-        tooling_repo=repo_root,
-    ).aligned
-
-
-def test_scaffold_removes_obsolete_profile_files_and_preserves_custom_files(
-    repo_root: Path,
-    workspace: Path,
-) -> None:
-    target = workspace / "translation-repo"
-    target.mkdir()
-    config = target / "translation-config.yml"
-    write_config(config)
-    sync_translation_repository_scaffold(repo_root=target, tooling_repo=repo_root)
-    custom = target / ".github/workflows/custom.yml"
-    custom.write_text("custom\n", encoding="utf-8")
-
-    write_github_git_config(config)
-    obsolete = Path(".github/workflows/localize_auto_sync.yml")
-    check = check_translation_repository_scaffold(repo_root=target, tooling_repo=repo_root)
-    assert obsolete in check.changed_files
-    sync_translation_repository_scaffold(repo_root=target, tooling_repo=repo_root)
-    assert not (target / obsolete).exists()
-
-    write_github_config(config)
-    sync_translation_repository_scaffold(repo_root=target, tooling_repo=repo_root)
-    assert (target / ".github/workflows/release.yml").is_file()
-    assert custom.read_text(encoding="utf-8") == "custom\n"
-    assert check_translation_repository_scaffold(repo_root=target, tooling_repo=repo_root).aligned
