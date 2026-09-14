@@ -56,7 +56,7 @@ current secret list and placement.
 
 `github_translation_import_template.yml` is the only translation-repository
 workflow that writes Weblate. It runs after reviewed changes reach `master`,
-imports only safe GitHub translation edits, and fails with a report if Weblate
+imports only safe edits to fields blank in the contribution base, and fails with a report if Weblate
 changed the same entries differently or the translation lost source Markdown
 formatting, including boundary whitespace. It resolves canonical shared edits,
 rejects competing field edits, and verifies that Weblate applied every uploaded
@@ -67,6 +67,8 @@ contains the proposed text.
 changes against the base commit recorded by the pull-request event. It checks
 Markdown and boundary-whitespace formatting, Weblate conflicts, and shared
 translation consistency, then uploads a field-level report. The workflow has
+blank-only checks that protect existing nonempty translations, including fuzzy
+entries, while allowing review of new translations within the same PR. It has
 read-only repository permission, receives no secrets, and never modifies the
 pull-request branch. It builds and uploads a native PO preview in its temporary
 checkout, without requiring translators to commit generated output changes.
@@ -82,7 +84,9 @@ retaining a source report and immutable snapshot in the same artifact. Source
 differences warn; fetch or validation failures fail the audit. Locale releases
 leave this live-source audit disabled and verify only their pinned inputs.
 
-`examples/github-actions/release_template.yml` publishes changed native PO locales after successful sync/import workflows. It validates a clean tracking-branch checkout against the pinned tooling and
+`examples/github-actions/release_template.yml` publishes changed native PO locales
+after successful sync/import workflows. It validates a clean tracking-branch
+checkout against the pinned tooling and
 source before publishing native PO assets, checksums, and provenance. See
 [Releases](releases.md) for locale revision tags and tooling releases.
 
