@@ -86,12 +86,6 @@ class TranslationOutputLayout:
         return self.output_root / "reports" / "final_report.json"
 
     @property
-    def tree_snapshot_path(self) -> Path:
-        """Return the optional JSON tree snapshot path."""
-
-        return self.output_root / "reports" / "tree_snapshot.json"
-
-    @property
     def backup_root(self) -> Path:
         """Return the local backup root for this translation tree."""
 

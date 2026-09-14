@@ -11,6 +11,7 @@ from dsw_km_translation_tool.native_locale import (
     NativeLocaleValidationError,
     validate_native_locale,
 )
+from dsw_km_translation_tool.po import PoCatalogParser
 from tests.helpers import run_cli_command
 
 
@@ -74,6 +75,33 @@ def test_native_locale_rejects_stale_source_text(
     with pytest.raises(NativeLocaleValidationError, match="Source mismatch"):
         validate_native_locale(
             po_path=stale_po,
+            km_path=model_path,
+            target_language="zh_Hant",
+        )
+
+
+@pytest.mark.parametrize("separator", [":", "/"])
+def test_native_locale_rejects_missing_field_with_matching_title(
+    po_path: Path,
+    model_path: Path,
+    workspace: Path,
+    separator: str,
+) -> None:
+    entry = next(
+        entry
+        for entry in PoCatalogParser(str(po_path)).parse_entries()
+        if entry.prefix == "chapter" and entry.field == "title"
+    )
+    invalid_reference = separator.join((entry.prefix, entry.uuid, "name"))
+    invalid_po = workspace / "missing-field.po"
+    invalid_po.write_text(
+        po_path.read_text(encoding="utf-8").replace(entry.comment, invalid_reference, 1),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(NativeLocaleValidationError, match=f"Missing field: {entry.uuid}:name"):
+        validate_native_locale(
+            po_path=invalid_po,
             km_path=model_path,
             target_language="zh_Hant",
         )
