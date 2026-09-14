@@ -121,8 +121,9 @@ translation commit, tooling commit, and message counts. Release notes appear in
 the release page body. The configuration is available in Git at the recorded
 translation commit. The successful release becomes **Latest**.
 Before publishing, CI imports the PO in disposable official DSW containers and
-checks language switching. Import or rendering errors block publication.
-Official POT coverage gaps produce a warning and are listed in the
+checks language switching and resource-page rendering. Import, questionnaire,
+page-load errors and unexpected resource-page text block publication.
+Official POT coverage gaps and resource-page source fallback produce warnings in the
 `native-dsw-review` artifact; an importable partial locale can still be released.
 
 Download all assets and run `sha256sum -c SHA256SUMS` to verify them. DSW needs
@@ -145,6 +146,10 @@ release assets.
 - Native DSW acceptance failed: download `native-dsw-review` for the result and
   browser failure screenshot. An incomplete coverage warning is separate from
   an import or rendering failure; inspect `coverage.md` for missing source text.
+- Resource pages remain in the source language: inspect `resource-pages.md`,
+  `resource-pages.json` and `resource-*.png` in `native-dsw-review`. This check is
+  separate from questionnaire switching. `result.json` records the tested DSW
+  versions; a successful PO import does not prove resource-page localization.
 - Upstream source catalog differs: inspect `source-catalog/source-catalog.md`
   in `native-dsw-review`. `different` lists messages found only in either catalog.
   The official Weblate/POT remains authoritative; differences from an older KM

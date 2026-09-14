@@ -75,7 +75,8 @@ checkout, without requiring translators to commit generated output changes.
 It then runs the pinned tooling's native-locale action in disposable official
 DSW containers. The same check runs daily, on manual runs, and before locale
 releases. Coverage warnings and real screenshots are available in
-`native-dsw-review`; import and rendering errors fail the workflow. See
+`native-dsw-review`; import, questionnaire and page-load errors fail the workflow.
+Resource-page source fallback is reported separately as a warning. See
 [Native Locale Verification](native-locale-verification.md).
 
 Translation operations also enable `audit-source-catalog` on the native-locale

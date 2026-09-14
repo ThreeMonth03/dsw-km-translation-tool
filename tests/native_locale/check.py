@@ -25,6 +25,12 @@ from dsw_km_translation_tool.locale_coverage import (
     render_locale_coverage,
     summarize_locale_coverage,
 )
+from dsw_km_translation_tool.resource_page_review import (
+    compare_resource_field,
+    render_resource_pages,
+    resource_page_candidates,
+    summarize_resource_pages,
+)
 from dsw_km_translation_tool.translation_repository_config import (
     load_translation_repository_config,
     version_paths,
@@ -56,6 +62,69 @@ def translated_chapter(pot_path: Path, po_path: Path) -> tuple[str, str]:
         if target and not target.fuzzy and target.string and target.string != source.id:
             return source.id, target.string
     raise RuntimeError("Browser check requires at least one translated chapter title")
+
+
+def set_project_language(page, project_url, language):
+    page.goto(f"{project_url}/settings")
+    field = page.get_by_label("Language", exact=True)
+    if field.input_value() != language:
+        field.select_option(language)
+        with page.expect_navigation(wait_until="networkidle"):
+            with page.expect_response(
+                lambda r: "/settings" in r.url and r.request.method == "PUT"
+            ) as saved:
+                page.locator(
+                    '.Projects__Detail__Content--Settings [data-cy="form-actions"] [data-cy="form_submit"]'
+                ).click()
+        checked(saved.value, "Project language save")
+    expect(field).to_have_value(language)
+
+
+def verify_resource_pages(page, client, package_uuid, candidates, language, out, result):
+    findings = []
+    for resource_uuid, fields in candidates.items():
+        page.goto(f"{client}/knowledge-models/{package_uuid}/resource-pages/{resource_uuid}")
+        content = page.locator(".KnowledgeModels__BookReference")
+        expect(content.locator(":scope > h1")).to_be_visible()
+        screenshot = f"resource-{resource_uuid}.png"
+        page.screenshot(path=out / screenshot, full_page=True)
+        findings.append(
+            {
+                "uuid": resource_uuid,
+                "project_language": language,
+                "screenshot": screenshot,
+                "fields": {
+                    field: compare_resource_field(
+                        expected,
+                        (
+                            content.locator(":scope > h1")
+                            if field == "title"
+                            else content.locator(":scope > div").last
+                        ).inner_html(),
+                    )
+                    for field, expected in fields.items()
+                },
+            }
+        )
+    summary = summarize_resource_pages(findings)
+    result["resource_page_rendering"] = summary
+    (out / "resource-pages.json").write_text(
+        json.dumps(findings, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    report = render_resource_pages(summary)
+    (out / "resource-pages.md").write_text(report, encoding="utf-8")
+    print(report, flush=True)
+    if os.environ.get("GITHUB_STEP_SUMMARY"):
+        with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as handle:
+            handle.write(report)
+    if summary["status"] == "failed":
+        raise RuntimeError("Resource page displayed neither the source nor its translation")
+    if summary["status"] != "passed":
+        print(
+            f"::warning::Resource-page rendering: {summary['status']}; see resource-pages.md. "
+            "PO import success does not prove resource-page localization.",
+            flush=True,
+        )
 
 
 def verify_browser(api, client, minio, km_path, po_path, package_id, source, target, out, result):
@@ -186,17 +255,7 @@ def verify_browser(api, client, minio, km_path, po_path, package_id, source, tar
                 (target, translated, "translated"),
                 (source, original, "source-restored"),
             ):
-                page.goto(f"{project_url}/settings")
-                field = page.get_by_label("Language", exact=True)
-                if field.input_value() != language:
-                    field.select_option(language)
-                    with page.expect_navigation(wait_until="networkidle"):
-                        with page.expect_response(
-                            lambda r: "/settings" in r.url and r.request.method == "PUT"
-                        ) as saved:
-                            page.get_by_role("button", name="Save", exact=True).last.click()
-                    checked(saved.value, "Project language save")
-                expect(page.get_by_label("Language", exact=True)).to_have_value(language)
+                set_project_language(page, project_url, language)
                 page.goto(project_url)
                 page.reload()
                 expect(page.get_by_text(title, exact=True).first).to_be_visible()
@@ -210,6 +269,16 @@ def verify_browser(api, client, minio, km_path, po_path, package_id, source, tar
                 page.locator(".driver-overlay").wait_for(state="hidden")
                 page.screenshot(path=out / f"questionnaire-{screenshot}.png", full_page=True)
             result["browser_import_and_language_switch"] = "passed"
+            set_project_language(page, project_url, target)
+            verify_resource_pages(
+                page,
+                client,
+                imported["uuid"],
+                resource_page_candidates(pot_path, po_path),
+                target,
+                out,
+                result,
+            )
         except Exception:
             page.screenshot(path=out / "failure.png", full_page=True)
             raise
@@ -324,7 +393,12 @@ def main() -> None:
                 out,
                 result,
             )
-            result["status"] = "passed"
+            result["status"] = (
+                "passed"
+                if result["coverage"]["status"] == "complete"
+                and result["resource_page_rendering"]["status"] == "passed"
+                else "passed-with-warnings"
+            )
         finally:
             try:
                 compose("down", "--volumes", "--remove-orphans")

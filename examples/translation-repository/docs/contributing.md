@@ -44,8 +44,14 @@ for 14 days. This artifact is not a hosted DSW preview.
 Download `native-dsw-review` from the same run for actual DSW screenshots and
 `coverage.md`. CI imports the PO in a temporary official DSW instance and checks
 source/translated language switching. The screenshots cover a translated
-chapter title, not every changed question. Review other changes interactively
-using the steps below.
+chapter title and resource pages with matching, non-fuzzy PO translations,
+not every changed question. Review other changes interactively using the steps below.
+
+Read `resource-pages.md` for the separate resource-page outcome, then inspect
+`resource-pages.json` and `resource-*.png` for individual fields. **incomplete**
+means checked fields still display source text; **not-checked** means there were
+no eligible translations. Neither is a successful localization check, even if
+PO import passed. These warnings do not prevent publishing an importable PO.
 
 The coverage report compares the PO with a freshly exported official POT.
 Missing, empty, fuzzy and extra entries are listed separately. An **incomplete**
