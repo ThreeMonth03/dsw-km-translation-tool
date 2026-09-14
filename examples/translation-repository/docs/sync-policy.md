@@ -108,9 +108,11 @@ restore removed translations automatically or change other language catalogs.
 
 ## Translation Quality States
 
-Git mirrors Weblate's review states in reports. Blank-only contribution PRs must
-not modify existing translations or clear fuzzy flags. Report those issues
-separately for a maintainer's decision.
+Git mirrors Weblate's review states in reports. A fuzzy flag means that a
+translation needs review, not that it is archived or frozen. Reported problems
+in existing translations may be corrected through reviewed PRs. Do not edit
+generated PO files or their flags manually; synchronization records Weblate's
+resulting state.
 
 ## Releases
 

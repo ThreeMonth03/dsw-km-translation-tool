@@ -253,20 +253,6 @@ def _matches_catalog(
     )
 
 
-def require_blank_contributions(report: GitHubTranslationReport) -> None:
-    """Freeze translations present at the contribution's base, even if fuzzy.
-
-    Apply this at the human contribution boundaries, not to official source sync
-    or diagnostic comparisons of historical repository states.
-    """
-    protected = [decision for decision in report.decisions if decision.base]
-    if protected:
-        fields = ", ".join(f"{item.path}:{item.field}" for item in protected)
-        raise GitHubTranslationContributionError(
-            f"Only fields blank in the PR base may be edited: {fields}"
-        )
-
-
 def read_tree_entries_from_git_ref(
     *,
     repo_root: Path,
