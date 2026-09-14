@@ -42,7 +42,7 @@ Configure these secrets in this repository:
 | `localize_alignment_report.yml` | Scheduled, manual | No | Verifies Weblate PO, checked-in PO, tree, and final PO alignment |
 | `km_version_auto_update.yml` | Scheduled, manual | Git | No-ops when current; updates only after validation passes |
 | `validate_translation_config.yml` | Push, PR, manual, daily | Test DSW only | Validates config, scaffold and PR edits; reports source gaps and PO coverage; checks browser import |
-| `release.yml` | Locale tag push | GitHub Release | Publishes verified native PO assets and provenance |
+| `release.yml` | Successful sync/import/KM update, or manual retry | GitHub Release | Publishes changed, verified native PO assets and provenance |
 
 ## Routine Check
 

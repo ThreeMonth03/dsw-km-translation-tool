@@ -108,11 +108,15 @@ restore removed translations automatically or change other language catalogs.
 
 ## Translation Quality States
 
-Resolve review-marked strings in Weblate. Git mirrors those states in reports.
+Git mirrors Weblate's review states in reports. Blank-only contribution PRs must
+not modify existing translations or clear fuzzy flags. Report those issues
+separately for a maintainer's decision.
 
 ## Releases
 
-`release.yml` rebuilds a tagged, clean checkout with its pinned tooling commit.
+`release.yml` runs after successful synchronization and publishes a new revision
+only when usable translations differ from the newest published locale. It
+rebuilds a clean tracking-branch checkout with its pinned tooling commit.
 It requires generated files to be reproducible before publishing a PO,
 checksums, and provenance. A translation revision is independent of the source
 KM version; see [the release procedure](maintenance-runbook.md#publishing-a-locale).

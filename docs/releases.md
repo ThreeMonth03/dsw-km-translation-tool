@@ -8,19 +8,23 @@ are derived from the configured coordinates and language.
 
 ## Native Locale Releases
 
-Translation repositories include **Publish Native KM Locale**.
-Push `locale-<language>-r<revision>` from the validated tracking branch.
+Translation repositories include **Publish Native KM Locale**, triggered after
+successful Weblate sync, GitHub translation import, or KM update workflows.
+It checks the tracking branch and chooses `locale-<language>-r<revision>` automatically.
 For example, `locale-zh_Hant-r2` is the second locale revision. Revision numbers
 advance independently of the context KM; do not include KM versions in tags.
 
-Before tagging:
+Publication requires:
 
-1. Wait for translation import/sync jobs to finish. The alignment report must
-   show that the repository matches Weblate and reproduces the final PO.
-2. Pin `tooling.ref` to a full reviewed commit SHA and regenerate the scaffold
-   using that exact tool checkout.
-3. Confirm the source KM, editable tree, generated PO, and review outputs are
-   committed and reproducible. KM source differences are informational.
+1. The alignment check confirms the repository matches Weblate and reproduces the final PO.
+2. `tooling.ref` is a full reviewed commit SHA and the managed scaffold matches that checkout.
+3. The source KM, editable tree, generated PO, and review outputs are committed and reproducible.
+
+The planner compares usable, non-fuzzy translations with the newest published
+locale. Documentation, PO headers, references, and newly empty entries do not
+trigger a release. Changed or removed usable translations do. Existing tags are
+never reused. **Run workflow** retries the same checks without requiring a tag;
+unchanged translations produce a successful no-op. KM source differences are informational.
 
 The workflow publishes exactly three assets: a versioned PO, `manifest.json`,
 and `SHA256SUMS`. Only the PO is needed for DSW import. The manifest includes
@@ -29,7 +33,9 @@ context KM coordinates/checksum, released PO checksum, translation/tooling
 commits, language and accepted message counts. The manifest uses schema 2;
 `context_knowledge_model` is test provenance, not a required catalog version. Release notes appear in the release page body. The configuration
 is available in Git at the recorded translation commit.
-The successful release becomes Latest. Never replace an existing tag or asset
+Assets are uploaded to a draft before it is published as Latest. A failed upload
+cannot become a published baseline; retries skip its reserved revision.
+Never replace an existing tag or asset
 to correct a translation; increment the locale revision.
 
 Import the PO into the desired KM through DSW's native **Import locale** action,

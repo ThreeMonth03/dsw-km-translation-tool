@@ -82,7 +82,7 @@ retaining a source report and immutable snapshot in the same artifact. Source
 differences warn; fetch or validation failures fail the audit. Locale releases
 leave this live-source audit disabled and verify only their pinned inputs.
 
-`examples/github-actions/release_template.yml` publishes native PO locales. It validates a clean, tagged checkout against the pinned tooling and
+`examples/github-actions/release_template.yml` publishes changed native PO locales after successful sync/import workflows. It validates a clean tracking-branch checkout against the pinned tooling and
 source before publishing native PO assets, checksums, and provenance. See
 [Releases](releases.md) for locale revision tags and tooling releases.
 
