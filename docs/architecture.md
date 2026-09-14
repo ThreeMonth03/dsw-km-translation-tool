@@ -73,6 +73,8 @@ These modules connect the translation repository to the Weblate website:
   computes repository paths.
 - [`localize_sync.py`][localize-sync-py]: downloads the current Weblate PO
   snapshot into the translation repository.
+- `pending_translations.py`: checks editable Markdown against the saved and
+  incoming catalogs before source sync or KM updates replace any inputs.
 - [`localize_status.py`][localize-status-py]: reports PO completion, empty strings, and Weblate
   review-state counts without modifying translations.
 - [`weblate_checks.py`][weblate-checks-py]: reports Weblate units matching quality-check queries

@@ -46,8 +46,9 @@ The workflow runs the `dsw-km-sync-localize` command. That command:
 1. Downloads the current Weblate PO and validates syntax, language, and native
    `entity/UUID/field` reference syntax. Source differences from the context KM
    are diagnostic only.
-2. Saves the validated snapshot to `sources/localize/zh_Hant/latest.po` and
-   force-refreshes `tree/`.
+2. Checks editable Markdown against the saved snapshot and incoming PO. Stops
+   without replacing files if Git edits have not reached Weblate; otherwise
+   saves the snapshot and refreshes `tree/`.
 3. Rebuilds `builds/final_translated.po`.
 4. Validates the PO for native DSW Knowledge Model locale import.
 5. Refreshes review outputs.
@@ -162,8 +163,9 @@ Use forward commits for sync and workflow corrections on public branches.
 Normal sync is Weblate-first:
 
 - The full official catalog wins, including empty translations and fuzzy flags.
-- Checked-in tree translations that differ from Weblate are replaced during
-  force-refresh.
+- Unedited tree translations follow upstream changes. Edits that differ from
+  the saved PO must first reach Weblate before any source refresh can replace
+  them, including edits in canonical shared blocks.
 - Entries marked for review stay in Weblate for translators to resolve on the
   website.
 
@@ -173,6 +175,13 @@ are safe against the current Weblate state. Conflicts require human review.
 Writer workflows use the same concurrency group with
 `cancel-in-progress: false`. This prevents a later push or scheduled run from
 cancelling an active writer job.
+
+If sync reports `not yet in Weblate`, inspect **GitHub Translation Import**.
+Retry a failed import after resolving its error. If several reviewed merges
+have accumulated, dispatch the import with the last mirrored commit as
+`base_ref` and the current tracking commit as `head_ref`, so every pending edit
+is included. Resolve reported conflicts explicitly; do not force-refresh the
+tree to clear the error. A successful import runs the normal sync automatically.
 
 ## KM Updates
 

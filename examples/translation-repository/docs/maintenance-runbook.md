@@ -138,6 +138,11 @@ release assets.
 
 ## Troubleshooting
 
+- Sync or KM update reports `not yet in Weblate`: check **GitHub Translation
+  Import** and resolve its error before retrying. For multiple pending reviewed
+  merges, use the manual import with the last mirrored commit as `base_ref` and
+  the current tracking commit as `head_ref`. Source sync leaves pending edits
+  untouched; do not force-refresh the tree to bypass the check.
 - Sync created no commit: the rebuild found no tracked changes. Use the alignment
   report to confirm the repository still matches live Weblate.
 - Alignment failed: download `localize-alignment-report` and compare the
