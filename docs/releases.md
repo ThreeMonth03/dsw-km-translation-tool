@@ -43,8 +43,10 @@ available since DSW 4.33. Versions need not match: DSW looks up source strings
 and falls back to source text when no translation matches. Before publishing,
 CI checks syntax and language, then imports the PO in a disposable official DSW
 instance. It verifies the PO round trip and source/translated language switching.
-Import or rendering failures block publication. Incomplete official POT coverage
-produces a warning and a detailed report; partial translations remain releasable.
+Import, questionnaire switching, page-load failures and unexpected resource-page
+text block publication. Incomplete official POT coverage or source-language
+fallback on resource pages produces a warning and a detailed report; partial
+translations remain releasable.
 See [Native Locale Verification](native-locale-verification.md).
 
 Pull-request PO artifacts are temporary review downloads, not formal releases

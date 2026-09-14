@@ -1,5 +1,5 @@
 name: Verify native DSW locale
-description: Import a PO in disposable official DSW containers and report POT coverage.
+description: Import a PO in disposable DSW containers and report coverage and resource-page rendering.
 inputs:
   translation-repository:
     description: Absolute translation repository path; omit to test tooling fixtures.

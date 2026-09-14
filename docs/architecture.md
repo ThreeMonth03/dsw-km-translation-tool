@@ -56,8 +56,10 @@ These modules handle the local representation of translation data:
 - `native_locale.py` validates gettext syntax and language before native import;
   KM source differences are diagnostic, not validation failures.
 - `locale_coverage.py` compares the PO with an official DSW-exported POT.
-  `tests/native_locale/` tests import and language switching in disposable
-  official containers; it never connects to production DSW.
+  `resource_page_review.py` selects matching translations and reports rendered
+  resource-page text separately from import success. `tests/native_locale/`
+  tests import, language switching and resource pages in disposable official
+  containers; it never connects to production DSW.
 - `source_catalog.py` snapshots Weblate's public upstream POT for read-only
   source comparison. It never updates the shared catalog or language PO files.
 

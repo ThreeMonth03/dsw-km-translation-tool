@@ -8,6 +8,7 @@ These checks answer different questions:
 | Official POT coverage | Which official DSW source messages are missing, empty, fuzzy or extra in the PO |
 | Upstream source catalog | How the authoritative upstream POT differs from the context KM export |
 | Browser acceptance | Official DSW imports the PO, returns the same file and renders a translated chapter after language switching |
+| Resource-page rendering | Whether standalone resource pages display matching PO translations or fall back to source text |
 
 A PO can pass import validation while leaving some official source messages in
 English. A fully translated Weblate catalog does not necessarily cover the
@@ -31,13 +32,18 @@ the `native-dsw-review` artifact. It includes:
 - `source-catalog/`: upstream POT snapshot, commit, checksums and source difference
   reports in `source-catalog.md` and `source-catalog.json`.
 - `locale-imported.png` and `questionnaire-*.png`: real browser screenshots.
+- `resource-pages.md`, `resource-pages.json` and `resource-*.png`: resource-page
+  rendering counts, per-field source/translation/displayed text and screenshots.
 - `result.json`: test outcome, input PO checksum, DSW image versions, and coverage
-  status/counts with a link to `coverage.json`. Full coverage details are stored
-  only in the dedicated coverage reports.
+  status/counts with a link to `coverage.json`, plus a separate resource-page
+  outcome. `passed-with-warnings` means the import checks passed but coverage
+  or resource-page rendering was incomplete or not checked. Full details are
+  stored only in their dedicated reports.
 - `failure.png`, when a browser check fails.
 
-Artifacts are retained for 14 days. Screenshots check a translated chapter title;
-they are not a review of every question or a hosted, interactive preview.
+Artifacts are retained for 14 days. Screenshots check a translated chapter title
+and resource pages with eligible translations; they are not a review of every
+question or a hosted, interactive preview.
 Download the PR's `native-locale-<head SHA>` artifact to review other changes in
 your own test DSW instance.
 
@@ -53,6 +59,26 @@ and missing, empty, fuzzy or extra entries emit warnings without blocking a
 usable partial locale. Comparisons include both catalog identities even when
 the upstream version differs from the context KM. This check reports gaps; it does not change
 translations, upload to Weblate, or maintain an exceptions list.
+
+## Resource Pages
+
+After verifying questionnaire switching, the check selects the target language
+in project settings and opens standalone resource pages in the same browser.
+Candidates are selected automatically from the official test-KM POT and input
+PO by exact source text and gettext context. Empty, fuzzy, absent and visibly
+unchanged translations cannot demonstrate localization and are not candidates.
+Their coverage remains visible in the separate POT report.
+
+Titles and Markdown content are compared as normalized rendered text, not HTML
+markup, layout or link destinations. Each checked field is **translated**,
+**source** (the original text is still displayed), or **unexpected**.
+The resource-page outcome is **passed** only when every checked field displays
+its translation. No candidates means **not-checked**, never a pass.
+
+Source fallback produces an **incomplete** warning without blocking an importable
+PO. Unexpected text or a page that fails to load fails CI. Read the separate
+resource-page outcome even when import and questionnaire checks pass; project
+language selection alone does not prove that standalone pages use that language.
 
 ## Source Catalog Updates
 
@@ -103,7 +129,8 @@ unbuilt Markdown edits.
 The check starts a uniquely named stack with loopback-only, dynamically assigned
 ports, fresh data and disposable example users. It exports the POT from that
 instance, imports the PO through the browser, switches source → translated →
-source language and verifies persisted rendering after reload. Containers and
+source language and verifies persisted rendering after reload. It then restores
+the target language for resource-page review. Containers and
 volumes are removed on success or failure. Other Docker stacks are untouched.
 It cannot target an existing DSW server. Reports contain no login tokens.
 

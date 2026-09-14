@@ -77,6 +77,7 @@ and actual DSW import failures still block CI.
 | Config validation failed | `translation-config.yml` and `validate_translation_config.yml` log |
 | Translation PR failed | `github-translation-report` artifact |
 | Native import failed or coverage is incomplete | `native-dsw-review` artifact |
+| Resource pages remain untranslated | `resource-pages.md` and `resource-*.png` in `native-dsw-review` |
 | Shared source POT differs | `source-catalog/source-catalog.md` in `native-dsw-review` |
 
 ## Local Maintenance
