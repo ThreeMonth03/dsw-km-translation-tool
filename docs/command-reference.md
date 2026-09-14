@@ -103,7 +103,7 @@ Prepare native locale release assets without publishing them:
 .venv/bin/dsw-km-prepare-locale-release \
   --repo-root /path/to/translation-repo \
   --tooling-repo . \
-  --tag km-2.7.0-zh_Hant-r1 \
+  --tag locale-zh_Hant-r1 \
   --out /tmp/native-locale-release
 ```
 

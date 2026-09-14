@@ -169,9 +169,6 @@ def test_sync_latest_km_updates_validates_and_pushes_target_ref(
     (tooling_repo / ".venv" / "bin" / "python").write_text("", encoding="utf-8")
     write_config(config_path)
     runner = RecordingRunner()
-    monkeypatch.setattr(
-        "dsw_km_translation_tool.km_latest_sync.upstream_target_version", lambda _: "2.8.0"
-    )
 
     result = sync_latest_km_version(
         repo_root=workspace,
@@ -222,9 +219,6 @@ def test_sync_latest_km_does_not_push_when_validation_fails(
     tooling_repo.mkdir()
     write_config(config_path)
     runner = RecordingRunner(fail_on="dsw-km-report-alignment")
-    monkeypatch.setattr(
-        "dsw_km_translation_tool.km_latest_sync.upstream_target_version", lambda _: "2.8.0"
-    )
 
     try:
         sync_latest_km_version(

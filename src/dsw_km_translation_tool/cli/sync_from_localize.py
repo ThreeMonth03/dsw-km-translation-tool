@@ -14,7 +14,6 @@ from dsw_km_translation_tool.ci_sync import (
 from dsw_km_translation_tool.localize_sync import pull_localize_po
 from dsw_km_translation_tool.localize_tree_sync import refresh_tree_from_localize
 from dsw_km_translation_tool.repository_ci_sync import build_repository_ci_sync_config
-from dsw_km_translation_tool.source_readiness import SourceUpdatePending, report_pending
 
 
 def build_argument_parser() -> argparse.ArgumentParser:
@@ -74,14 +73,10 @@ def main() -> None:
     tooling_repo = Path(args.tooling_repo).resolve()
     config_path = Path(args.config)
 
-    try:
-        pull_result = pull_localize_po(
-            config_path=_resolve_host_path(host_repo, config_path),
-            repo_root=host_repo,
-        )
-    except SourceUpdatePending as pending:
-        report_pending(pending.report)
-        return
+    pull_result = pull_localize_po(
+        config_path=_resolve_host_path(host_repo, config_path),
+        repo_root=host_repo,
+    )
     print("Localize PO pull")
     print(f"  Version         : {pull_result.version}")
     print(f"  Changed         : {pull_result.changed}")

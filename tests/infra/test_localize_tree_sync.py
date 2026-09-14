@@ -15,12 +15,12 @@ from dsw_km_translation_tool.workflow import TranslationWorkflowService
 from tests.helpers import parse_po_entries, update_tree_field
 
 
-def test_invalid_source_does_not_modify_existing_tree(
+def test_invalid_catalog_does_not_modify_existing_tree(
     repo_root: Path, workspace: Path, po_path: Path, model_path: Path
 ) -> None:
     latest = workspace / "latest.po"
     latest.write_text(
-        po_path.read_text(encoding="utf-8").replace('msgid "10 years"', 'msgid "11 years"', 1),
+        po_path.read_text(encoding="utf-8").replace("Language: zh_Hant", "Language: de"),
         encoding="utf-8",
     )
     source = workspace / "source.km"
@@ -32,7 +32,7 @@ def test_invalid_source_does_not_modify_existing_tree(
     config = _build_refresh_config(
         host_repo=workspace, tooling_repo=repo_root, latest_po_path=latest, source_km_path=source
     )
-    with pytest.raises(NativeLocaleValidationError, match="Source mismatch"):
+    with pytest.raises(NativeLocaleValidationError, match="Language header"):
         refresh_tree_from_localize(config=config, km_version="2.7.0")
     assert list(tree.iterdir()) == [marker]
     assert marker.read_text(encoding="utf-8") == "Keep the current translations"

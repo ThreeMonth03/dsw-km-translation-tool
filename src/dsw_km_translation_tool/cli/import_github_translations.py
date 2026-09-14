@@ -21,13 +21,8 @@ from dsw_km_translation_tool.github_translation_contributions import (
     write_import_po,
 )
 from dsw_km_translation_tool.localize_sync import pull_localize_po
-from dsw_km_translation_tool.source_readiness import (
-    SourceUpdatePending,
-    report_pending,
-)
 from dsw_km_translation_tool.translation_repository_config import (
     load_translation_repository_config,
-    version_paths,
 )
 from dsw_km_translation_tool.weblate_upload import (
     resolve_weblate_file_api_url,
@@ -73,27 +68,12 @@ def main() -> None:
     config_path = _resolve_repo_path(repo_root, Path(args.config))
     repository_config = load_translation_repository_config(config_path)
     localize = repository_config.localize
-    source_km = repo_root / version_paths(repository_config).source_km_path
     with TemporaryDirectory(prefix="dsw-github-import-") as temp_dir:
         temp_root = Path(temp_dir)
-        try:
-            pull_result = pull_localize_po(
-                config_path=config_path,
-                repo_root=temp_root,
-                km_path=source_km if source_km.is_file() else None,
-            )
-        except SourceUpdatePending as pending:
-            report_pending(
-                pending.report,
-                json_path=args.json_out,
-                markdown_path=args.details_out,
-                summary_path=args.summary,
-            )
-            append_github_outputs(
-                output_path=args.github_output,
-                values={"source_status": "waiting-for-km", "uploaded": False},
-            )
-            return
+        pull_result = pull_localize_po(
+            config_path=config_path,
+            repo_root=temp_root,
+        )
         report = build_github_translation_report(
             repo_root=repo_root,
             base_ref=args.base_ref,

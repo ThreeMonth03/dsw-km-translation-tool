@@ -57,13 +57,15 @@ website state into this repository:
 ## Publish to DSW
 
 Download a PO from this repository's **Releases → Latest**. In DSW, open
-the matching source Knowledge Model version, open **Locales → Import**,
+the desired Knowledge Model version, open **Locales → Import**,
 enter the locale name, and upload the PO. Confirm that DSW reports the expected
 language. In a test project's **Settings**, select the imported **Language** and
 save before reviewing its **Questionnaire**. See the
 [PO review instructions](contributing.md#review-the-po) for the full procedure.
 
-The source `.km` under `sources/knowledge-models/` exists only for validation.
+The `.km` under `sources/knowledge-models/` supplies context and browser tests.
+Catalog and KM versions need not match: only matching source strings translate;
+unmatched strings remain in the source language.
 Do not import it as a translated Knowledge Model.
 
 Use [Publishing a locale](maintenance-runbook.md#publishing-a-locale) to create

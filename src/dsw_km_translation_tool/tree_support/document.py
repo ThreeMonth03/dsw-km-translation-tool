@@ -68,7 +68,7 @@ class TranslationMarkdownDocument:
             "# Translation",
             "",
             f"- UUID: `{entity_uuid}`",
-            f"- Event Type: `{event_type}`",
+            f"- Event Type: `{event_type or ''}`",
             f"- Edit only the `Translation ({self.target_lang})` blocks below.",
             "",
         ]

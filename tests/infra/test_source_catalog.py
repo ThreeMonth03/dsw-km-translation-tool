@@ -56,7 +56,7 @@ def test_aligned_sources_ignore_references_and_translation_state(catalogs):
 def test_missing_source_is_an_upstream_addition_not_an_empty_translation(catalogs):
     catalogs[1].add("Before Submitting the DMP", locations=[("phase/uuid/title", None)])
     report = compare(catalogs)
-    assert report["status"] == "additions-only"
+    assert report["status"] == "different"
     assert report["counts"] == {
         "official": 2,
         "upstream": 1,
@@ -69,7 +69,7 @@ def test_missing_source_is_an_upstream_addition_not_an_empty_translation(catalog
     rendered = render_source_catalog(report)
     assert "Before Submitting the DMP" in rendered
     assert "not live Weblate units" in rendered
-    assert "Do not replace" in rendered
+    assert "do not block" in rendered
     assert "Before Submitting" not in render_source_catalog(report, details=False)
 
 
@@ -77,12 +77,14 @@ def test_changed_source_or_context_requires_review(catalogs):
     catalogs[2].delete("Existing")
     catalogs[2].add("Existing", context="different")
     report = compare(catalogs)
-    assert report["status"] == "review-required"
+    assert report["status"] == "different"
     assert report["counts"]["missing_upstream"] == report["counts"]["upstream_only"] == 1
 
 
-@pytest.mark.parametrize("project,version", [("Other", "2.8.0"), ("Other", "12.7.0"), ("", "")])
-def test_upstream_version_must_match(catalogs, project, version):
+@pytest.mark.parametrize(
+    "project,version", [("other:root:2.8.0", ""), ("Other", "invalid"), ("", "")]
+)
+def test_upstream_identity_must_be_identifiable(catalogs, project, version):
     catalogs[2].project, catalogs[2].version = project, version
     with pytest.raises(LocaleCoverageError, match="version"):
         compare(catalogs)
@@ -93,14 +95,21 @@ def test_package_id_header_is_accepted(catalogs):
     assert compare(catalogs)["status"] == "aligned"
 
 
-def test_known_different_version_is_waiting_not_a_coverage_comparison(catalogs):
+def test_human_readable_header_does_not_require_the_context_version(catalogs):
+    catalogs[2].version = "2.8.1"
+    report = compare(catalogs)
+    assert report["status"] == "aligned"
+    assert report["upstream_package_id"] == "dsw:root:2.8.1"
+
+
+def test_different_versions_still_report_catalog_differences(catalogs):
     catalogs[2].project, catalogs[2].version = "dsw:root:2.8.1", ""
     report = compare(catalogs)
-    assert report["status"] == "waiting-for-km"
-    assert report["required_package_id"] == "dsw:root:2.8.1"
-    assert "shared" not in report["counts"]
+    assert report["status"] == "aligned"
+    assert report["upstream_package_id"] == "dsw:root:2.8.1"
+    assert report["counts"]["shared"] == 1
     report["upstream_url"] = "https://github.com/example/locales"
-    assert "not compared across KM versions" in render_source_catalog(report)
+    assert "do not block" in render_source_catalog(report)
 
 
 def test_target_language_cannot_be_used_as_source(catalogs):
@@ -213,7 +222,15 @@ def test_cli_does_not_claim_coverage_without_an_upstream_repository(tmp_path, mo
     monkeypatch.setattr(
         sys,
         "argv",
-        ["report", "--repo-root", str(tmp_path), "--official-pot", "unused.pot", "--out", str(out)],
+        [
+            "report",
+            "--repo-root",
+            str(tmp_path),
+            "--official-pot",
+            "unused.pot",
+            "--out",
+            str(out),
+        ],
     )
     main()
     assert json.loads((out / "source-catalog.json").read_text())["status"] == "not-configured"
@@ -245,6 +262,6 @@ def test_cli_additions_are_reported_without_failing_or_mutating_sources(catalogs
         ],
     )
     main()
-    assert json.loads((out / "source-catalog.json").read_text())["status"] == "additions-only"
+    assert json.loads((out / "source-catalog.json").read_text())["status"] == "different"
     assert "New source" in (out / "source-catalog.md").read_text()
     assert all(path.read_bytes() == content for path, content in original.items())

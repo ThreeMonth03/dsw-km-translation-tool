@@ -7,7 +7,11 @@ translations are imported as native PO locales.
 
 For zh-Hant production work, the latest translation state is maintained in
 Localize/Weblate. This repository provides automation and visualization around
-that workflow:
+that workflow. The official Weblate/POT catalog is authoritative; the available
+KM supplies context and browser tests, not a source-version gate. Upstream
+additions, removals and review flags are mirrored without local backports.
+
+The tools:
 
 - mirror Weblate PO exports into a Git translation tree
 - build and validate native DSW Knowledge Model locale PO files

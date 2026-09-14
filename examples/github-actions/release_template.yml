@@ -2,7 +2,7 @@ name: Publish Native KM Locale
 
 on:
   push:
-    tags: ["km-*-r*"]
+    tags: ["locale-*-r*"]
 
 permissions:
   contents: write

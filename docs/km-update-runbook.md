@@ -1,7 +1,8 @@
 # KM Update Runbook
 
 Use this runbook when the DSW Registry publishes a new Common DSW Knowledge
-Model. The translation repository uses the latest verified KM/PO pair.
+Model. The KM provides tree context and a browser-test target. It does not
+constrain the version or contents of the official Weblate catalog.
 
 ## When to Start
 
@@ -16,16 +17,16 @@ workflow. Local runs read the same token from the shell environment. See
 [Security and Permissions](security-and-permissions.md).
 
 The scheduled KM version auto-update workflow is the normal update mechanism.
-The upstream POT selects the target KM version; a newer Registry version alone
-does not advance the repository ahead of Weblate. Candidate KM and PO files
-are validated in a temporary workspace before the active config or inputs change.
+The latest published Registry KM selects the context version independently of
+Weblate. The bundle identity and the downloaded PO syntax/language are checked
+in a temporary workspace before the active config or inputs change.
 It runs `dsw-km-sync-latest-km`, no-ops when the configured KM is current, and
 only pushes to Git when every safety check passes. When the Registry has a newer
 published KM, the workflow:
 
 - downloads the new KM bundle using `DSW_REGISTRY_TOKEN`;
 - downloads the current Weblate PO without uploading anything to Weblate;
-- validates the candidate pair, then updates `translation-config.yml` and source files;
+- checks the bundle identity and catalog format, then updates config and sources;
 - rebuilds `tree/` and `builds/final_translated.po`;
 - validates the PO for native DSW Knowledge Model locale import;
 - validates config, runs translation tests, and checks repository alignment;
@@ -34,10 +35,10 @@ published KM, the workflow:
 If the token is missing or any validation step fails, no Git commit is pushed.
 The next scheduled run will retry.
 
-The latest Weblate catalog and latest Registry package are not guaranteed to
-advance together. PO source validation and the upstream POT audit must match
-the configured KM. If Weblate uses an unpublished version, wait for its official
-bundle rather than relabeling the older KM or accepting source mismatches.
+The latest Weblate catalog and Registry package need not advance together.
+PO synchronization continues with the current KM when a newer bundle is not
+available. Source differences are recorded for review, not rejected. Never
+relabel an older bundle or rewrite official catalog headers to make them match.
 
 For a local maintainer run, use:
 

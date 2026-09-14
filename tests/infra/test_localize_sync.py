@@ -19,7 +19,6 @@ from dsw_km_translation_tool.localize_sync import (
     _SameOriginHttpsRedirectHandler,
     pull_localize_po,
 )
-from dsw_km_translation_tool.native_locale import NativeLocaleValidationError
 from dsw_km_translation_tool.po_support.parser import PoCatalogError
 from dsw_km_translation_tool.translation_repository_config import (
     TranslationRepositoryConfigError,
@@ -66,8 +65,8 @@ def test_pull_rejects_wrong_language_without_creating_snapshot(workspace: Path, 
     assert not (workspace / "sources/localize/zh_Hant/latest.po").exists()
 
 
-def test_pull_rejects_new_source_before_replacing_current_snapshot(
-    workspace: Path, po_path: Path, model_path: Path, monkeypatch
+def test_pull_accepts_new_source_without_requiring_a_new_model(
+    workspace: Path, po_path: Path, model_path: Path
 ):
     config_path = workspace / "translation-config.yml"
     write_config(config_path)
@@ -77,17 +76,11 @@ def test_pull_rejects_new_source_before_replacing_current_snapshot(
     latest = workspace / "sources/localize/zh_Hant/latest.po"
     latest.parent.mkdir(parents=True)
     latest.write_bytes(po_path.read_bytes())
-    from tests.infra.test_source_readiness import mock_pot
-
-    pot = workspace / "current.pot"
-    pot.write_bytes(po_path.read_bytes().replace(b"Language: zh_Hant", b"Language: en"))
-    mock_pot(monkeypatch, pot)
     payload = po_path.read_bytes().replace(b'msgid "10 years"', b'msgid "11 years"', 1)
 
-    with pytest.raises(NativeLocaleValidationError, match="Source mismatch"):
-        pull_localize_po(config_path=config_path, repo_root=workspace, downloader=lambda _: payload)
+    pull_localize_po(config_path=config_path, repo_root=workspace, downloader=lambda _: payload)
 
-    assert latest.read_bytes() == po_path.read_bytes()
+    assert latest.read_bytes() == payload
 
 
 class _SequenceOpener:
@@ -106,15 +99,19 @@ class _SequenceOpener:
         return outcome
 
 
-@pytest.mark.parametrize("external_model", [False, True])
+@pytest.mark.parametrize("with_context_model", [False, True])
 def test_pull_validates_the_catalog_once(
-    workspace: Path, po_path: Path, model_path: Path, monkeypatch, external_model: bool
+    workspace: Path,
+    po_path: Path,
+    model_path: Path,
+    monkeypatch,
+    with_context_model: bool,
 ):
     from dsw_km_translation_tool.po_support import parser
 
     config_path = workspace / "translation-config.yml"
     write_config(config_path)
-    if not external_model:
+    if with_context_model:
         km = workspace / "sources/knowledge-models/dsw-root-2.7.0/dsw-root-2.7.0.km"
         km.parent.mkdir(parents=True)
         km.write_bytes(model_path.read_bytes())
@@ -129,24 +126,10 @@ def test_pull_validates_the_catalog_once(
     result = pull_localize_po(
         config_path=config_path,
         repo_root=workspace,
-        km_path=model_path if external_model else None,
         downloader=lambda _: po_path.read_bytes(),
     )
     assert result.latest_po_path.read_bytes() == po_path.read_bytes()
     assert len(reads) == 1
-
-
-def test_explicit_missing_model_cannot_skip_validation(workspace: Path, po_path: Path):
-    config_path = workspace / "translation-config.yml"
-    write_config(config_path)
-    with pytest.raises(FileNotFoundError):
-        pull_localize_po(
-            config_path=config_path,
-            repo_root=workspace,
-            km_path=workspace / "missing.km",
-            downloader=lambda _: po_path.read_bytes(),
-        )
-    assert not (workspace / "sources").exists()
 
 
 def _http_error(url: str, code: int, *, retry_after: str | None = None):

@@ -187,29 +187,38 @@ def build_github_translation_report(
         target_lang=target_lang,
         runner=runner,
     )
+    weblate_entries = parse_po_entry_states(latest_po_path)
+    upstream_mirror = _matches_catalog(head_entries, weblate_entries)
     shared = resolve_shared_block_translations(
         repo_root=repo_root,
-        base_ref=base_ref,
+        base_ref=head_ref if upstream_mirror else base_ref,
         head_ref=head_ref,
-        base_targets={key: entry.target for key, entry in base_entries.items()},
+        base_targets={
+            key: entry.target
+            for key, entry in (head_entries if upstream_mirror else base_entries).items()
+        },
         head_targets={key: entry.target for key, entry in head_entries.items()},
         tree_path=tree_path,
         target_lang=target_lang,
         runner=runner,
     )
-    base_entries = {
-        key: replace(entry, target=shared.base_targets[key]) for key, entry in base_entries.items()
-    }
+    if not upstream_mirror:
+        base_entries = {
+            key: replace(entry, target=shared.base_targets[key])
+            for key, entry in base_entries.items()
+        }
     head_entries = {
         key: replace(entry, target=shared.head_targets[key]) for key, entry in head_entries.items()
     }
-    weblate_entries = parse_po_entry_states(latest_po_path)
+    # A canonical edit can differ even when the expanded fields match Weblate.
+    upstream_mirror = upstream_mirror and _matches_catalog(head_entries, weblate_entries)
     decisions = tuple(
         _build_decision(
             key=key,
             base_entry=base_entries.get(key),
             head_entry=head_entries.get(key),
             weblate_entry=weblate_entries.get(key),
+            upstream_mirror=upstream_mirror,
         )
         for key in sorted(set(base_entries) | set(head_entries))
         if _target_text(base_entries.get(key)) != _target_text(head_entries.get(key))
@@ -220,6 +229,16 @@ def build_github_translation_report(
         latest_po_path=latest_po_path,
         decisions=decisions,
         shared_block_issues=shared.issues,
+    )
+
+
+def _matches_catalog(
+    entries: dict[PoKey, TreeTranslationEntry], catalog: dict[PoKey, PoEntryState]
+) -> bool:
+    """Require every source and target to match live Weblate before accepting a mirror."""
+    return entries.keys() == catalog.keys() and all(
+        (entry.source, entry.target) == (catalog[key].msgid, catalog[key].msgstr)
+        for key, entry in entries.items()
     )
 
 
@@ -237,7 +256,7 @@ def read_tree_entries_from_git_ref(
     relative_tree = tree_path.as_posix()
     result = _run_checked(
         runner,
-        ["git", "ls-tree", "-r", "--name-only", ref, "--", relative_tree],
+        ["git", "ls-tree", "-r", "--name-only", "-z", ref, "--", relative_tree],
         cwd=repo_root,
         description=f"list translation files in {ref}",
     )
@@ -250,7 +269,7 @@ def read_tree_entries_from_git_ref(
     )
     canonical_paths = _canonical_translation_paths(manifest, relative_tree, manifest_path)
     entries: dict[PoKey, TreeTranslationEntry] = {}
-    for path_text in result.stdout.splitlines():
+    for path_text in result.stdout.split("\0"):
         if not path_text.endswith(f"/{TRANSLATION_FILENAME}"):
             continue
         entity_uuid = canonical_paths.get(path_text)
@@ -520,6 +539,7 @@ def _build_decision(
     base_entry: TreeTranslationEntry | None,
     head_entry: TreeTranslationEntry | None,
     weblate_entry: PoEntryState | None,
+    upstream_mirror: bool,
 ) -> GitHubTranslationDecision:
     uuid, field = key
     base_text = _target_text(base_entry)
@@ -529,7 +549,9 @@ def _build_decision(
         head_entry.source if head_entry is not None else base_entry.source if base_entry else ""
     )
     path = head_entry.path if head_entry is not None else base_entry.path if base_entry else ""
-    if head_entry is None:
+    if upstream_mirror:
+        decision = ALREADY_IMPORTED_DECISION
+    elif head_entry is None:
         decision = REMOVED_DECISION
     elif weblate_entry is None:
         decision = MISSING_WEBLATE_DECISION
@@ -551,7 +573,9 @@ def _build_decision(
         github=github_text,
         weblate=weblate_text,
         format_issues=(
-            compare_markdown_format(source, github_text) if head_entry is not None else ()
+            compare_markdown_format(source, github_text)
+            if head_entry is not None and not upstream_mirror
+            else ()
         ),
     )
 

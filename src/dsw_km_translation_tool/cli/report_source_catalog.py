@@ -6,7 +6,10 @@ import argparse
 import json
 from pathlib import Path
 
-from dsw_km_translation_tool.locale_coverage import LocaleCoverageError, render_source_catalog
+from dsw_km_translation_tool.locale_coverage import (
+    LocaleCoverageError,
+    render_source_catalog,
+)
 from dsw_km_translation_tool.source_catalog import audit_source_catalog
 from dsw_km_translation_tool.translation_repository_config import (
     load_translation_repository_config,
@@ -51,7 +54,8 @@ def main() -> None:
         json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
     (args.out / "source-catalog.md").write_text(
-        render_source_catalog(report) if "counts" in report else summary, encoding="utf-8"
+        render_source_catalog(report) if "counts" in report else summary,
+        encoding="utf-8",
     )
     print(summary)
     if args.summary:
@@ -59,7 +63,7 @@ def main() -> None:
             handle.write(summary)
     if report["status"] == "failed":
         raise SystemExit(1)
-    if report["status"] in ("additions-only", "review-required", "waiting-for-km"):
+    if report["status"] == "different":
         print("::warning::Upstream POT differs from the official export; review source-catalog.md.")
 
 

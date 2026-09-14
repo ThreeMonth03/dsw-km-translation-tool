@@ -10,7 +10,6 @@ from pathlib import Path
 from .data_models import PoBlock
 from .path_safety import reject_symlink_path
 from .po import PoCatalogParser
-from .source_readiness import PendingSourceUpdate
 
 
 @dataclass(frozen=True)
@@ -73,7 +72,6 @@ class LocalizePoStatusReport:
     accepted_references: int
     empty_issues: tuple[LocalizePoIssue, ...]
     fuzzy_issues: tuple[LocalizePoIssue, ...]
-    source_readiness: PendingSourceUpdate | None = None
 
     @property
     def filled_percent(self) -> float:
@@ -201,8 +199,6 @@ def render_localize_po_status_markdown(
         "| Metric | Message blocks | KM references |",
         "| --- | ---: | ---: |",
     ]
-    if report.source_readiness:
-        lines = [report.source_readiness.markdown(), "", *lines]
     lines.extend(
         f"| {label} | {_format_int(blocks)} | {_format_int(references)} |"
         for label, blocks, references in rows

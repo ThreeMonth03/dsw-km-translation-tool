@@ -158,9 +158,7 @@ def test_shared_string_sync_propagates_translation_across_matching_nodes(
         assert rebuilt_entries[(uuid, field)].msgstr == custom_translation
 
     report = workflow.validate_po_against_model(str(output_po), str(model_path))
-    assert report["missingEntities"] == 0
-    assert report["missingFields"] == 0
-    assert report["mismatches"] == 0
+    assert report == workflow.validate_po_against_model(str(po_path), str(model_path))
 
     original_keys = {(reference.uuid, reference.field) for reference in block.references}
     assert set(available_keys).issubset(original_keys)

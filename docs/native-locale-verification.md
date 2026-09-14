@@ -4,9 +4,9 @@ These checks answer different questions:
 
 | Check | What it proves |
 | --- | --- |
-| PO validation | A nonempty catalog has valid syntax, language and native KM references; every referenced source string matches the KM |
+| PO validation | A nonempty catalog has valid syntax, language and native reference syntax |
 | Official POT coverage | Which official DSW source messages are missing, empty, fuzzy or extra in the PO |
-| Upstream source catalog | Whether Weblate's shared repository POT includes the official source messages for the configured KM version |
+| Upstream source catalog | How the authoritative upstream POT differs from the context KM export |
 | Browser acceptance | Official DSW imports the PO, returns the same file and renders a translated chapter after language switching |
 
 A PO can pass import validation while leaving some official source messages in
@@ -16,8 +16,10 @@ identity, not the spelling of UUID references.
 
 Translation-tree inputs retain their source references, including the current
 official `entity/UUID/field` format. Existing snapshots do not need rewriting.
-Refresh catalogs from Weblate together with their matching official KM; do not
-rewrite source messages or relabel a bundle to bypass validation.
+Refresh catalogs from Weblate independently of KM releases. The KM provides
+hierarchy and a browser-test target; source differences never block the catalog.
+Entities absent from the KM are exported as top-level translation folders,
+without invented parent relationships. Source text always comes from the PO.
 
 ## Review in Actions
 
@@ -46,11 +48,10 @@ Both tooling and locale release workflows run acceptance before publishing.
 Only **KM Translation Operations** enables the live upstream source audit;
 releases validate their pinned inputs without depending on today's upstream POT.
 
-Import, download, malformed POT and browser failures fail CI. A valid upstream
-POT for another version reports **waiting-for-km** without comparing coverage
-across versions. Missing, empty, fuzzy or extra entries make coverage
-**incomplete** and emit a warning, without
-blocking a usable partial locale. This check reports gaps; it does not change
+Import, download, malformed POT and browser failures fail CI. Source differences
+and missing, empty, fuzzy or extra entries emit warnings without blocking a
+usable partial locale. Comparisons include both catalog identities even when
+the upstream version differs from the context KM. This check reports gaps; it does not change
 translations, upload to Weblate, or maintain an exceptions list.
 
 ## Source Catalog Updates
@@ -58,40 +59,28 @@ translations, upload to Weblate, or maintain an exceptions list.
 The source audit reads `messages.pot` from the default branch of the public
 GitHub repository configured by `localize.repository`. It fetches a temporary
 bare snapshot without executing upstream code and records the exact commit.
-Coverage comparison requires the upstream POT version to match the configured
-KM. An empty, invalid or unrecognized-package POT fails the audit. A valid POT for another version is
-reported as **waiting-for-km** without comparing its messages to the current KM.
-An unset repository is reported as
+An empty, invalid or unrecognized-package POT fails the audit. Source version
+differences are reported, not treated as a reason to wait. An unset repository is reported as
 **not-configured**, never as complete coverage.
 
 Read `source-catalog/source-catalog.md` in the Actions artifact:
 
 - **aligned**: both POTs contain the same gettext message identities.
-- **waiting-for-km**: upstream identifies a different KM version; retain the verified pair.
-- **additions-only**: the official export contains sources absent from upstream.
-- **review-required**: upstream also contains sources absent from the official
-  export. Review source edits, removals or a different source model before proceeding.
+- **different**: the two catalogs contain different source messages. The report
+  lists sources found only in either catalog. Different KM versions can naturally
+  produce these differences; this is not evidence of an upstream extraction bug.
 
 Source differences emit warnings. Download or validation errors fail the source
 audit separately from browser acceptance. The audit checks the repository POT,
 not the live Weblate units: even an aligned POT may still need merging into the
 language PO files before translators see new entries.
 
-For a confirmed extraction gap, submit one upstream PR with the extraction fix,
-tests and regenerated POT. Reuse that PR for follow-up findings rather than
-opening duplicates on every scheduled run. Official maintainers decide whether
-to accept it and configure Weblate's
-[Update PO files to match POT](https://docs.weblate.org/en/latest/admin/addons.html#update-po-files-to-match-pot-msgmerge)
-add-on or equivalent upstream automation. POT updates alone do not guarantee
-existing language PO files are refreshed.
-
-Before an upstream merge, verify that unchanged message/context pairs preserve
-every language's translations and review flags. New sources can add untranslated
-entries to every language and lower completion percentages. Changed or removed
-sources require explicit review. Do not replace language files with an empty POT.
-Our scheduled jobs do not upload source strings, change Weblate settings, open
-upstream PRs automatically or maintain a separate canonical POT. After the
-official PO catalogs update, normal Weblate-to-Git sync picks up the new entries.
+Official maintainers own extraction and POT-to-PO updates. This repository does
+not upload sources, change other languages, open upstream PRs automatically or
+maintain its own canonical POT. Normal synchronization consumes the official
+language PO, including additions, removals, empty translations and fuzzy flags.
+An updated POT alone does not guarantee Weblate has updated every language PO.
+Reports describe differences but do not preserve translations removed upstream.
 
 ## Run Locally
 

@@ -44,7 +44,7 @@ ad hoc PO entries or create new translation folders for it.
 
 To review the translation in a test DSW instance running DSW 4.33 or newer:
 
-1. Open the matching source Knowledge Model version under **Knowledge Models**.
+1. Open the desired Knowledge Model version under **Knowledge Models**.
 2. Open **Locales → Import**, enter a display name, and upload the PO.
 3. Create or open a test project that uses that Knowledge Model version.
 4. In the project's **Settings**, select `{{TARGET_LANGUAGE}}` under **Language**

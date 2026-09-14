@@ -15,9 +15,6 @@ Expected outcomes:
 
 - Git was already aligned with Weblate.
 - The workflow committed a Weblate sync update to `master`.
-- The workflow reports `waiting-for-km` and preserves the verified KM/PO pair
-  until the matching official KM is available. This is not a completed sync;
-  alignment remains false, and local integrity failures still block CI.
 
 Check read-only reports:
 
@@ -107,20 +104,17 @@ update.
 ## Publishing a Locale
 
 Wait for post-merge Weblate import and sync jobs to finish, then review the
-alignment report. `aligned` confirms the repository matches Weblate. During
-`waiting-for-km`, release only the existing verified KM/PO pair after local
-integrity checks pass; the release does not contain the pending upstream
-translations. The release must be built from a clean tracking branch, with
-`tooling.ref` pinned to a full commit SHA.
+alignment report. `aligned` confirms the repository matches Weblate and the tree
+reproduces the final PO. A different KM version does not delay publication.
+Release from a clean tracking branch with `tooling.ref` pinned to a full SHA.
 
-Use a tag of the form `km-<source KM version>-<language>-r<revision>`. For
-example, the first and second translation releases for KM 2.7.0 are
-`km-2.7.0-zh_Hant-r1` and `km-2.7.0-zh_Hant-r2`. Neither requires a new KM version.
+Use `locale-<language>-r<revision>`, for example `locale-zh_Hant-r1` and
+`locale-zh_Hant-r2`. Revisions advance independently of KM releases.
 
 ```shell
 git switch {{TRACKING_BRANCH}}
 git pull --ff-only
-TAG="km-<source-version>-{{TARGET_LANGUAGE}}-r<revision>"
+TAG="locale-{{TARGET_LANGUAGE}}-r<revision>"
 git tag "$TAG"
 git push origin "$TAG"
 ```
@@ -128,7 +122,8 @@ git push origin "$TAG"
 Replace the angle-bracket placeholders before running these commands.
 **Publish Native KM Locale** rebuilds and validates the PO and refuses
 uncommitted generated changes. It publishes exactly three assets: the versioned
-PO, `manifest.json`, and `SHA256SUMS`. The manifest records the source KM checksum,
+PO, `manifest.json`, and `SHA256SUMS`. The schema-2 manifest records the official
+Weblate snapshot URL/header/checksum, context KM coordinates/checksum, released PO checksum,
 translation commit, tooling commit, and message counts. Release notes appear in
 the release page body. The configuration is available in Git at the recorded
 translation commit. The successful release becomes **Latest**.
@@ -143,22 +138,20 @@ release assets.
 
 ## Troubleshooting
 
-- Sync created no commit: check the reported status. No changes may be needed,
-  or the workflow may be `waiting-for-km`; waiting does not mean Git is aligned
-  with the latest Weblate catalog.
+- Sync created no commit: the rebuild found no tracked changes. Use the alignment
+  report to confirm the repository still matches live Weblate.
 - Alignment failed: download `localize-alignment-report` and compare the
   generated files with the checked-in files.
 - Native locale validation failed: compare `sources/localize/*/latest.po` with
-  `builds/final_translated.po`, then inspect the reported KM reference.
+  `builds/final_translated.po`, then inspect the syntax or language error.
 - Native DSW acceptance failed: download `native-dsw-review` for the result and
   browser failure screenshot. An incomplete coverage warning is separate from
   an import or rendering failure; inspect `coverage.md` for missing source text.
 - Upstream source catalog differs: inspect `source-catalog/source-catalog.md`
-  in `native-dsw-review`. `additions-only` means the official export contains
-  sources missing from the shared POT; `review-required` also reports upstream-only
-  sources. Follow the [shared source policy](sync-policy.md#shared-source-catalog).
-  An audit failure can indicate a download problem or mismatched KM version;
-  it does not mean existing translations have been removed.
+  in `native-dsw-review`. `different` lists messages found only in either catalog.
+  The official Weblate/POT remains authoritative; differences from an older KM
+  do not block sync. See the [source policy](sync-policy.md#shared-source-catalog).
+  An audit failure means its download or catalog validation failed.
 - KM auto-update failed before downloading a bundle: check `DSW_REGISTRY_TOKEN`.
 - KM auto-update failed after rebuilding the translation tree and locale PO:
   inspect the validation or alignment error.

@@ -21,7 +21,7 @@ from .localize_sync import (
     pull_localize_po,
 )
 from .native_locale import validate_native_locale
-from .source_readiness import check_po_source
+from .po_support.parser import PoCatalogParser
 from .translation_repository_config import (
     TranslationRepositoryConfig,
     load_translation_repository_config,
@@ -133,8 +133,6 @@ def run_upstream_smoke(
         downloader=localize_downloader,
     )
 
-    if localize_source == "github-repository":
-        check_po_source(config=updated_config, po_path=latest_po_path, km_path=source_km_path)
     workflow = TranslationWorkflowService(
         source_lang=updated_config.translation.source_language,
         target_lang=updated_config.translation.target_language,
@@ -225,6 +223,9 @@ def _pull_localize_with_repository_fallback(
                 "Localize is temporarily unavailable and the configured GitHub "
                 f"repository fallback also failed: {fallback_error}"
             ) from fallback_error
+        PoCatalogParser.parse_text(
+            payload.decode("utf-8"), target_language=config.translation.target_language
+        )
         result = _write_localize_fallback_snapshot(
             version=config.knowledge_model.version,
             url=fallback_url,
