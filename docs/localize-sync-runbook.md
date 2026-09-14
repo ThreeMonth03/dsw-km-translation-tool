@@ -182,7 +182,9 @@ Common DSW KM.
 
 ## Troubleshooting
 
-- If sync commits nothing, Weblate and Git outputs are already aligned.
+- If sync commits nothing, check its reported status. It may have found no
+  changes, or it may be `waiting-for-km`. Waiting preserves the verified local
+  pair and does not mean Git is aligned with the latest Weblate catalog.
 - If `translation-config.yml` fails validation, fix config before running sync.
 - If tree parsing fails in CI, the writer may restore malformed files from the
   tracking branch once and retry.

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..constants import PO_FIELD_FALLBACKS, PRIMARY_NAME_FIELDS, RELATED_NAME_UUID_FIELDS, ZERO_UUID
+from ..constants import PRIMARY_NAME_FIELDS, RELATED_NAME_UUID_FIELDS, ZERO_UUID
 
 
 class KnowledgeModelTextResolver:
@@ -15,27 +15,21 @@ class KnowledgeModelTextResolver:
         event: dict[str, Any] | None,
         field: str,
     ) -> str | None:
-        """Read one translatable field from a merged KM entity.
+        """Read the exact translatable field referenced by a PO entry.
 
         Args:
             event: Latest merged KM entity.
             field: Requested translatable field name.
 
         Returns:
-            Resolved source text or `None` when unavailable.
+            Source text or `None` when the requested field is missing or null.
+            Display-name alternatives are never used for source validation.
         """
 
         if not event:
             return None
 
         content = event.get("content", {})
-        if field in content and content[field] is not None:
-            return self.normalize_source_text(content[field])
-
-        for fallback_field in PO_FIELD_FALLBACKS.get(field, []):
-            if fallback_field in content and content[fallback_field] is not None:
-                return self.normalize_source_text(content[fallback_field])
-
         return self.normalize_source_text(content.get(field))
 
     def resolve_node_display_name(

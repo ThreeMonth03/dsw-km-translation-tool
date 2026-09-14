@@ -15,8 +15,10 @@ revision for the same KM as `km-2.7.0-zh_Hant-r1`.
 
 Before tagging:
 
-1. Wait for translation import/sync to finish and confirm
-   the alignment report passes.
+1. Wait for translation import/sync jobs to finish and review the alignment
+   report. `aligned` confirms the repository matches Weblate. `waiting-for-km`
+   permits a release of the existing verified KM/PO pair only when local
+   integrity checks pass; it does not include pending upstream translations.
 2. Pin `tooling.ref` to a full reviewed commit SHA and regenerate the scaffold
    using that exact tool checkout.
 3. Confirm the source KM, editable tree, generated PO, and review outputs are

@@ -33,14 +33,3 @@ class SharedBlockRecord:
         """Return whether the shared block currently has a translation."""
 
         return bool(self.translation_text.strip())
-
-    @property
-    def field_names(self) -> tuple[str, ...]:
-        """Return sorted field names represented by the shared block."""
-
-        return tuple(
-            sorted(
-                {context.reference.field for context in self.contexts},
-                key=str.casefold,
-            )
-        )

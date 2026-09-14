@@ -11,10 +11,13 @@ Check the latest scheduled Weblate-to-Git sync:
 gh run list --workflow localize_auto_sync.yml --branch master --limit 5
 ```
 
-Healthy outcomes:
+Expected outcomes:
 
 - Git was already aligned with Weblate.
 - The workflow committed a Weblate sync update to `master`.
+- The workflow reports `waiting-for-km` and preserves the verified KM/PO pair
+  until the matching official KM is available. This is not a completed sync;
+  alignment remains false, and local integrity failures still block CI.
 
 Check read-only reports:
 
@@ -103,9 +106,12 @@ update.
 
 ## Publishing a Locale
 
-Wait for the post-merge Weblate import and sync to finish and confirm the
-alignment report passes. The release must be built from a clean tracking
-branch, with `tooling.ref` pinned to a full commit SHA.
+Wait for post-merge Weblate import and sync jobs to finish, then review the
+alignment report. `aligned` confirms the repository matches Weblate. During
+`waiting-for-km`, release only the existing verified KM/PO pair after local
+integrity checks pass; the release does not contain the pending upstream
+translations. The release must be built from a clean tracking branch, with
+`tooling.ref` pinned to a full commit SHA.
 
 Use a tag of the form `km-<source KM version>-<language>-r<revision>`. For
 example, the first and second translation releases for KM 2.7.0 are
@@ -137,7 +143,9 @@ release assets.
 
 ## Troubleshooting
 
-- Sync created no commit: Git is already aligned with Weblate.
+- Sync created no commit: check the reported status. No changes may be needed,
+  or the workflow may be `waiting-for-km`; waiting does not mean Git is aligned
+  with the latest Weblate catalog.
 - Alignment failed: download `localize-alignment-report` and compare the
   generated files with the checked-in files.
 - Native locale validation failed: compare `sources/localize/*/latest.po` with

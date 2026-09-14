@@ -38,12 +38,6 @@ class OutlineNode:
     children: list["OutlineNode"] = field(default_factory=list)
 
     @property
-    def is_complete(self) -> bool:
-        """Return whether the node subtree is fully translated."""
-
-        return self.subtree_translated_fields == self.subtree_total_fields
-
-    @property
     def is_self_complete(self) -> bool:
         """Return whether this node itself is complete or non-translatable."""
 

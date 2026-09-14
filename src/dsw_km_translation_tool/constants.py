@@ -6,16 +6,6 @@ import re
 
 UUID_RE = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 
-PO_FIELD_FALLBACKS = {
-    "text": ["text", "title", "label", "description", "name", "url"],
-    "title": ["title", "text", "label", "description", "name"],
-    "label": ["label", "text", "title", "description", "name"],
-    "description": ["description", "label", "text", "title", "name"],
-    "name": ["name", "title", "text", "label", "description"],
-    "url": ["url"],
-    "advice": ["advice", "label", "description", "text"],
-}
-
 ZERO_UUID = "00000000-0000-0000-0000-000000000000"
 PRIMARY_NAME_FIELDS = ("title", "label", "name", "text")
 RELATED_NAME_UUID_FIELDS = ("targetUuid", "resourcePageUuid")

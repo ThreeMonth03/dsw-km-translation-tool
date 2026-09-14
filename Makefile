@@ -35,7 +35,6 @@ OUTPUT_ROOT ?= translation/$(TARGET_LANG)
 TREE_DIR ?= $(OUTPUT_ROOT)/tree
 FINAL_PO ?= $(OUTPUT_ROOT)/builds/final_translated.po
 REPORT ?= $(OUTPUT_ROOT)/reports/final_report.json
-TREE_JSON ?= $(OUTPUT_ROOT)/reports/tree_snapshot.json
 REVIEW_DIFF ?= $(OUTPUT_ROOT)/reviews/final_translated.diff
 OUTLINE_MD ?= $(TREE_DIR)/outline.md
 SHARED_BLOCKS_OUTLINE_MD ?= $(TREE_DIR)/shared_blocks_outline.md
