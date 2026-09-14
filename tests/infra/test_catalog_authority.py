@@ -162,7 +162,7 @@ def test_official_mirror_accepts_upstream_removals_and_format_changes(catalog_re
     payload = (
         'msgid ""\nmsgstr ""\n"Language: zh_Hant\\n"\n'
         "\n#: phase/ffffffff-ffff-4fff-8fff-ffffffffffff/title\n"
-        'msgid "**Important phase**"\nmsgstr "官方無粗體譯文"\n'
+        'msgid "**Important phase’s title**"\nmsgstr "官方無粗體譯文"\n'
     ).encode()
     source = root / paths.source_po_path
     pull_localize_po(config_path=config, repo_root=root, downloader=lambda _: payload)

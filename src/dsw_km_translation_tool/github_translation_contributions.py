@@ -256,7 +256,7 @@ def read_tree_entries_from_git_ref(
     relative_tree = tree_path.as_posix()
     result = _run_checked(
         runner,
-        ["git", "ls-tree", "-r", "--name-only", ref, "--", relative_tree],
+        ["git", "ls-tree", "-r", "--name-only", "-z", ref, "--", relative_tree],
         cwd=repo_root,
         description=f"list translation files in {ref}",
     )
@@ -269,7 +269,7 @@ def read_tree_entries_from_git_ref(
     )
     canonical_paths = _canonical_translation_paths(manifest, relative_tree, manifest_path)
     entries: dict[PoKey, TreeTranslationEntry] = {}
-    for path_text in result.stdout.splitlines():
+    for path_text in result.stdout.split("\0"):
         if not path_text.endswith(f"/{TRANSLATION_FILENAME}"):
             continue
         entity_uuid = canonical_paths.get(path_text)
