@@ -74,13 +74,17 @@ def test_locale_release_rebuilds_and_records_verified_assets(
     assert manifest["revision"] == 2
     assert manifest["knowledge_model"]["package_id"] == "dsw:root:2.7.0"
     assert manifest["po"]["messages"] == 1466
-    assert json.loads((output / "manifest.json").read_text()) == manifest
+    assets = output / "assets"
+    assert json.loads((assets / "manifest.json").read_text()) == manifest
     name = "dsw-root-zh_Hant-locale-2.7.0-r2.po"
-    assert (output / name).read_bytes() == (root / "builds/final_translated.po").read_bytes()
-    assert (output / name).read_bytes() == (output / "dsw-root-zh_Hant-locale.po").read_bytes()
-    for line in (output / "SHA256SUMS").read_text().splitlines():
+    assert {p.name for p in assets.iterdir()} == {name, "manifest.json", "SHA256SUMS"}
+    assert {p.name for p in output.iterdir()} == {"assets", "release-notes.md"}
+    assert (assets / name).read_bytes() == (root / "builds/final_translated.po").read_bytes()
+    checksum_lines = (assets / "SHA256SUMS").read_text().splitlines()
+    assert {line.split("  ")[1] for line in checksum_lines} == {name, "manifest.json"}
+    for line in checksum_lines:
         checksum, filename = line.split("  ")
-        assert hashlib.sha256((output / filename).read_bytes()).hexdigest() == checksum
+        assert hashlib.sha256((assets / filename).read_bytes()).hexdigest() == checksum
     with pytest.raises(LocaleReleaseError, match="already exists"):
         prepare_locale_release(
             repo_root=root,

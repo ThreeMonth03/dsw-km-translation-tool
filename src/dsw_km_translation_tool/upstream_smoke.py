@@ -133,7 +133,8 @@ def run_upstream_smoke(
         downloader=localize_downloader,
     )
 
-    check_po_source(config=updated_config, po_path=latest_po_path, km_path=source_km_path)
+    if localize_source == "github-repository":
+        check_po_source(config=updated_config, po_path=latest_po_path, km_path=source_km_path)
     workflow = TranslationWorkflowService(
         source_lang=updated_config.translation.source_language,
         target_lang=updated_config.translation.target_language,

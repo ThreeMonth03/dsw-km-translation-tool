@@ -23,7 +23,6 @@ from dsw_km_translation_tool.github_translation_contributions import (
 from dsw_km_translation_tool.localize_sync import pull_localize_po
 from dsw_km_translation_tool.source_readiness import (
     SourceUpdatePending,
-    check_po_source,
     report_pending,
 )
 from dsw_km_translation_tool.translation_repository_config import (
@@ -74,30 +73,27 @@ def main() -> None:
     config_path = _resolve_repo_path(repo_root, Path(args.config))
     repository_config = load_translation_repository_config(config_path)
     localize = repository_config.localize
+    source_km = repo_root / version_paths(repository_config).source_km_path
     with TemporaryDirectory(prefix="dsw-github-import-") as temp_dir:
         temp_root = Path(temp_dir)
-        pull_result = pull_localize_po(
-            config_path=config_path,
-            repo_root=temp_root,
-        )
-        source_km = repo_root / version_paths(repository_config).source_km_path
-        if source_km.is_file():
-            try:
-                check_po_source(
-                    config=repository_config, po_path=pull_result.latest_po_path, km_path=source_km
-                )
-            except SourceUpdatePending as pending:
-                report_pending(
-                    pending.report,
-                    json_path=args.json_out,
-                    markdown_path=args.details_out,
-                    summary_path=args.summary,
-                )
-                append_github_outputs(
-                    output_path=args.github_output,
-                    values={"source_status": "waiting-for-km", "uploaded": False},
-                )
-                return
+        try:
+            pull_result = pull_localize_po(
+                config_path=config_path,
+                repo_root=temp_root,
+                km_path=source_km if source_km.is_file() else None,
+            )
+        except SourceUpdatePending as pending:
+            report_pending(
+                pending.report,
+                json_path=args.json_out,
+                markdown_path=args.details_out,
+                summary_path=args.summary,
+            )
+            append_github_outputs(
+                output_path=args.github_output,
+                values={"source_status": "waiting-for-km", "uploaded": False},
+            )
+            return
         report = build_github_translation_report(
             repo_root=repo_root,
             base_ref=args.base_ref,

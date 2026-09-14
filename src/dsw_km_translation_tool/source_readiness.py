@@ -10,7 +10,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from .locale_coverage import read_upstream_pot
-from .native_locale import NativeLocaleValidationError, validate_native_locale
+from .native_locale import NativeLocaleValidationError, validate_locale_blocks
 from .po_support.parser import PoCatalogParser
 from .source_catalog import snapshot_upstream_pot
 from .translation_repository_config import TranslationRepositoryConfig, version_paths
@@ -71,9 +71,7 @@ def check_po_source(*, config: TranslationRepositoryConfig, po_path: Path, km_pa
         po_path.read_text(encoding="utf-8"), target_language=config.translation.target_language
     )
     try:
-        validate_native_locale(
-            po_path=po_path, km_path=km_path, target_language=config.translation.target_language
-        )
+        validate_locale_blocks(blocks=blocks, km_path=km_path)
     except NativeLocaleValidationError as error:
         if not config.localize.repository:
             raise

@@ -12,6 +12,7 @@ from dsw_km_translation_tool.locale_coverage import (
     LocaleCoverageError,
     compare_locale_coverage,
     render_locale_coverage,
+    summarize_locale_coverage,
 )
 
 
@@ -58,6 +59,18 @@ def test_removed_message_is_reported_even_when_remaining_po_is_fully_translated(
     assert report["counts"]["expected"] == 2
     assert report["missing"][0]["msgid"] == "Administrative information"
     assert "Administrative information" in render_locale_coverage(report)
+
+
+def test_result_summary_does_not_embed_coverage_details(catalogs) -> None:
+    catalogs[3].delete("Administrative information")
+    report = compare(catalogs)
+    summary = summarize_locale_coverage(report)
+    assert summary == {
+        "status": "incomplete",
+        "counts": report["counts"],
+        "report": "coverage.json",
+    }
+    assert report["missing"]
 
 
 def test_empty_fuzzy_and_extra_are_distinct(catalogs) -> None:

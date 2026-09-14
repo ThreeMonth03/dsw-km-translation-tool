@@ -20,7 +20,11 @@ import yaml
 from babel.messages.pofile import read_po
 from playwright.sync_api import Error, TimeoutError, expect, sync_playwright
 
-from dsw_km_translation_tool.locale_coverage import compare_locale_coverage, render_locale_coverage
+from dsw_km_translation_tool.locale_coverage import (
+    compare_locale_coverage,
+    render_locale_coverage,
+    summarize_locale_coverage,
+)
 from dsw_km_translation_tool.translation_repository_config import (
     load_translation_repository_config,
     version_paths,
@@ -112,7 +116,7 @@ def verify_browser(api, client, minio, km_path, po_path, package_id, source, tar
                 source_language=source,
                 target_language=target,
             )
-            result["coverage"] = coverage
+            result["coverage"] = summarize_locale_coverage(coverage)
             (out / "coverage.json").write_text(
                 json.dumps(coverage, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
             )

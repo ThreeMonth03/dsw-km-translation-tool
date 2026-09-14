@@ -1,7 +1,7 @@
 """Facade for the local PO, translation tree, and KM build workflow.
 
 Most command-line scripts should call this service instead of coordinating PO
-parsing, tree storage, shared-string sync, review diffs, and KM rewriting
+parsing, tree storage, shared-string sync, review diffs, and locale validation
 directly.
 """
 

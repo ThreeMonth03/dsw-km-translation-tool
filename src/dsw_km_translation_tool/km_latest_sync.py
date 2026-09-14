@@ -23,8 +23,8 @@ from .km_bundle_sync import BundleDownloader, pull_km_bundle
 from .km_registry import Downloader, discover_km_versions
 from .knowledge_model_service import KnowledgeModelService
 from .localize_sync import Downloader as LocalizeDownloader
-from .localize_sync import pull_localize_po
-from .source_readiness import SourceUpdatePending, check_po_source, upstream_target_version
+from .localize_sync import download_localize_po, pull_localize_po
+from .source_readiness import SourceUpdatePending, upstream_target_version
 from .translation_repository_config import (
     DEFAULT_REGISTRY_API_URL,
     TranslationRepositoryConfigError,
@@ -109,13 +109,7 @@ def sync_latest_km_version(
     if not discovery.newer_versions:
         current_km = host_repo / version_paths(config).source_km_path
         if current_km.is_file():
-            with tempfile.TemporaryDirectory(prefix="dsw-km-readiness-") as temp:
-                result = pull_localize_po(
-                    config_path=resolved_config_path,
-                    repo_root=Path(temp),
-                    downloader=localize_downloader,
-                )
-                check_po_source(config=config, po_path=result.latest_po_path, km_path=current_km)
+            download_localize_po(config=config, km_path=current_km, downloader=localize_downloader)
         return KmLatestSyncResult(
             configured_version=configured_version,
             registry_version=registry_version,
@@ -155,17 +149,11 @@ def sync_latest_km_version(
             skipped_reason="waiting-for-po",
         )
     if version_sort_key(target_version) > version_sort_key(registry_version):
-        with tempfile.TemporaryDirectory(prefix="dsw-km-readiness-") as temp:
-            result = pull_localize_po(
-                config_path=resolved_config_path,
-                repo_root=Path(temp),
-                downloader=localize_downloader,
-            )
-            check_po_source(
-                config=config,
-                po_path=result.latest_po_path,
-                km_path=host_repo / version_paths(config).source_km_path,
-            )
+        download_localize_po(
+            config=config,
+            km_path=host_repo / version_paths(config).source_km_path,
+            downloader=localize_downloader,
+        )
         return KmLatestSyncResult(
             configured_version=configured_version,
             registry_version=registry_version,

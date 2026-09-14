@@ -17,6 +17,7 @@ from pathlib import Path
 from .po_support.parser import PoCatalogParser
 from .source_readiness import check_po_source
 from .translation_repository_config import (
+    TranslationRepositoryConfig,
     TranslationRepositoryConfigError,
     _validate_https_url,
     load_translation_repository_config,
@@ -47,6 +48,7 @@ def pull_localize_po(
     config_path: Path,
     repo_root: Path,
     downloader: Downloader | None = None,
+    km_path: Path | None = None,
 ) -> LocalizePullResult:
     """Download and store the latest Localize PO snapshot.
 
@@ -54,6 +56,7 @@ def pull_localize_po(
         config_path: Path to ``translation-config.yml``.
         repo_root: Translation repository checkout root.
         downloader: Optional injectable downloader used by tests.
+        km_path: Model to validate against when staging the PO outside its repository.
 
     Returns:
         Pull summary.
@@ -65,18 +68,12 @@ def pull_localize_po(
     paths = version_paths(repository_config)
     latest_po_path = repo_root / paths.source_po_path
     url = localize.download_url
-    download = downloader or _download_url
-    downloaded = download(url)
-    PoCatalogParser.parse_text(
-        downloaded.decode("utf-8"),
-        target_language=repository_config.translation.target_language,
+    source_km = km_path or repo_root / paths.source_km_path
+    downloaded = download_localize_po(
+        config=repository_config,
+        km_path=source_km if km_path is not None or source_km.is_file() else None,
+        downloader=downloader,
     )
-    source_km = repo_root / paths.source_km_path
-    if source_km.is_file():
-        with tempfile.TemporaryDirectory(prefix="dsw-localize-validation-") as temp:
-            candidate = Path(temp) / "candidate.po"
-            candidate.write_bytes(downloaded)
-            check_po_source(config=repository_config, po_path=candidate, km_path=source_km)
 
     latest_exists = latest_po_path.exists()
     previous_latest = latest_po_path.read_bytes() if latest_exists else None
@@ -101,6 +98,30 @@ def pull_localize_po(
         initialized=previous_latest is None,
         bytes_downloaded=len(downloaded),
     )
+
+
+def download_localize_po(
+    *,
+    config: TranslationRepositoryConfig,
+    km_path: Path | None,
+    downloader: Downloader | None = None,
+) -> bytes:
+    """Download and validate a catalog without replacing repository inputs.
+
+    A missing model argument requests syntax and language checks only, as needed
+    when bootstrapping a source snapshot. Pair checks require an existing model.
+    """
+    downloaded = (downloader or _download_url)(config.localize.download_url)
+    if km_path is None:
+        PoCatalogParser.parse_text(
+            downloaded.decode("utf-8"), target_language=config.translation.target_language
+        )
+    else:
+        with tempfile.TemporaryDirectory(prefix="dsw-localize-validation-") as temp:
+            candidate = Path(temp) / "candidate.po"
+            candidate.write_bytes(downloaded)
+            check_po_source(config=config, po_path=candidate, km_path=km_path)
+    return downloaded
 
 
 class _SameOriginHttpsRedirectHandler(urllib.request.HTTPRedirectHandler):

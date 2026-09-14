@@ -189,6 +189,11 @@ def _render_entries(entries: list[dict[str, object]]) -> list[str]:
     return lines
 
 
+def summarize_locale_coverage(report: dict[str, object]) -> dict[str, object]:
+    """Reference the full coverage report without embedding its message lists."""
+    return {"status": report["status"], "counts": report["counts"], "report": "coverage.json"}
+
+
 def render_source_catalog(report: dict[str, object], *, details: bool = True) -> str:
     """Render an upstream review report, not a proposed translation replacement."""
     if report["status"] == "waiting-for-km":

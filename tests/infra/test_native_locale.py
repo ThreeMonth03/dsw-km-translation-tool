@@ -17,7 +17,18 @@ from tests.helpers import run_cli_command
 def test_native_locale_accepts_valid_po(
     po_path: Path,
     model_path: Path,
+    monkeypatch,
 ) -> None:
+    from dsw_km_translation_tool.po_support import parser
+
+    reads = []
+    read_po = parser.read_po
+
+    def counted_read(*args, **kwargs):
+        reads.append(1)
+        return read_po(*args, **kwargs)
+
+    monkeypatch.setattr(parser, "read_po", counted_read)
     result = validate_native_locale(
         po_path=po_path,
         km_path=model_path,
@@ -30,6 +41,7 @@ def test_native_locale_accepts_valid_po(
     assert result.model_report["missingEntities"] == 0
     assert result.model_report["missingFields"] == 0
     assert result.model_report["mismatches"] == 0
+    assert len(reads) == 1
 
 
 def test_native_locale_rejects_wrong_language_header(

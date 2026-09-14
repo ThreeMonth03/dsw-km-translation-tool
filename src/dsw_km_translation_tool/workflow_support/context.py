@@ -34,8 +34,8 @@ class TranslationWorkflowContextBuilder:
         """
 
         parser = PoCatalogParser(po_path)
-        po_entries = parser.parse_entries()
         po_blocks = parser.parse_blocks()
+        po_entries = parser.entries_from_blocks(po_blocks)
         latest_by_uuid, model_info = self.model_service.load_model(model_path)
         relevant_uuids = self.model_service.build_ancestor_set(
             latest_by_uuid,
