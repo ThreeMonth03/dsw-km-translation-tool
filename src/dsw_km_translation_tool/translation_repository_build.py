@@ -10,7 +10,9 @@ from .translation_repository_config import (
     load_translation_repository_config,
     version_paths,
 )
-from .translation_repository_shared_sync import sync_translation_repository_shared_strings
+from .translation_repository_shared_sync import (
+    sync_translation_repository_shared_strings,
+)
 from .workflow import TranslationWorkflowService
 
 
@@ -37,9 +39,8 @@ def build_translation_repository(
     """Rebuild the tree and native DSW locale PO from Git-managed inputs.
 
     ``preserve_existing_translations`` is intended for ordinary tree-to-output
-    rebuilds. Source synchronization must disable it after carrying exact
-    source matches into the catalog, otherwise stale tree text could survive a
-    changed source string.
+    rebuilds. Source synchronization must disable it: upstream source text,
+    translations and review flags replace the previous snapshot exactly.
     """
 
     root = repo_root.resolve()

@@ -59,13 +59,12 @@ See [Maintenance Runbook](maintenance-runbook.md) for commands.
 
 - Sync reports Git and Weblate are already aligned, or creates one sync commit.
 - Alignment report status is `aligned`.
-- Status report has no empty translations unless new KM strings were introduced.
+- Status report accurately lists official empty and fuzzy translations.
 - KM auto-update reports `current`, or commits an update after validation passes.
 
-If Weblate advances before the matching official KM is available, sync and KM
-update report `waiting-for-km` without changing the verified local pair. The
-alignment report remains `aligned: false`; existing artifacts must still pass
-local integrity checks. Treat this as an expected pause, not a completed sync.
+Weblate sync continues when the available KM is older. Source differences and
+incomplete coverage are informational; invalid PO files, broken reproducibility
+and actual DSW import failures still block CI.
 
 ## Failure Entry Points
 

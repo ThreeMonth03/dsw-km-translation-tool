@@ -17,7 +17,9 @@ from dsw_km_translation_tool.locale_release import (
 )
 from dsw_km_translation_tool.po_support.state import parse_po_entry_states
 from dsw_km_translation_tool.shared_blocks.parser import SharedBlocksCatalogParser
-from dsw_km_translation_tool.translation_repository_build import build_translation_repository
+from dsw_km_translation_tool.translation_repository_build import (
+    build_translation_repository,
+)
 from dsw_km_translation_tool.translation_repository_config import (
     load_translation_repository_config,
     version_paths,
@@ -28,15 +30,15 @@ from tests.infra.test_translation_repository_config import write_config
 
 @pytest.mark.parametrize("revision", [1, 2, 15])
 def test_locale_revision_is_independent_of_km_version(revision: int) -> None:
-    assert locale_revision(f"km-2.7.0-zh_Hant-r{revision}", "2.7.0", "zh_Hant") == revision
+    assert locale_revision(f"locale-zh_Hant-r{revision}", "zh_Hant") == revision
 
 
 @pytest.mark.parametrize(
-    "tag", ["v2.7.0", "km-2.7.0-de-r1", "km-2.7.1-zh_Hant-r1", "km-2.7.0-zh_Hant-r0"]
+    "tag", ["v2.7.0", "locale-de-r1", "km-2.7.0-zh_Hant-r1", "locale-zh_Hant-r0"]
 )
 def test_locale_revision_rejects_mismatched_tags(tag: str) -> None:
     with pytest.raises(LocaleReleaseError, match="Expected release tag"):
-        locale_revision(tag, "2.7.0", "zh_Hant")
+        locale_revision(tag, "zh_Hant")
 
 
 @pytest.fixture
@@ -51,7 +53,10 @@ def release_repositories(workspace: Path, model_path: Path, po_path: Path) -> tu
     write_config(config_file)
     config_file.write_text(config_file.read_text().replace("ref: master", f"ref: {tool_sha}"))
     paths = version_paths(load_translation_repository_config(config_file))
-    for source, target in ((model_path, paths.source_km_path), (po_path, paths.source_po_path)):
+    for source, target in (
+        (model_path, paths.source_km_path),
+        (po_path, paths.source_po_path),
+    ):
         (root / target).parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source, root / target)
     build_translation_repository(repo_root=root)
@@ -68,15 +73,18 @@ def test_locale_release_rebuilds_and_records_verified_assets(
     manifest = prepare_locale_release(
         repo_root=root,
         tooling_repo=tool,
-        tag="km-2.7.0-zh_Hant-r2",
+        tag="locale-zh_Hant-r2",
         output_dir=output,
     )
     assert manifest["revision"] == 2
-    assert manifest["knowledge_model"]["package_id"] == "dsw:root:2.7.0"
+    assert manifest["schema_version"] == 2
+    source = root / "sources/localize/zh_Hant/latest.po"
+    assert manifest["source_catalog"]["sha256"] == hashlib.sha256(source.read_bytes()).hexdigest()
+    assert manifest["context_knowledge_model"]["package_id"] == "dsw:root:2.7.0"
     assert manifest["po"]["messages"] == 1466
     assets = output / "assets"
     assert json.loads((assets / "manifest.json").read_text()) == manifest
-    name = "dsw-root-zh_Hant-locale-2.7.0-r2.po"
+    name = "dsw-root-zh_Hant-locale-r2.po"
     assert {p.name for p in assets.iterdir()} == {name, "manifest.json", "SHA256SUMS"}
     assert {p.name for p in output.iterdir()} == {"assets", "release-notes.md"}
     assert (assets / name).read_bytes() == (root / "builds/final_translated.po").read_bytes()
@@ -89,7 +97,7 @@ def test_locale_release_rebuilds_and_records_verified_assets(
         prepare_locale_release(
             repo_root=root,
             tooling_repo=tool,
-            tag="km-2.7.0-zh_Hant-r2",
+            tag="locale-zh_Hant-r2",
             output_dir=output,
         )
 
@@ -111,7 +119,7 @@ def test_build_preserves_canonical_only_edits_but_release_requires_committed_out
         prepare_locale_release(
             repo_root=root,
             tooling_repo=tool,
-            tag="km-2.7.0-zh_Hant-r1",
+            tag="locale-zh_Hant-r1",
             output_dir=workspace / "assets",
         )
     states = parse_po_entry_states(root / "builds/final_translated.po")
@@ -133,7 +141,7 @@ def test_locale_release_rejects_unpinned_or_mismatched_tooling(
         prepare_locale_release(
             repo_root=root,
             tooling_repo=tool,
-            tag="km-2.7.0-zh_Hant-r1",
+            tag="locale-zh_Hant-r1",
             output_dir=workspace / "assets",
         )
 

@@ -28,15 +28,14 @@ The sync writer:
 
 Scheduled sync does not upload translations to Weblate.
 
-Weblate and the Registry publish independently. When a valid upstream POT and
-PO target a different KM, reports show **waiting-for-km** and the writer keeps
-the last verified PO, KM, and translation tree. No sync commit or Weblate upload
-is made while waiting. New KM/PO pairs are validated in a temporary workspace
-before they replace the active inputs.
+Weblate and the Registry publish independently. The official PO controls source
+strings, translations and fuzzy flags even when the context KM is older. Sync
+never waits for a matching KM. The KM supplies known hierarchy and browser tests;
+catalog-only entities appear as root folders with no invented parents.
 
-Waiting is not a completed sync: alignment remains false until the sources
-are ready. Repository integrity, syntax errors, and same-version source
-mismatches are still checked and can fail CI.
+Upstream removals and coverage regressions are mirrored, not repaired locally.
+Syntax, language, reproducibility and genuine import failures still block CI.
+Differences from the context KM are reported without blocking sync or release.
 
 Reviewed GitHub translation pull requests use a guarded reverse path:
 
@@ -53,6 +52,11 @@ Markdown formatting and boundary whitespace. Canonical
 `tree/shared_blocks/*/context.md` edits are expanded automatically for reporting
 and building; competing field edits are rejected. After upload, the workflow
 downloads Weblate again and fails unless every expected entry is present.
+
+A full tree refresh matching every current Weblate source and translation is
+recognized as an upstream mirror, not a new translation submission. Upstream
+removals and formatting are accepted; human proposals still receive conflict,
+shared-block and Markdown checks.
 
 ## Writer Workflows
 
@@ -88,13 +92,11 @@ The `native-dsw-review` artifact includes `source-catalog/source-catalog.md`,
 the upstream POT snapshot and its exact commit. The audit checks the configured
 KM version and reports missing or differing sources without changing any language.
 
-Report confirmed extraction gaps through an upstream PR. Official maintainers
-review the source change and arrange the POT-to-PO merge for existing languages.
-An updated POT alone does not ensure Weblate's language catalogs are updated.
-New sources can add untranslated entries for all languages; unchanged sources
-must retain existing translations. Source edits and removals require review.
-Once official Weblate PO exports include the new entries, normal sync brings
-them into this repository. No translation work is added locally ahead of upstream.
+Official maintainers decide extraction and POT-to-PO updates. An updated POT
+alone does not ensure every language PO has been refreshed. Once official PO
+exports include the changes, normal sync brings them here, including additions,
+removals and review flags. We do not generate source entries ahead of upstream,
+restore removed translations automatically or change other language catalogs.
 
 ## Translation Quality States
 

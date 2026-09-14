@@ -11,9 +11,11 @@ See [Contributing translations](docs/contributing.md) for browser-only steps.
 
 Download the PO from this repository's **Releases → Latest**. The working copy
 is `builds/final_translated.po`. Import the PO into the
-matching source Knowledge Model version with DSW's locale import; no separate
+desired Knowledge Model version with DSW's locale import; no separate
 Knowledge Model package is created.
 
-This workflow requires DSW 4.33 or newer.
+This workflow requires DSW 4.33 or newer. Catalog and KM versions need not match:
+DSW translates matching source text; unmatched strings stay in the source language.
+Official Weblate/POT changes are mirrored without waiting for a new KM.
 
 For maintenance details, start with [docs/README.md](docs/README.md).

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import tempfile
 import time
 import urllib.error
 import urllib.parse
@@ -15,7 +14,6 @@ from email.utils import parsedate_to_datetime
 from pathlib import Path
 
 from .po_support.parser import PoCatalogParser
-from .source_readiness import check_po_source
 from .translation_repository_config import (
     TranslationRepositoryConfig,
     TranslationRepositoryConfigError,
@@ -48,7 +46,6 @@ def pull_localize_po(
     config_path: Path,
     repo_root: Path,
     downloader: Downloader | None = None,
-    km_path: Path | None = None,
 ) -> LocalizePullResult:
     """Download and store the latest Localize PO snapshot.
 
@@ -56,7 +53,6 @@ def pull_localize_po(
         config_path: Path to ``translation-config.yml``.
         repo_root: Translation repository checkout root.
         downloader: Optional injectable downloader used by tests.
-        km_path: Model to validate against when staging the PO outside its repository.
 
     Returns:
         Pull summary.
@@ -68,10 +64,8 @@ def pull_localize_po(
     paths = version_paths(repository_config)
     latest_po_path = repo_root / paths.source_po_path
     url = localize.download_url
-    source_km = km_path or repo_root / paths.source_km_path
     downloaded = download_localize_po(
         config=repository_config,
-        km_path=source_km if km_path is not None or source_km.is_file() else None,
         downloader=downloader,
     )
 
@@ -103,24 +97,16 @@ def pull_localize_po(
 def download_localize_po(
     *,
     config: TranslationRepositoryConfig,
-    km_path: Path | None,
     downloader: Downloader | None = None,
 ) -> bytes:
     """Download and validate a catalog without replacing repository inputs.
 
-    A missing model argument requests syntax and language checks only, as needed
-    when bootstrapping a source snapshot. Pair checks require an existing model.
+    Weblate owns the catalog. The local KM provides context, not an import gate.
     """
     downloaded = (downloader or _download_url)(config.localize.download_url)
-    if km_path is None:
-        PoCatalogParser.parse_text(
-            downloaded.decode("utf-8"), target_language=config.translation.target_language
-        )
-    else:
-        with tempfile.TemporaryDirectory(prefix="dsw-localize-validation-") as temp:
-            candidate = Path(temp) / "candidate.po"
-            candidate.write_bytes(downloaded)
-            check_po_source(config=config, po_path=candidate, km_path=km_path)
+    PoCatalogParser.parse_text(
+        downloaded.decode("utf-8"), target_language=config.translation.target_language
+    )
     return downloaded
 
 

@@ -130,9 +130,7 @@ def test_translation_fixture_tree_and_generated_po_stay_in_sync(
         str(translation_final_po_path),
         str(model_path),
     )
-    assert report["missingEntities"] == 0
-    assert report["missingFields"] == 0
-    assert report["mismatches"] == 0
+    assert report == workflow.validate_po_against_model(str(po_path), str(model_path))
 
     review = workflow.review_po_changes(
         original_po_path=str(po_path),

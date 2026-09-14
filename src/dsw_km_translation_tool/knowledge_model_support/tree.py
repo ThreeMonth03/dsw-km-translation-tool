@@ -79,6 +79,7 @@ class KnowledgeModelTreeBuilder:
 
         roots.sort(
             key=lambda node: (
+                node.event_type is None,
                 node.content.get("createdAt") or "",
                 node.entity_uuid,
             )

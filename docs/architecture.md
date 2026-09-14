@@ -47,13 +47,14 @@ These modules handle the local representation of translation data:
 - [`dsw_models_adapter.py`][dsw-models-adapter-py]: adapts DSW KM JSON events into a structure the tools
   can inspect.
 - [`tree.py`][tree-py], [`outline.py`][outline-py], [`workflow.py`][workflow-py]: export and inspect the
-  translator-facing folder tree.
+  translator-facing folder tree. PO source text is authoritative; the KM supplies
+  known hierarchy, and catalog-only entities become root folders.
 - [`shared_blocks/`][shared-blocks-dir], [`sync.py`][sync-py], [`review.py`][review-py]: synchronize repeated strings,
   rebuild generated PO files, and produce review diffs.
 - [`knowledge_model_service.py`][knowledge-model-service-py]: validates PO
-  references and source strings against a KM bundle.
-- `native_locale.py` validates gettext syntax, the locale language, and DSW KM
-  references before a PO is published for native locale import.
+  references and source strings against a context KM for informational reports.
+- `native_locale.py` validates gettext syntax and language before native import;
+  KM source differences are diagnostic, not validation failures.
 - `locale_coverage.py` compares the PO with an official DSW-exported POT.
   `tests/native_locale/` tests import and language switching in disposable
   official containers; it never connects to production DSW.

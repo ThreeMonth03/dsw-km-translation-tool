@@ -112,27 +112,13 @@ def compare_source_catalog(
 ) -> dict[str, object]:
     """Compare the official export with Weblate's shared source POT, without merging.
 
-    The repository POT may use a human-readable project name instead of package
-    coordinates. Require its version to match; retain both headers as evidence.
-    Source changes cannot safely be distinguished from removals and additions,
-    so any upstream-only entry requires maintainer review, never automatic deletion.
+    Differences are informational. Weblate owns the source catalog, including
+    changes and removals; a context KM does not constrain its version.
     """
     pot = _read_official_pot(pot_path, package_id, source_language)
     upstream, project, version = read_upstream_pot(upstream_pot_path, package_id, source_language)
     expected = {_key(message): message for message in pot if message.id}
     actual = {_key(message): message for message in upstream if message.id}
-    if version != package_id.rsplit(":", 1)[-1]:
-        return {
-            "package_id": package_id,
-            "upstream_project_id_version": project,
-            "required_package_id": f"{package_id.rsplit(':', 1)[0]}:{version}",
-            "pot_sha256": hashlib.sha256(pot_path.read_bytes()).hexdigest(),
-            "upstream_pot_sha256": hashlib.sha256(upstream_pot_path.read_bytes()).hexdigest(),
-            "status": "waiting-for-km",
-            "counts": {"official": len(expected), "upstream": len(actual)},
-            "missing_upstream": [],
-            "upstream_only": [],
-        }
     missing = [_entry(message) for key, message in expected.items() if key not in actual]
     extra = [_entry(message) for key, message in actual.items() if key not in expected]
     return {
@@ -140,7 +126,8 @@ def compare_source_catalog(
         "upstream_project_id_version": project,
         "pot_sha256": hashlib.sha256(pot_path.read_bytes()).hexdigest(),
         "upstream_pot_sha256": hashlib.sha256(upstream_pot_path.read_bytes()).hexdigest(),
-        "status": "review-required" if extra else "additions-only" if missing else "aligned",
+        "upstream_package_id": f"{package_id.rsplit(':', 1)[0]}:{version}",
+        "status": "different" if missing or extra else "aligned",
         "counts": {
             "official": len(expected),
             "upstream": len(actual),
@@ -159,14 +146,17 @@ def read_upstream_pot(
     """Read a nonempty source POT and identify its KM without relabeling it."""
     catalog = _read_catalog(path)
     project = dict(catalog.mime_headers).get("Project-Id-Version", "").strip()
-    family, current_version = package_id.rsplit(":", 1)
+    family = package_id.rsplit(":", 1)[0]
     if project.startswith(f"{family}:"):
         try:
             version = normalize_version(project[len(family) + 1 :])
         except ValueError as error:
             raise LocaleCoverageError("Upstream POT has an invalid KM version") from error
-    elif ":" not in project and project.endswith(f" {current_version}"):
-        version = current_version
+    elif ":" not in project and " " in project:
+        try:
+            version = normalize_version(project.rsplit(" ", 1)[1])
+        except ValueError as error:
+            raise LocaleCoverageError("Upstream POT has an invalid KM version") from error
     else:
         raise LocaleCoverageError(
             "Upstream POT package/version does not identify the configured KM"
@@ -191,25 +181,21 @@ def _render_entries(entries: list[dict[str, object]]) -> list[str]:
 
 def summarize_locale_coverage(report: dict[str, object]) -> dict[str, object]:
     """Reference the full coverage report without embedding its message lists."""
-    return {"status": report["status"], "counts": report["counts"], "report": "coverage.json"}
+    return {
+        "status": report["status"],
+        "counts": report["counts"],
+        "report": "coverage.json",
+    }
 
 
 def render_source_catalog(report: dict[str, object], *, details: bool = True) -> str:
     """Render an upstream review report, not a proposed translation replacement."""
-    if report["status"] == "waiting-for-km":
-        return (
-            "## Weblate upstream source catalog\n\n"
-            "Status: **waiting-for-km**\n\n"
-            f"Configured KM: `{report['package_id']}`\n\n"
-            f"Upstream POT requires: `{report['required_package_id']}`\n\n"
-            f"Upstream POT: {report['upstream_url']}\n\n"
-            "Coverage was not compared across KM versions. Existing translations are unchanged.\n"
-        )
     lines = [
         "## Weblate upstream source catalog",
         "",
         f"Knowledge Model: `{report['package_id']}`",
         f"Source catalog: **{report['status']}**",
+        f"Upstream catalog KM: `{report['upstream_package_id']}`",
         f"Upstream POT: {report['upstream_url']}",
         "",
         "| Category | Messages |",
@@ -219,10 +205,8 @@ def render_source_catalog(report: dict[str, object], *, details: bool = True) ->
         "This compares the repository POT, not live Weblate units or translation quality.",
         "No POT, PO, Weblate settings or translations have been updated.",
         "",
-        "Review source differences with the upstream maintainers. Any accepted POT update",
-        "still needs a PO merge in Weblate or upstream automation. All language catalogs",
-        "may gain untranslated entries; preserve existing translations and review any",
-        "changed or removed source strings before merging. Do not replace language PO files.",
+        "The official Weblate/POT catalog is authoritative. Differences from the context",
+        "KM do not block PO synchronization or releases. Missing matches use DSW source text.",
         "",
     ]
     if details:

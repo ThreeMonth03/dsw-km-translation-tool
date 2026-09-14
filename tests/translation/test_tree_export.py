@@ -41,9 +41,7 @@ def test_export_tree_contains_all_expected_translation_fields(
         tree_dir=tree_dir,
     )
 
-    assert context.report["missingEntities"] == 0
-    assert context.report["missingFields"] == 0
-    assert context.report["mismatches"] == 0
+    assert context.report == workflow.validate_po_against_model(str(po_path), str(model_path))
 
     scan_result = validate_tree(
         workflow=workflow,

@@ -108,7 +108,10 @@ class PoCatalogWriter:
             return output_lines, index
 
         current_msgstr, next_index = PoCatalogParser.parse_string_block(lines, index)
-        if not parsed_tokens:
+        if all(
+            translations_by_key.get((token.uuid, token.field), current_msgstr) == current_msgstr
+            for token in parsed_tokens
+        ):
             output_lines.extend(section.comment_lines)
             output_lines.extend(extra_comment_lines)
             output_lines.extend(msgid_lines)

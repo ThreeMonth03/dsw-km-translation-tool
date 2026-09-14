@@ -21,6 +21,11 @@ guarded:
 GitHub PR -> reviewed merge -> Weblate import -> Weblate-to-Git sync
 ```
 
+A full tree refresh matching every current Weblate source and translation is
+recognized as an upstream mirror, not a new translation submission. Upstream
+removals and formatting are accepted; human proposals still receive conflict,
+shared-block and Markdown checks.
+
 ## Secrets
 
 Scheduled sync and alignment do not need Weblate write access. Configure
@@ -39,8 +44,8 @@ The external translation workflow should run:
 The workflow runs the `dsw-km-sync-localize` command. That command:
 
 1. Downloads the current Weblate PO and validates syntax, language, and native
-   `entity/UUID/field` references. When a source KM exists, every referenced
-   field and source string must match it before the snapshot is replaced.
+   `entity/UUID/field` reference syntax. Source differences from the context KM
+   are diagnostic only.
 2. Saves the validated snapshot to `sources/localize/zh_Hant/latest.po` and
    force-refreshes `tree/`.
 3. Rebuilds `builds/final_translated.po`.
@@ -51,13 +56,13 @@ The workflow runs the `dsw-km-sync-localize` command. That command:
 Scheduled runs commit directly to `master` when repository policy allows it.
 The writer does not run for pull requests.
 
-Weblate and the Registry publish independently. If Weblate advances to a KM
-that the configured KM cannot represent, the tool checks the upstream POT.
-Only a valid POT identifying another KM, with the same source fields as the PO,
-can produce **waiting-for-km**. That state preserves the current snapshot and
-tree without committing or uploading translations. Obtain the matching official
-KM before resuming; do not change the PO header or remove unmatched messages to
-force a pass. Syntax errors and same-version source mismatches remain failures.
+Weblate and the Registry publish independently. The latest official PO is
+synchronized even when the available KM is older. Added or changed source
+strings, removed translations and fuzzy flags follow Weblate exactly. The KM
+provides hierarchy and a browser-test target; it never selects the catalog or
+blocks its release. Catalog-only entities remain editable at the tree root.
+Do not relabel headers, invent missing source strings or restore old translations
+automatically. Invalid catalog syntax or language still fails before replacement.
 
 ## Pull Request Validation
 
@@ -91,7 +96,7 @@ Git or Weblate. It:
 
 1. Checks out the translation repository.
 2. Downloads the latest Weblate PO into a temporary directory without replacing
-   the checked-in snapshot, and checks whether it targets the configured KM.
+   the checked-in snapshot, and validates its syntax and language.
 3. Runs `dsw-km-report-localize-status`.
 4. Writes a GitHub step summary and uploads
    `reviews/localize_status_report.json` and
@@ -114,18 +119,13 @@ changing Git or Weblate. It:
 1. Downloads the latest Weblate PO into a temporary file.
 2. Compares it with `sources/localize/zh_Hant/latest.po`.
 3. Rebuilds `builds/final_translated.po` from `tree/`.
-4. Validates the final PO against the configured KM and target language.
+4. Validates the final PO syntax and target language, with KM differences reported.
 5. Uploads JSON, Markdown, and the generated PO comparison artifact.
 
-The alignment report still checks the existing PO/KM and tree when an upstream
-version transition is pending. It reports **waiting-for-km**, with `aligned: false`,
-and defers only the Weblate snapshot equality check. Broken checked-in artifacts
-still fail. A waiting result must not be described as a completed sync.
-
-The alignment report is allowed to fail when same-version drift is detected. That failure
-means a pull sync or tree rebuild should run before maintainers
-trust the repository outputs. It also requires only `contents: read` and does
-not change translations.
+The alignment report fails whenever the checked-in snapshot differs from
+Weblate or the tree does not reproduce the final PO. Run a pull sync or rebuild
+before relying on those outputs. It requires only `contents: read` and does not
+change translations. KM version differences do not defer any alignment checks.
 
 To run the same alignment check from your machine, use:
 
@@ -161,7 +161,7 @@ Use forward commits for sync and workflow corrections on public branches.
 
 Normal sync is Weblate-first:
 
-- Weblate entries that are ready for use win.
+- The full official catalog wins, including empty translations and fuzzy flags.
 - Checked-in tree translations that differ from Weblate are replaced during
   force-refresh.
 - Entries marked for review stay in Weblate for translators to resolve on the
@@ -182,13 +182,12 @@ Common DSW KM.
 
 ## Troubleshooting
 
-- If sync commits nothing, check its reported status. It may have found no
-  changes, or it may be `waiting-for-km`. Waiting preserves the verified local
-  pair and does not mean Git is aligned with the latest Weblate catalog.
+- If sync commits nothing, it found no tracked changes after rebuilding. Use the
+  alignment report to verify the repository still matches live Weblate.
 - If `translation-config.yml` fails validation, fix config before running sync.
 - If tree parsing fails in CI, the writer may restore malformed files from the
   tracking branch once and retry.
 - If Weblate has untranslated strings after sync, check whether they are empty,
-  marked for review, or missing from the current KM source.
+  or marked for review in the official catalog.
 
 [makefile]: https://github.com/ThreeMonth03/dsw-km-translation-tool/blob/master/Makefile

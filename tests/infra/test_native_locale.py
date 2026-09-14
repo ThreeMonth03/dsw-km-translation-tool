@@ -57,7 +57,7 @@ def test_native_locale_rejects_wrong_language_header(
         )
 
 
-def test_native_locale_rejects_stale_source_text(
+def test_native_locale_reports_source_difference_without_blocking_import(
     po_path: Path,
     model_path: Path,
     workspace: Path,
@@ -72,16 +72,12 @@ def test_native_locale_rejects_stale_source_text(
         encoding="utf-8",
     )
 
-    with pytest.raises(NativeLocaleValidationError, match="Source mismatch"):
-        validate_native_locale(
-            po_path=stale_po,
-            km_path=model_path,
-            target_language="zh_Hant",
-        )
+    result = validate_native_locale(po_path=stale_po, km_path=model_path, target_language="zh_Hant")
+    assert result.model_report["mismatches"] > 0
 
 
 @pytest.mark.parametrize("separator", [":", "/"])
-def test_native_locale_rejects_missing_field_with_matching_title(
+def test_native_locale_reports_missing_field_without_blocking_import(
     po_path: Path,
     model_path: Path,
     workspace: Path,
@@ -99,12 +95,10 @@ def test_native_locale_rejects_missing_field_with_matching_title(
         encoding="utf-8",
     )
 
-    with pytest.raises(NativeLocaleValidationError, match=f"Missing field: {entry.uuid}:name"):
-        validate_native_locale(
-            po_path=invalid_po,
-            km_path=model_path,
-            target_language="zh_Hant",
-        )
+    result = validate_native_locale(
+        po_path=invalid_po, km_path=model_path, target_language="zh_Hant"
+    )
+    assert result.model_report["missingFields"] > 0
 
 
 def test_native_locale_cli_writes_report(
@@ -128,7 +122,7 @@ def test_native_locale_cli_writes_report(
     )
 
     assert result.returncode == 0, result.stderr or result.stdout
-    assert "PO syntax, language and KM references are valid" in result.stdout
-    assert "coverage and server import are separate checks" in result.stdout
+    assert "PO syntax and language are valid" in result.stdout
+    assert "KM differences, coverage and server import are separate checks" in result.stdout
     report = json.loads(report_path.read_text(encoding="utf-8"))
     assert report["catalog_language"] == "zh_Hant"

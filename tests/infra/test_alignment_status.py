@@ -8,7 +8,6 @@ import sys
 from collections.abc import Callable
 from pathlib import Path
 
-from dsw_km_translation_tool import alignment_status
 from dsw_km_translation_tool.alignment_status import (
     build_alignment_status_report,
     render_alignment_status_markdown,
@@ -194,7 +193,8 @@ def test_report_alignment_status_cli_writes_outputs(
 
     latest_po = translation_repo / "sources/localize/zh_Hant/latest.po"
     monkeypatch.setattr(
-        alignment_status, "_download_url", _static_downloader(latest_po.read_bytes())
+        "dsw_km_translation_tool.localize_sync._download_url",
+        _static_downloader(latest_po.read_bytes()),
     )
     monkeypatch.setattr(
         sys,

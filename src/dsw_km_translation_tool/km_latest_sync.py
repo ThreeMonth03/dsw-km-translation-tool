@@ -6,7 +6,7 @@ import json
 import shutil
 import tempfile
 import urllib.parse
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
@@ -23,8 +23,7 @@ from .km_bundle_sync import BundleDownloader, pull_km_bundle
 from .km_registry import Downloader, discover_km_versions
 from .knowledge_model_service import KnowledgeModelService
 from .localize_sync import Downloader as LocalizeDownloader
-from .localize_sync import download_localize_po, pull_localize_po
-from .source_readiness import SourceUpdatePending, upstream_target_version
+from .localize_sync import pull_localize_po
 from .translation_repository_config import (
     DEFAULT_REGISTRY_API_URL,
     TranslationRepositoryConfigError,
@@ -32,7 +31,6 @@ from .translation_repository_config import (
     normalize_version,
     tracking_branch,
     version_paths,
-    version_sort_key,
 )
 
 
@@ -107,9 +105,6 @@ def sync_latest_km_version(
     discovery = discover_km_versions(config_path=resolved_config_path, downloader=downloader)
     registry_version = discovery.latest_registry_version
     if not discovery.newer_versions:
-        current_km = host_repo / version_paths(config).source_km_path
-        if current_km.is_file():
-            download_localize_po(config=config, km_path=current_km, downloader=localize_downloader)
         return KmLatestSyncResult(
             configured_version=configured_version,
             registry_version=registry_version,
@@ -139,28 +134,7 @@ def sync_latest_km_version(
 
     run = runner or default_command_runner
     _ensure_git_repo_is_clean(host_repo, run)
-    target_version = upstream_target_version(config)
-    if version_sort_key(target_version) <= version_sort_key(configured_version):
-        return KmLatestSyncResult(
-            configured_version=configured_version,
-            registry_version=registry_version,
-            target_ref=push_ref,
-            changed=False,
-            skipped_reason="waiting-for-po",
-        )
-    if version_sort_key(target_version) > version_sort_key(registry_version):
-        download_localize_po(
-            config=config,
-            km_path=host_repo / version_paths(config).source_km_path,
-            downloader=localize_downloader,
-        )
-        return KmLatestSyncResult(
-            configured_version=configured_version,
-            registry_version=registry_version,
-            target_ref=push_ref,
-            changed=False,
-            skipped_reason="waiting-for-km",
-        )
+    target_version = registry_version
     with tempfile.TemporaryDirectory(prefix="dsw-km-candidate-") as temp:
         candidate_root = Path(temp)
         candidate_config = candidate_root / "translation-config.yml"
@@ -180,17 +154,15 @@ def sync_latest_km_version(
             raise KmLatestSyncError(
                 f"Downloaded KM identifies {model_info.id}, expected {candidate_paths.package_id}"
             )
-        try:
-            pull_localize_po(
-                config_path=candidate_config,
-                repo_root=candidate_root,
-                downloader=localize_downloader,
-            )
-        except SourceUpdatePending as pending:
-            raise SourceUpdatePending(
-                replace(pending.report, configured_package_id=version_paths(config).package_id)
-            ) from pending
-        for relative in (candidate_paths.source_km_path, candidate_paths.source_po_path):
+        pull_localize_po(
+            config_path=candidate_config,
+            repo_root=candidate_root,
+            downloader=localize_downloader,
+        )
+        for relative in (
+            candidate_paths.source_km_path,
+            candidate_paths.source_po_path,
+        ):
             target = host_repo / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(candidate_root / relative, target)

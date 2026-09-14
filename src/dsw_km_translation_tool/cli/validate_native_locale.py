@@ -20,7 +20,9 @@ def build_argument_parser() -> argparse.ArgumentParser:
         description="Validate a PO for native DSW knowledge-model locale import.",
     )
     parser.add_argument("--po", required=True, help="Translated PO file.")
-    parser.add_argument("--km", required=True, help="Source KM bundle.")
+    parser.add_argument(
+        "--km", required=True, help="KM bundle for informational context comparison."
+    )
     parser.add_argument("--target-language", required=True, help="Expected PO Language value.")
     parser.add_argument("--report", help="Optional JSON report path.")
     return parser
@@ -47,7 +49,7 @@ def main() -> None:
             encoding="utf-8",
         )
     print(
-        "PO syntax, language and KM references are valid; coverage and server import are separate checks."
+        "PO syntax and language are valid; KM differences, coverage and server import are separate checks."
     )
     print(f"Language: {result.catalog_language}")
     print(f"Messages: {result.total_messages}")

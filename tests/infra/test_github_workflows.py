@@ -36,7 +36,7 @@ def test_contributor_guide_names_the_translation_workflow(repo_root: Path) -> No
 
 def test_native_locale_release_is_tagged_and_pinned(repo_root: Path) -> None:
     workflow, text = load_rendered_workflow(repo_root, "release_template.yml")
-    assert workflow["on"]["push"]["tags"] == ["km-*-r*"]
+    assert workflow["on"]["push"]["tags"] == ["locale-*-r*"]
     assert "pull_request" not in workflow["on"]
     assert workflow["permissions"] == {"contents": "write"}
     assert text.count("persist-credentials: false") == 2

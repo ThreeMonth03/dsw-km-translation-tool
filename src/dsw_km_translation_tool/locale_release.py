@@ -10,6 +10,7 @@ from pathlib import Path
 
 from .command import default_command_runner, make_checked_runner
 from .native_locale import validate_native_locale
+from .po_support.parser import PoCatalogParser
 from .translation_repository_build import build_translation_repository
 from .translation_repository_config import load_translation_repository_config
 
@@ -21,10 +22,10 @@ class LocaleReleaseError(ValueError):
 _run = make_checked_runner(LocaleReleaseError, include_command=True)
 
 
-def locale_revision(tag: str, km_version: str, language: str) -> int:
-    """Require a tag identifying the source KM, language, and positive revision."""
+def locale_revision(tag: str, language: str) -> int:
+    """Require a language-scoped revision, independent of the context KM."""
 
-    prefix = f"km-{km_version}-{language}-r"
+    prefix = f"locale-{language}-r"
     match = re.fullmatch(re.escape(prefix) + r"([1-9][0-9]*)", tag)
     if match is None:
         raise LocaleReleaseError(f"Expected release tag {prefix}<positive revision>, got {tag!r}")
@@ -50,7 +51,7 @@ def prepare_locale_release(
     config = load_translation_repository_config(config_file)
     km = config.knowledge_model
     language = config.translation.target_language
-    revision = locale_revision(tag, km.version, language)
+    revision = locale_revision(tag, language)
     for value in (km.organization_id, km.km_id, language):
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", value):
             raise LocaleReleaseError(f"Unsafe release asset identifier: {value!r}")
@@ -83,14 +84,22 @@ def prepare_locale_release(
     assets = output / "assets"
     assets.mkdir(parents=True)
     stem = f"{km.organization_id}-{km.km_id}-{language}-locale"
-    po_name = f"{stem}-{km.version}-r{revision}.po"
+    po_name = f"{stem}-r{revision}.po"
     shutil.copyfile(build.final_po_path, assets / po_name)
+    source_catalog, _ = PoCatalogParser.parse_catalog(
+        build.source_po_path.read_text(encoding="utf-8"), target_language=language
+    )
     manifest: dict[str, object] = {
-        "schema_version": 1,
+        "schema_version": 2,
         "tag": tag,
-        "knowledge_model": {
+        "context_knowledge_model": {
             "package_id": package_id,
             "sha256": _sha256(build.source_km_path),
+        },
+        "source_catalog": {
+            "url": config.localize.download_url,
+            "sha256": _sha256(build.source_po_path),
+            "project_id_version": dict(source_catalog.mime_headers).get("Project-Id-Version", ""),
         },
         "language": language,
         "revision": revision,
@@ -107,14 +116,17 @@ def prepare_locale_release(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
     (output / "release-notes.md").write_text(
-        f"Native {language} locale for `{package_id}`, translation revision {revision}.\n\n"
-        f"Download `{po_name}` and import it into this Knowledge Model version using "
+        f"Native {language} locale, translation revision {revision}.\n\n"
+        f"Download `{po_name}` and import it into a Knowledge Model using "
         "DSW's **Import locale** action (DSW 4.33 or newer). "
         "Select the questionnaire language in project settings.\n\n"
+        f"Context and browser-test KM: `{package_id}`. Catalog and KM versions need not "
+        "match: DSW looks up source strings and falls back to source text for missing translations.\n\n"
         f"Messages: {validation.total_messages}; translated: {validation.translated_messages}.\n\n"
         f"Translation commit: `{translation_commit}`.\n\n"
         f"Tooling commit: `{tool_commit}`.\n\n"
-        "`manifest.json` records the source KM and PO checksums. "
+        "`manifest.json` records the Weblate snapshot, context KM and released PO checksums. "
+        "The source header is preserved as provided by Weblate, not a compatibility requirement. "
         "Verify downloaded assets with `sha256sum -c SHA256SUMS`.\n",
         encoding="utf-8",
     )
@@ -127,7 +139,10 @@ def prepare_locale_release(
 
 def _git(root: Path, *args: str) -> str:
     return _run(
-        default_command_runner, ["git", *args], cwd=root, description="verify release checkout"
+        default_command_runner,
+        ["git", *args],
+        cwd=root,
+        description="verify release checkout",
     ).stdout.strip()
 
 

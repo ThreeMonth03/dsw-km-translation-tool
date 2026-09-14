@@ -17,7 +17,7 @@ class NativeLocaleValidationError(ValueError):
 
 @dataclass(frozen=True)
 class NativeLocaleValidationResult:
-    """Summary of native locale syntax and KM-reference validation."""
+    """Catalog validation plus an informational comparison with the context KM."""
 
     po_path: Path
     km_path: Path
@@ -61,36 +61,13 @@ def validate_native_locale(
         target_language=target_language,
         catalog_language=catalog.locale_identifier,
         total_messages=len(messages),
-        translated_messages=sum(bool(message.string) for message in messages),
+        translated_messages=sum(bool(message.string) and not message.fuzzy for message in messages),
         model_report=report,
     )
 
 
 def validate_locale_blocks(*, blocks: list[PoBlock], km_path: Path) -> dict[str, Any]:
-    """Check parsed source fields against the KM without parsing the PO again."""
+    """Report source differences; DSW imports do not require matching KM fields."""
     entries = PoCatalogParser.entries_from_blocks(blocks)
     latest_by_uuid, _ = KnowledgeModelService.load_model(str(km_path))
-    report = KnowledgeModelService.validate_po_entries(entries, latest_by_uuid)
-    if _has_model_errors(report):
-        preview = "\n".join(_format_model_errors(report)[:50])
-        raise NativeLocaleValidationError(f"PO validation against KM failed:\n{preview}")
-    return report
-
-
-def _has_model_errors(report: dict[str, Any]) -> bool:
-    return any(report.get(key, 0) for key in ("missingEntities", "missingFields", "mismatches"))
-
-
-def _format_model_errors(report: dict[str, Any]) -> list[str]:
-    errors: list[str] = []
-    for detail in report.get("missingEntitiesDetails", ()):
-        errors.append(f"Missing entity: {detail['uuid']}:{detail['field']}")
-    for detail in report.get("missingFieldsDetails", ()):
-        errors.append(f"Missing field: {detail['uuid']}:{detail['field']}")
-    for detail in report.get("mismatchesDetails", ()):
-        errors.append(
-            "Source mismatch: "
-            f"{detail['uuid']}:{detail['field']} "
-            f"PO msgid={detail['msgid']!r} KM={detail['actual']!r}"
-        )
-    return errors or ["Unknown validation error."]
+    return KnowledgeModelService.validate_po_entries(entries, latest_by_uuid)

@@ -37,22 +37,31 @@ class TranslationWorkflowContextBuilder:
         po_blocks = parser.parse_blocks()
         po_entries = parser.entries_from_blocks(po_blocks)
         latest_by_uuid, model_info = self.model_service.load_model(model_path)
+        report = self.model_service.validate_po_entries(po_entries, latest_by_uuid)
+        # This is a presentation index, never a rebuilt KM. The catalog supplies
+        # current source text; the downloaded KM supplies only known hierarchy.
+        display_entities = {
+            uuid: {**event, "content": dict(event.get("content", {}))}
+            for uuid, event in latest_by_uuid.items()
+        }
+        for entry in po_entries:
+            entity = display_entities.setdefault(entry.uuid, {"content": {}})
+            entity["content"][entry.field] = entry.msgid
         relevant_uuids = self.model_service.build_ancestor_set(
-            latest_by_uuid,
+            display_entities,
             {entry.uuid for entry in po_entries},
         )
         tree_roots, nodes_map = self.model_service.build_tree(
-            latest_by_uuid,
+            display_entities,
             relevant_uuids,
         )
         self.model_service.annotate_tree_nodes(po_entries, nodes_map)
-        report = self.model_service.validate_po_entries(po_entries, latest_by_uuid)
         return WorkflowContext(
             report=report,
             model_info=model_info,
             roots=tree_roots,
             entries=po_entries,
-            latest_by_uuid=latest_by_uuid,
+            latest_by_uuid=display_entities,
             shared_reference_keys=self.build_shared_reference_keys(po_blocks),
         )
 

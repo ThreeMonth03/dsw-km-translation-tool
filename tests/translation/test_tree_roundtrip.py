@@ -44,6 +44,4 @@ def test_untouched_tree_roundtrip_rebuilds_byte_identical_po(
     assert len(rebuilt_entries) == len(po_entries)
 
     report = workflow.validate_po_against_model(str(rebuilt_po), str(model_path))
-    assert report["missingEntities"] == 0
-    assert report["missingFields"] == 0
-    assert report["mismatches"] == 0
+    assert report == workflow.validate_po_against_model(str(po_path), str(model_path))

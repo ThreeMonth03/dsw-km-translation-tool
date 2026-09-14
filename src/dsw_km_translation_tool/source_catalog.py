@@ -19,7 +19,8 @@ def snapshot_upstream_pot(repository: str, destination: Path) -> tuple[str, str]
     No Weblate credentials, API writes, worktree checkout or pushes are involved.
     """
     match = re.fullmatch(
-        r"https://github\.com/([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?)(?:\.git)?/?", repository
+        r"https://github\.com/([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?)(?:\.git)?/?",
+        repository,
     )
     if not match:
         raise LocaleCoverageError("Source catalog audit requires a public HTTPS GitHub repository")
@@ -60,7 +61,7 @@ def snapshot_upstream_pot(repository: str, destination: Path) -> tuple[str, str]
 def audit_source_catalog(
     *, repository: str, pot_path: Path, out: Path, package_id: str, source_language: str
 ) -> dict[str, object]:
-    """Download an upstream snapshot and compare message identities for the same KM."""
+    """Download an upstream snapshot and compare message identities with the context KM."""
     upstream_pot = out / "upstream.pot"
     commit, url = snapshot_upstream_pot(repository, upstream_pot)
     report = compare_source_catalog(
