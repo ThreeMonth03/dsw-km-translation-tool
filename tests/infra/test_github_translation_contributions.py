@@ -20,11 +20,128 @@ from dsw_km_translation_tool.github_translation_contributions import (
     IMPORT_DECISION,
     GitHubTranslationContributionError,
     build_github_translation_report,
+    require_blank_contributions,
     write_import_po,
 )
 from tests.infra.test_translation_repository_config import write_config
 
 TEST_UUID = "11111111-1111-1111-1111-111111111111"
+
+
+@pytest.mark.parametrize("target", ["改寫", ""])
+def test_blank_policy_freezes_existing_fields(workspace: Path, target: str) -> None:
+    repo = initialize_translation_repo(workspace)
+    base = commit_translation(repo, "base", "既有翻譯")
+    head = commit_translation(repo, "change", target)
+    report = build_github_translation_report(
+        repo_root=repo,
+        base_ref=base,
+        head_ref=head,
+        latest_po_path=write_latest_po(workspace / "latest.po", "既有翻譯"),
+    )
+    with pytest.raises(GitHubTranslationContributionError, match="Only fields blank"):
+        require_blank_contributions(report)
+
+
+def test_blank_policy_allows_review_within_same_pr(workspace: Path) -> None:
+    repo = initialize_translation_repo(workspace)
+    base = commit_translation(repo, "base", "")
+    latest = write_latest_po(workspace / "latest.po", "")
+    for text in ("初稿", "審核後譯文"):
+        head = commit_translation(repo, "review", text)
+        report = build_github_translation_report(
+            repo_root=repo,
+            base_ref=base,
+            head_ref=head,
+            latest_po_path=latest,
+        )
+        require_blank_contributions(report)
+        assert report.importable_entries == 1
+
+
+def test_blank_policy_freezes_canonical_shared_translation(workspace: Path) -> None:
+    repo = initialize_translation_repo(workspace)
+    commit_translation(repo, "base tree", "既有翻譯")
+    base = commit_shared_translation(repo, "base shared", "既有翻譯")
+    head = commit_shared_translation(repo, "change shared", "改寫")
+    report = build_github_translation_report(
+        repo_root=repo,
+        base_ref=base,
+        head_ref=head,
+        latest_po_path=write_latest_po(workspace / "latest.po", "既有翻譯"),
+    )
+    with pytest.raises(GitHubTranslationContributionError, match="Only fields blank"):
+        require_blank_contributions(report)
+
+
+def test_blank_policy_freezes_pending_canonical_text_even_if_head_matches_weblate(
+    workspace: Path,
+) -> None:
+    repo = initialize_translation_repo(workspace)
+    commit_translation(repo, "base tree", "")
+    base = commit_shared_translation(repo, "accepted canonical text", "既有翻譯")
+    head = commit_shared_translation(repo, "overwrite", "改寫", tree_target="改寫")
+    report = build_github_translation_report(
+        repo_root=repo,
+        base_ref=base,
+        head_ref=head,
+        latest_po_path=write_latest_po(workspace / "latest.po", "改寫"),
+    )
+    with pytest.raises(GitHubTranslationContributionError, match="Only fields blank"):
+        require_blank_contributions(report)
+
+
+@pytest.mark.parametrize("cli", [report_github_translations, import_github_translations])
+def test_contribution_commands_reject_fuzzy_nonempty_base(
+    monkeypatch, workspace: Path, cli
+) -> None:
+    repo = initialize_translation_repo(workspace)
+    write_config(repo / "translation-config.yml")
+    base = commit_translation(repo, "base", "待確認譯文")
+    head = commit_translation(repo, "overwrite", "改寫")
+    latest = write_latest_po(workspace / "latest.po", "待確認譯文")
+    latest.write_text(
+        latest.read_text().replace('msgid "Source title"', '#, fuzzy\nmsgid "Source title"'),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        cli, "pull_localize_po", lambda **kwargs: SimpleNamespace(latest_po_path=latest)
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "test",
+            "--repo-root",
+            str(repo),
+            "--base-ref",
+            base,
+            "--head-ref",
+            head,
+            "--json-out",
+            str(workspace / "report.json"),
+            "--details-out",
+            str(workspace / "report.md"),
+        ],
+    )
+    with pytest.raises(GitHubTranslationContributionError, match="Only fields blank"):
+        cli.main()
+
+
+def test_source_only_edits_are_not_ignored(workspace: Path) -> None:
+    repo = initialize_translation_repo(workspace)
+    base = commit_translation(repo, "base", "")
+    path = next((repo / "tree").rglob("translation.md"))
+    path.write_text(path.read_text().replace("Source title", "Changed source"), encoding="utf-8")
+    run_git(repo, "add", ".")
+    run_git(repo, "commit", "-m", "tamper source")
+    report = build_github_translation_report(
+        repo_root=repo,
+        base_ref=base,
+        head_ref="HEAD",
+        latest_po_path=write_latest_po(workspace / "latest.po", ""),
+    )
+    assert report.has_conflicts
 
 
 def test_github_translation_report_marks_safe_imports(workspace: Path) -> None:
@@ -228,9 +345,9 @@ def test_report_github_translations_cli_writes_outputs(
 
     repo = initialize_translation_repo(workspace)
     write_config(repo / "translation-config.yml")
-    base_ref = commit_translation(repo, "base", "舊翻譯")
+    base_ref = commit_translation(repo, "base", "")
     head_ref = commit_translation(repo, "github", "GitHub 新翻譯")
-    latest_po = write_latest_po(workspace / "latest.po", "舊翻譯")
+    latest_po = write_latest_po(workspace / "latest.po", "")
     json_out = workspace / "report.json"
     details_out = workspace / "report.md"
     github_output = workspace / "github-output.txt"
@@ -531,9 +648,9 @@ def test_import_github_translations_cli_verifies_weblate_upload(
 
     repo = initialize_translation_repo(workspace)
     write_config(repo / "translation-config.yml")
-    base_ref = commit_translation(repo, "base", "舊翻譯")
+    base_ref = commit_translation(repo, "base", "")
     head_ref = commit_translation(repo, "github", "GitHub 新翻譯")
-    latest_before = write_latest_po(workspace / "before.po", "舊翻譯")
+    latest_before = write_latest_po(workspace / "before.po", "")
     latest_after = write_latest_po(workspace / "after.po", "GitHub 新翻譯")
     pulls = iter((latest_before, latest_after))
     github_output = workspace / "github-output.txt"
@@ -584,9 +701,9 @@ def test_import_github_translations_cli_rejects_unapplied_upload(
 
     repo = initialize_translation_repo(workspace)
     write_config(repo / "translation-config.yml")
-    base_ref = commit_translation(repo, "base", "舊翻譯")
+    base_ref = commit_translation(repo, "base", "")
     head_ref = commit_translation(repo, "github", "GitHub 新翻譯")
-    latest_po = write_latest_po(workspace / "latest.po", "舊翻譯")
+    latest_po = write_latest_po(workspace / "latest.po", "")
     github_output = workspace / "github-output.txt"
 
     monkeypatch.setattr(

@@ -202,11 +202,22 @@ def build_github_translation_report(
         target_lang=target_lang,
         runner=runner,
     )
-    if not upstream_mirror:
-        base_entries = {
-            key: replace(entry, target=shared.base_targets[key])
-            for key, entry in base_entries.items()
-        }
+    base_targets = shared.base_targets
+    if upstream_mirror:
+        # Accepted canonical text may not yet be expanded into the base tree.
+        base_targets = resolve_shared_block_translations(
+            repo_root=repo_root,
+            base_ref=base_ref,
+            head_ref=base_ref,
+            base_targets={key: entry.target for key, entry in base_entries.items()},
+            head_targets={key: entry.target for key, entry in base_entries.items()},
+            tree_path=tree_path,
+            target_lang=target_lang,
+            runner=runner,
+        ).head_targets
+    base_entries = {
+        key: replace(entry, target=base_targets[key]) for key, entry in base_entries.items()
+    }
     head_entries = {
         key: replace(entry, target=shared.head_targets[key]) for key, entry in head_entries.items()
     }
@@ -221,7 +232,7 @@ def build_github_translation_report(
             upstream_mirror=upstream_mirror,
         )
         for key in sorted(set(base_entries) | set(head_entries))
-        if _target_text(base_entries.get(key)) != _target_text(head_entries.get(key))
+        if base_entries.get(key) != head_entries.get(key)
     )
     return _build_report(
         base_ref=base_ref,
@@ -240,6 +251,20 @@ def _matches_catalog(
         (entry.source, entry.target) == (catalog[key].msgid, catalog[key].msgstr)
         for key, entry in entries.items()
     )
+
+
+def require_blank_contributions(report: GitHubTranslationReport) -> None:
+    """Freeze translations present at the contribution's base, even if fuzzy.
+
+    Apply this at the human contribution boundaries, not to official source sync
+    or diagnostic comparisons of historical repository states.
+    """
+    protected = [decision for decision in report.decisions if decision.base]
+    if protected:
+        fields = ", ".join(f"{item.path}:{item.field}" for item in protected)
+        raise GitHubTranslationContributionError(
+            f"Only fields blank in the PR base may be edited: {fields}"
+        )
 
 
 def read_tree_entries_from_git_ref(
@@ -553,6 +578,11 @@ def _build_decision(
         decision = ALREADY_IMPORTED_DECISION
     elif head_entry is None:
         decision = REMOVED_DECISION
+    elif base_entry is not None and (base_entry.source, base_entry.path) != (
+        head_entry.source,
+        head_entry.path,
+    ):
+        decision = SOURCE_MISMATCH_DECISION
     elif weblate_entry is None:
         decision = MISSING_WEBLATE_DECISION
     elif weblate_entry.msgid != head_entry.source:

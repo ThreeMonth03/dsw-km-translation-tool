@@ -51,6 +51,14 @@ def test_scaffold_sync_is_idempotent_and_preserves_config(
     assert 'audit-source-catalog: "true"' in workflow_text
     release = (target_repo / ".github/workflows/release.yml").read_text(encoding="utf-8")
     assert "audit-source-catalog" not in release
+    assert "workflow_run:" in release
+    assert "workflow_dispatch:" in release
+    assert "tags:" not in release
+    assert "dsw-km-plan-locale-release" in release
+    assert "--fail-on-mismatch" in release
+    assert "--target" in release
+    assert "head_repository.full_name == github.repository" in release
+    assert release.count("if: steps.plan.outputs.publish == 'true'") == 4
 
     second_sync = sync_translation_repository_scaffold(
         repo_root=target_repo,

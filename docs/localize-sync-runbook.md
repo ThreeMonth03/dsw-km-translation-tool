@@ -71,7 +71,11 @@ The read-only validation workflow compares the exact pull-request head with
 the base commit recorded by the pull-request event. When a pull request edits
 translation Markdown, it reports those changes and validates Weblate
 conflicts, shared translations, and source Markdown formatting, including
-leading and trailing whitespace. Invalid changes fail with a field-level
+leading and trailing whitespace. Contributions may fill only fields blank in
+the PR base; review may revise those new translations within the same PR.
+Existing nonempty text, including fuzzy translations, is protected. This
+contributor restriction does not apply to official Weblate synchronization.
+Invalid changes fail with a field-level
 `github-translation-report` artifact.
 
 The validation workflow has no secrets or write permission. It never updates

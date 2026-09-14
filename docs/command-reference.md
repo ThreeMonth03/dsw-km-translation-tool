@@ -97,6 +97,18 @@ configured by `localize.repository` and writes a snapshot and reports only.
 It does not upload to Weblate, edit translations or create a pull request.
 Source differences produce warnings; invalid inputs and download failures fail.
 
+Plan a native locale release without publishing it (requires an authenticated
+GitHub CLI and a checkout containing all tags):
+
+```shell
+.venv/bin/dsw-km-plan-locale-release \
+  --repo-root /path/to/translation-repo \
+  --repository owner/translation-repo
+```
+
+The planner compares usable translations with published locale releases and
+prints either the next unused revision or a no-change result.
+
 Prepare native locale release assets without publishing them:
 
 ```shell

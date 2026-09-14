@@ -103,24 +103,17 @@ update.
 
 ## Publishing a Locale
 
-Wait for post-merge Weblate import and sync jobs to finish, then review the
-alignment report. `aligned` confirms the repository matches Weblate and the tree
-reproduces the final PO. A different KM version does not delay publication.
-Release from a clean tracking branch with `tooling.ref` pinned to a full SHA.
+**Publish Native KM Locale** runs automatically after a successful Weblate sync,
+GitHub translation import, or KM update. It compares usable, non-fuzzy translations
+with the newest published locale. Documentation, PO headers, references, and new
+empty entries do not trigger publication. Changed or removed usable translations do.
 
-Use `locale-<language>-r<revision>`, for example `locale-zh_Hant-r1` and
-`locale-zh_Hant-r2`. Revisions advance independently of KM releases.
+The workflow chooses the next unused `locale-<language>-r<revision>` tag. Revisions
+advance independently of KM versions. It checks Weblate alignment, uses the full
+SHA in `tooling.ref`, and rebuilds the tracking branch from committed inputs.
+To retry, select **Run workflow**; an unchanged locale is a successful no-op.
 
-```shell
-git switch {{TRACKING_BRANCH}}
-git pull --ff-only
-TAG="locale-{{TARGET_LANGUAGE}}-r<revision>"
-git tag "$TAG"
-git push origin "$TAG"
-```
-
-Replace the angle-bracket placeholders before running these commands.
-**Publish Native KM Locale** rebuilds and validates the PO and refuses
+The release workflow rebuilds and validates the PO and refuses
 uncommitted generated changes. It publishes exactly three assets: the versioned
 PO, `manifest.json`, and `SHA256SUMS`. The schema-2 manifest records the official
 Weblate snapshot URL/header/checksum, context KM coordinates/checksum, released PO checksum,

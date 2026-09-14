@@ -34,15 +34,25 @@ def test_contributor_guide_names_the_translation_workflow(repo_root: Path) -> No
     assert f"**{workflow['name']}**" in files[Path("docs/contributing.md")]
 
 
-def test_native_locale_release_is_tagged_and_pinned(repo_root: Path) -> None:
+def test_native_locale_release_is_automatic_and_pinned(repo_root: Path) -> None:
     workflow, text = load_rendered_workflow(repo_root, "release_template.yml")
-    assert workflow["on"]["push"]["tags"] == ["locale-*-r*"]
+    assert workflow["on"]["workflow_run"]["types"] == ["completed"]
+    assert workflow["on"]["workflow_run"]["branches"] == ["master"]
+    assert set(workflow["on"]["workflow_run"]["workflows"]) == {
+        "Localize Translation Auto Sync",
+        "GitHub Translation Import",
+        "KM Version Auto Update",
+    }
+    assert "workflow_dispatch" in workflow["on"]
+    assert "push" not in workflow["on"]
+    assert workflow["concurrency"]["group"] == "locale-release-master"
     assert "pull_request" not in workflow["on"]
     assert workflow["permissions"] == {"contents": "write"}
     assert text.count("persist-credentials: false") == 2
     assert "--tooling-repo tooling-repo" in text
     assert "dsw-km-prepare-locale-release" in text
-    assert "--verify-tag --latest" in text
+    assert '--target "$RELEASE_COMMIT" --draft' in text
+    assert "--draft=false --latest" in text
     assert "secrets." not in text
     assert "dsw-km-import-github-translations" not in text
     steps = workflow["jobs"]["release"]["steps"]
@@ -54,6 +64,11 @@ def test_native_locale_release_is_tagged_and_pinned(repo_root: Path) -> None:
     )
     assert native < publish
     assert "continue-on-error" not in steps[native]
+    alignment = next(
+        i for i, step in enumerate(steps) if step.get("name") == "Verify Weblate alignment"
+    )
+    assert alignment < native
+    assert "Tracking branch advanced during validation" in text
     command = steps[publish]["run"]
     assert '"$assets/$po_filename" "$assets/manifest.json" "$assets/SHA256SUMS"' in command
     assert "*" not in command

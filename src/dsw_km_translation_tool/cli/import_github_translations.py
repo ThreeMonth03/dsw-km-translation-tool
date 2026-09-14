@@ -16,6 +16,7 @@ from dsw_km_translation_tool.github_translation_contributions import (
     GitHubTranslationReport,
     build_github_translation_report,
     find_unapplied_weblate_imports,
+    require_blank_contributions,
     write_github_translation_json,
     write_github_translation_markdown,
     write_import_po,
@@ -118,6 +119,7 @@ def main() -> None:
                 "GitHub translation import contains shared-block conflicts. "
                 "Resolve the canonical and field edits listed in the report before updating Weblate."
             )
+        require_blank_contributions(report)
         if report.importable_entries == 0:
             _write_github_translation_outputs(
                 output_path=args.github_output,

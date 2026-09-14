@@ -3,13 +3,25 @@
 You can translate in Localize/Weblate or propose a GitHub pull request using
 only your browser. You do not need to install the tooling or edit code.
 
+## Blank-only contributions
+
+Fill only translation fields that were empty in the pull request's base.
+Reviewers may revise those new translations within the same PR. Leave existing
+nonempty translations unchanged, including fuzzy entries; do not clear review
+flags. Report a suspected problem in an existing translation separately for a
+maintainer's decision. Do not rewrite surrounding text while filling a gap.
+
+CI checks this rule before merge and again before uploading to Weblate. Official
+Weblate synchronization remains authoritative and is not subject to this
+contributor restriction.
+
 ## Edit on GitHub
 
-1. Open [the question outline](../tree/outline.md) and find the text to change.
+1. Open [the question outline](../tree/outline.md) and find an empty translation field.
 2. Open its `translation.md` file. For a repeated string, follow the shared
    block link and edit that group's `context.md` instead.
 3. Use GitHub's pencil button. Change only the text inside the
-   `Translation ({{TARGET_LANGUAGE}})` fenced block. Keep its fences, English
+   empty `Translation ({{TARGET_LANGUAGE}})` fenced block. Keep its fences, English
    source, UUIDs, links, and Markdown formatting intact.
 4. Propose the change on a new branch and open a pull request. Explain the
    wording briefly; do not edit generated PO files or run build commands.
@@ -62,4 +74,6 @@ does not choose which translation wins.
 Source sync pauses while merged edits await Weblate import, so a failed import
 does not cause your translation to be overwritten by the next scheduled run.
 
-For approved, long-term downloads, use this repository's **Releases → Latest**.
+After successful sync and validation, changed usable translations are published
+automatically. No manual tag is required. For approved, long-term downloads,
+use this repository's **Releases → Latest**.
