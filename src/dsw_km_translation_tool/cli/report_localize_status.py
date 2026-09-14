@@ -12,6 +12,7 @@ from dsw_km_translation_tool.localize_status import (
     write_localize_po_status_json,
     write_localize_po_status_markdown,
 )
+from dsw_km_translation_tool.po_support.parser import PoCatalogError
 
 
 def build_argument_parser() -> argparse.ArgumentParser:
@@ -50,7 +51,10 @@ def main() -> None:
     """Run the Localize/Weblate PO status CLI."""
 
     args = build_argument_parser().parse_args()
-    report = build_localize_po_status_report(Path(args.po))
+    try:
+        report = build_localize_po_status_report(Path(args.po))
+    except (OSError, PoCatalogError) as error:
+        raise SystemExit(f"Unable to report PO status: {error}") from error
     issue_limit = None if args.issue_limit == 0 else args.issue_limit
     print(render_localize_po_status_markdown(report, issue_limit=issue_limit), end="")
     if args.json_out:

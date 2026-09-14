@@ -52,10 +52,7 @@ class PoReferenceSectionReader:
             Structured PO references.
         """
 
-        for token in tokens:
-            reference = PoCatalogParser.parse_comment_token(token)
-            if reference is not None:
-                yield reference
+        yield from PoCatalogParser.parse_references(list(tokens))
 
     @staticmethod
     def collect_extra_comment_lines(

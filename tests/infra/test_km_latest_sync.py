@@ -142,6 +142,8 @@ def test_sync_latest_km_rejects_untrusted_registry_before_network_access(
 
 def test_sync_latest_km_updates_validates_and_pushes_target_ref(
     workspace: Path,
+    po_path: Path,
+    model_path: Path,
 ) -> None:
     """Verify a new Registry KM updates only after validation commands pass."""
 
@@ -160,8 +162,8 @@ def test_sync_latest_km_updates_validates_and_pushes_target_ref(
         registry_token="secret",
         target_ref="master",
         downloader=lambda _url: registry_payload("2.7.0", "2.8.0"),
-        bundle_downloader=lambda _url, _token: b"km 2.8",
-        localize_downloader=lambda _url: b"latest po",
+        bundle_downloader=lambda _url, _token: model_path.read_bytes(),
+        localize_downloader=lambda _url: po_path.read_bytes(),
         runner=runner,
     )
 
@@ -170,8 +172,8 @@ def test_sync_latest_km_updates_validates_and_pushes_target_ref(
     assert "bundle_path" not in config["knowledge_model"]
     assert (
         workspace / "sources/knowledge-models/dsw-root-2.8.0/dsw-root-2.8.0.km"
-    ).read_bytes() == b"km 2.8"
-    assert (workspace / "sources/localize/zh_Hant/latest.po").read_bytes() == b"latest po"
+    ).read_bytes() == model_path.read_bytes()
+    assert (workspace / "sources/localize/zh_Hant/latest.po").read_bytes() == po_path.read_bytes()
     assert result.changed is True
     assert result.status == "updated"
     assert result.target_ref == "master"
@@ -192,7 +194,9 @@ def test_sync_latest_km_updates_validates_and_pushes_target_ref(
     ]
 
 
-def test_sync_latest_km_does_not_push_when_validation_fails(workspace: Path) -> None:
+def test_sync_latest_km_does_not_push_when_validation_fails(
+    workspace: Path, po_path: Path, model_path: Path
+) -> None:
     """Verify failed validation stops before committing any generated changes."""
 
     config_path = workspace / "translation-config.yml"
@@ -209,8 +213,8 @@ def test_sync_latest_km_does_not_push_when_validation_fails(workspace: Path) -> 
             registry_token="secret",
             target_ref="master",
             downloader=lambda _url: registry_payload("2.7.0", "2.8.0"),
-            bundle_downloader=lambda _url, _token: b"km 2.8",
-            localize_downloader=lambda _url: b"latest po",
+            bundle_downloader=lambda _url, _token: model_path.read_bytes(),
+            localize_downloader=lambda _url: po_path.read_bytes(),
             runner=runner,
         )
     except RuntimeError as error:

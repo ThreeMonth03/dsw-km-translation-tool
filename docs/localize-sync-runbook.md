@@ -38,8 +38,11 @@ The external translation workflow should run:
 
 The workflow runs the `dsw-km-sync-localize` command. That command:
 
-1. Downloads the current Weblate PO to `sources/localize/zh_Hant/latest.po`.
-2. Force-refreshes `tree/` from the latest Weblate PO.
+1. Downloads the current Weblate PO and validates syntax, language, and native
+   `entity/UUID/field` references. When a source KM exists, every referenced
+   field and source string must match it before the snapshot is replaced.
+2. Saves the validated snapshot to `sources/localize/zh_Hant/latest.po` and
+   force-refreshes `tree/`.
 3. Rebuilds `builds/final_translated.po`.
 4. Validates the PO for native DSW Knowledge Model locale import.
 5. Refreshes review outputs.
@@ -47,6 +50,13 @@ The workflow runs the `dsw-km-sync-localize` command. That command:
 
 Scheduled runs commit directly to `master` when repository policy allows it.
 The writer does not run for pull requests.
+
+Weblate and the Registry publish independently. If Weblate advances to a KM
+that the Registry has not published, source validation stops the sync and
+preserves the current snapshot and tree. Obtain the matching official KM before
+resuming; do not change the PO header or remove unmatched messages to force a
+pass. An empty catalog or unrecognized reference format is an error, not a
+successful zero-message sync.
 
 ## Pull Request Validation
 

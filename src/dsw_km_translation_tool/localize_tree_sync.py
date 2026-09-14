@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .ci_sync import CiSyncCommitConfig
+from .native_locale import validate_native_locale
 from .workflow import TranslationWorkflowService
 
 
@@ -55,6 +56,11 @@ def refresh_tree_from_localize(
         raise FileNotFoundError(f"Missing Localize PO snapshot: {latest_po_path}")
     if not source_km_path.exists():
         raise FileNotFoundError(f"Missing source KM bundle: {source_km_path}")
+    validate_native_locale(
+        po_path=latest_po_path,
+        km_path=source_km_path,
+        target_language=config.target_lang,
+    )
 
     workflow = TranslationWorkflowService(
         source_lang=config.source_lang,

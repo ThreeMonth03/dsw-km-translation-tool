@@ -19,6 +19,8 @@ from dsw_km_translation_tool.localize_sync import (
     _SameOriginHttpsRedirectHandler,
     pull_localize_po,
 )
+from dsw_km_translation_tool.native_locale import NativeLocaleValidationError
+from dsw_km_translation_tool.po_support.parser import PoCatalogError
 from dsw_km_translation_tool.translation_repository_config import (
     TranslationRepositoryConfigError,
 )
@@ -39,6 +41,48 @@ class _FakeResponse:
 
     def read(self) -> bytes:
         return self._payload
+
+
+@pytest.mark.parametrize("payload", [b"", b"<html>Unavailable</html>", b'msgid ""\nmsgstr ""\n'])
+def test_pull_rejects_invalid_catalog_without_overwriting_latest(workspace: Path, payload: bytes):
+    config_path = workspace / "translation-config.yml"
+    write_config(config_path)
+    latest = workspace / "sources/localize/zh_Hant/latest.po"
+    latest.parent.mkdir(parents=True)
+    latest.write_bytes(b"previous snapshot")
+
+    with pytest.raises(PoCatalogError):
+        pull_localize_po(config_path=config_path, repo_root=workspace, downloader=lambda _: payload)
+
+    assert latest.read_bytes() == b"previous snapshot"
+
+
+def test_pull_rejects_wrong_language_without_creating_snapshot(workspace: Path, po_path: Path):
+    config_path = workspace / "translation-config.yml"
+    write_config(config_path)
+    payload = po_path.read_bytes().replace(b"Language: zh_Hant", b"Language: de")
+    with pytest.raises(PoCatalogError, match="Language header"):
+        pull_localize_po(config_path=config_path, repo_root=workspace, downloader=lambda _: payload)
+    assert not (workspace / "sources/localize/zh_Hant/latest.po").exists()
+
+
+def test_pull_rejects_new_source_before_replacing_current_snapshot(
+    workspace: Path, po_path: Path, model_path: Path
+):
+    config_path = workspace / "translation-config.yml"
+    write_config(config_path)
+    km = workspace / "sources/knowledge-models/dsw-root-2.7.0/dsw-root-2.7.0.km"
+    km.parent.mkdir(parents=True)
+    km.write_bytes(model_path.read_bytes())
+    latest = workspace / "sources/localize/zh_Hant/latest.po"
+    latest.parent.mkdir(parents=True)
+    latest.write_bytes(po_path.read_bytes())
+    payload = po_path.read_bytes().replace(b'msgid "10 years"', b'msgid "11 years"', 1)
+
+    with pytest.raises(NativeLocaleValidationError, match="Source mismatch"):
+        pull_localize_po(config_path=config_path, repo_root=workspace, downloader=lambda _: payload)
+
+    assert latest.read_bytes() == po_path.read_bytes()
 
 
 class _SequenceOpener:
@@ -70,7 +114,7 @@ def _http_error(url: str, code: int, *, retry_after: str | None = None):
     )
 
 
-def test_pull_localize_po_initializes_latest(workspace: Path) -> None:
+def test_pull_localize_po_initializes_latest(workspace: Path, po_path: Path) -> None:
     """Verify the first pull writes the latest Weblate snapshot."""
 
     config_path = workspace / "translation-config.yml"
@@ -78,12 +122,12 @@ def test_pull_localize_po_initializes_latest(workspace: Path) -> None:
     result = pull_localize_po(
         config_path=config_path,
         repo_root=workspace,
-        downloader=lambda _url: b"new po",
+        downloader=lambda _url: po_path.read_bytes(),
     )
 
     assert result.changed is True
     assert result.initialized is True
-    assert result.latest_po_path.read_bytes() == b"new po"
+    assert result.latest_po_path.read_bytes() == po_path.read_bytes()
 
 
 def test_downloader_rejects_local_file_urls() -> None:
@@ -209,6 +253,7 @@ def test_redirect_handler_rejects_cross_origin_redirect() -> None:
 
 def test_pull_localize_po_uses_configured_rolling_download_url(
     workspace: Path,
+    po_path: Path,
 ) -> None:
     """Verify Localize pulls use the rolling project URL from config."""
 
@@ -219,7 +264,7 @@ def test_pull_localize_po_uses_configured_rolling_download_url(
     result = pull_localize_po(
         config_path=config_path,
         repo_root=workspace,
-        downloader=lambda url: requested_urls.append(url) or b"new po",
+        downloader=lambda url: requested_urls.append(url) or po_path.read_bytes(),
     )
 
     expected_url = (
@@ -230,7 +275,7 @@ def test_pull_localize_po_uses_configured_rolling_download_url(
     assert result.url == expected_url
 
 
-def test_pull_localize_po_replaces_previous_latest(workspace: Path) -> None:
+def test_pull_localize_po_replaces_previous_latest(workspace: Path, po_path: Path) -> None:
     """Verify changed pulls replace the checked-in Weblate snapshot."""
 
     config_path = workspace / "translation-config.yml"
@@ -242,32 +287,32 @@ def test_pull_localize_po_replaces_previous_latest(workspace: Path) -> None:
     result = pull_localize_po(
         config_path=config_path,
         repo_root=workspace,
-        downloader=lambda _url: b"new latest",
+        downloader=lambda _url: po_path.read_bytes(),
     )
 
     assert result.changed is True
     assert result.initialized is False
-    assert latest_path.read_bytes() == b"new latest"
+    assert latest_path.read_bytes() == po_path.read_bytes()
 
 
-def test_pull_localize_po_noops_when_latest_is_unchanged(workspace: Path) -> None:
+def test_pull_localize_po_noops_when_latest_is_unchanged(workspace: Path, po_path: Path) -> None:
     """Verify unchanged pulls leave the checked-in snapshot untouched."""
 
     config_path = workspace / "translation-config.yml"
     write_config(config_path)
     latest_path = workspace / "sources/localize/zh_Hant/latest.po"
     latest_path.parent.mkdir(parents=True)
-    latest_path.write_bytes(b"same")
+    latest_path.write_bytes(po_path.read_bytes())
 
     result = pull_localize_po(
         config_path=config_path,
         repo_root=workspace,
-        downloader=lambda _url: b"same",
+        downloader=lambda _url: po_path.read_bytes(),
     )
 
     assert result.changed is False
     assert result.initialized is False
-    assert latest_path.read_bytes() == b"same"
+    assert latest_path.read_bytes() == po_path.read_bytes()
 
 
 def test_sync_from_localize_runs_pull_refresh_and_commit(

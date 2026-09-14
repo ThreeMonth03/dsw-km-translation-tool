@@ -31,6 +31,11 @@ published KM, the workflow:
 If the token is missing or any validation step fails, no Git commit is pushed.
 The next scheduled run will retry.
 
+The latest Weblate catalog and latest Registry package are not guaranteed to
+advance together. PO source validation and the upstream POT audit must match
+the configured KM. If Weblate uses an unpublished version, wait for its official
+bundle rather than relabeling the older KM or accepting source mismatches.
+
 For a local maintainer run, use:
 
 ```shell

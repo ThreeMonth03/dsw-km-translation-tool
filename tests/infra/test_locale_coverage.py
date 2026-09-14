@@ -27,7 +27,7 @@ def catalogs(tmp_path: Path) -> tuple[Path, Path, Catalog, Catalog]:
     po = Catalog(locale="zh_Hant")
     for source, target in (("Administrative information", "行政資訊"), ("Contributors", "貢獻者")):
         pot.add(source, locations=[("chapter/uuid/title", None)])
-        po.add(source, target, locations=[("chapter:uuid:title", None)])
+        po.add(source, target, locations=[("chapter/another-uuid/title", None)])
     return tmp_path / "official.pot", tmp_path / "translation.po", pot, po
 
 
@@ -44,7 +44,7 @@ def compare(catalogs: tuple[Path, Path, Catalog, Catalog]) -> dict[str, object]:
     )
 
 
-def test_complete_catalog_ignores_reference_separator(catalogs) -> None:
+def test_complete_catalog_uses_source_identity_not_reference_location(catalogs) -> None:
     report = compare(catalogs)
     assert report["status"] == "complete"
     assert report["counts"]["translated"] == 2

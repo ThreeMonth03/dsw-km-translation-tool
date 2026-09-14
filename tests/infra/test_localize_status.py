@@ -22,16 +22,16 @@ def write_status_fixture_po(path: Path) -> None:
     path.write_text(
         "\n".join(
             [
-                "#: questions:11111111-1111-1111-1111-111111111111:title",
+                "#: questions/11111111-1111-1111-1111-111111111111/title",
                 'msgid "Filled"',
                 'msgstr "已翻譯"',
                 "",
-                "#: questions:22222222-2222-2222-2222-222222222222:title",
-                "#: answers:33333333-3333-3333-3333-333333333333:label",
+                "#: questions/22222222-2222-2222-2222-222222222222/title",
+                "#: answers/33333333-3333-3333-3333-333333333333/label",
                 'msgid "Empty"',
                 'msgstr ""',
                 "",
-                "#: choices:44444444-4444-4444-4444-444444444444:label",
+                "#: choices/44444444-4444-4444-4444-444444444444/label",
                 "#, fuzzy",
                 'msgid "Review me"',
                 'msgstr "需要檢查"',
@@ -65,7 +65,7 @@ def test_localize_po_status_counts_blocks_and_references(workspace: Path) -> Non
     assert [issue.block_number for issue in report.empty_issues] == [2]
     assert [issue.block_number for issue in report.fuzzy_issues] == [3]
     assert report.empty_issues[0].references[0].comment == (
-        "questions:22222222-2222-2222-2222-222222222222:title"
+        "questions/22222222-2222-2222-2222-222222222222/title"
     )
     assert report.fuzzy_issues[0].msgid == "Review me"
     assert report.fuzzy_issues[0].msgstr == "需要檢查"
@@ -85,9 +85,9 @@ def test_localize_po_status_renders_markdown(workspace: Path) -> None:
     assert "| Fuzzy / needs editing | 1 | 1 |" in markdown
     assert "| Filled and not fuzzy blocks | 33.33% |" in markdown
     assert "### Fuzzy / Needs Editing Entries" in markdown
-    assert "choices:44444444-4444-4444-4444-444444444444:label" in markdown
+    assert "choices/44444444-4444-4444-4444-444444444444/label" in markdown
     assert "### Empty Translation Entries" in markdown
-    assert "questions:22222222-2222-2222-2222-222222222222:title" in markdown
+    assert "questions/22222222-2222-2222-2222-222222222222/title" in markdown
 
 
 def test_localize_po_status_writes_json(workspace: Path) -> None:

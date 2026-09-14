@@ -488,7 +488,7 @@ def write_import_po(
             )
         group.append(decision)
     for source, group in groups.items():
-        references = " ".join(f"github:{item.uuid}:{item.field}" for item in group)
+        references = " ".join(f"github/{item.uuid}/{item.field}" for item in group)
         lines.append(f"#: {references}\n")
         lines.extend(PoSectionRenderer.format_po_string_block("msgid", source))
         lines.extend(PoSectionRenderer.format_po_string_block("msgstr", group[0].github))

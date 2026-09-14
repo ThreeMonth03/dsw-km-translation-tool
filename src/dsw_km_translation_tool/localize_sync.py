@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import tempfile
 import time
 import urllib.error
 import urllib.parse
@@ -13,6 +14,8 @@ from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 
+from .native_locale import NativeLocaleValidationError, validate_native_locale
+from .po_support.parser import PoCatalogParser
 from .translation_repository_config import (
     TranslationRepositoryConfigError,
     _validate_https_url,
@@ -64,6 +67,28 @@ def pull_localize_po(
     url = localize.download_url
     download = downloader or _download_url
     downloaded = download(url)
+    PoCatalogParser.parse_text(
+        downloaded.decode("utf-8"),
+        target_language=repository_config.translation.target_language,
+    )
+    source_km = repo_root / paths.source_km_path
+    if source_km.is_file():
+        with tempfile.TemporaryDirectory(prefix="dsw-localize-validation-") as temp:
+            candidate = Path(temp) / "candidate.po"
+            candidate.write_bytes(downloaded)
+            try:
+                validate_native_locale(
+                    po_path=candidate,
+                    km_path=source_km,
+                    target_language=repository_config.translation.target_language,
+                )
+            except NativeLocaleValidationError as error:
+                raise NativeLocaleValidationError(
+                    f"Weblate PO does not match the configured KM {paths.package_id}. "
+                    "The current snapshot has not been replaced. "
+                    "Obtain the matching official KM before syncing.\n"
+                    f"{error}"
+                ) from error
 
     latest_exists = latest_po_path.exists()
     previous_latest = latest_po_path.read_bytes() if latest_exists else None

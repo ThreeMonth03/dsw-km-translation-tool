@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+from dsw_km_translation_tool.po_support.parser import PoCatalogError
 from dsw_km_translation_tool.review import PoDiffReviewer
 from tests.helpers import (
     apply_translation_map_to_tree,
@@ -19,22 +20,23 @@ from tests.infra.support import (
 
 
 @pytest.mark.parametrize(
-    "injected_line",
+    "injected_line,error",
     [
-        'msgctxt "attacker-controlled-context"\n',
-        "# arbitrary ignored comment\n",
-        "#: invalid-reference-token\n",
+        ('msgctxt "attacker-controlled-context"\n', "contexts or plural"),
+        ("# arbitrary ignored comment\n", None),
+        ("#: invalid-reference-token\n", "Invalid DSW reference"),
     ],
 )
 def test_review_rejects_parser_ignored_non_msgstr_changes(
     tmp_path,
     injected_line,
+    error,
 ) -> None:
     """Verify that the msgstr-only result accounts for every non-msgstr line."""
 
     original_path = tmp_path / "original.po"
     generated_path = tmp_path / "generated.po"
-    reference = "question:123e4567-e89b-12d3-a456-426614174000:title"
+    reference = "question/123e4567-e89b-12d3-a456-426614174000/title"
     original = f'#: {reference}\nmsgid "Question"\nmsgstr "Translation"\n'
     original_path.write_text(original, encoding="utf-8")
     generated_path.write_text(
@@ -42,9 +44,12 @@ def test_review_rejects_parser_ignored_non_msgstr_changes(
         encoding="utf-8",
     )
 
-    review = PoDiffReviewer().review(str(original_path), str(generated_path))
-
-    assert review.msgstr_only is False
+    if error is not None:
+        with pytest.raises(PoCatalogError, match=error):
+            PoDiffReviewer().review(str(original_path), str(generated_path))
+    else:
+        review = PoDiffReviewer().review(str(original_path), str(generated_path))
+        assert review.msgstr_only is False
 
 
 def test_review_rejects_plural_msgstr_index_changes(tmp_path) -> None:
@@ -61,9 +66,8 @@ def test_review_rejects_plural_msgstr_index_changes(tmp_path) -> None:
         encoding="utf-8",
     )
 
-    review = PoDiffReviewer().review(str(original_path), str(generated_path))
-
-    assert review.msgstr_only is False
+    with pytest.raises(PoCatalogError, match="contexts or plural"):
+        PoDiffReviewer().review(str(original_path), str(generated_path))
 
 
 def test_review_po_cli_reports_msgstr_only_changes_for_generated_output(

@@ -2,11 +2,19 @@
 
 from __future__ import annotations
 
+from io import StringIO
+from pathlib import Path
 from typing import Iterable
+
+from babel.messages.pofile import PoFileError, read_po
 
 from ..constants import UUID_RE
 from ..data_models import PoBlock, PoEntry, PoReference
 from .codec import PoStringCodec
+
+
+class PoCatalogError(ValueError):
+    """Raised when a catalog cannot be represented as a native DSW translation tree."""
 
 
 class PoCatalogParser:
@@ -26,8 +34,26 @@ class PoCatalogParser:
             Parsed PO blocks with grouped references.
         """
 
-        with open(self.po_path, "r", encoding="utf-8") as handle:
-            lines = handle.readlines()
+        return self.parse_text(Path(self.po_path).read_text(encoding="utf-8"))
+
+    @classmethod
+    def parse_text(cls, text: str, *, target_language: str | None = None) -> list[PoBlock]:
+        """Validate syntax and every reference before accepting a downloaded catalog.
+
+        Keep individual blocks intact: a local review can split a shared msgid
+        into multiple translations, which a gettext catalog alone would merge.
+        """
+        try:
+            catalog = read_po(StringIO(text), abort_invalid=True)
+        except (PoFileError, ValueError) as error:
+            raise PoCatalogError(f"Invalid gettext catalog: {error}") from error
+        if target_language is not None and catalog.locale_identifier != target_language:
+            raise PoCatalogError(f"PO Language header does not match {target_language!r}")
+        if any(
+            message.context is not None or not isinstance(message.id, str) for message in catalog
+        ):
+            raise PoCatalogError("DSW tree catalogs cannot contain contexts or plural messages")
+        lines = StringIO(text, newline=None).readlines()
         index = 0
         pending_tokens: list[str] = []
         pending_is_fuzzy = False
@@ -36,7 +62,7 @@ class PoCatalogParser:
         while index < len(lines):
             line = lines[index].rstrip("\n")
             if line.startswith("#"):
-                pending_tokens, pending_is_fuzzy = self.consume_comment_line(
+                pending_tokens, pending_is_fuzzy = cls.consume_comment_line(
                     line=line,
                     pending_tokens=pending_tokens,
                     pending_is_fuzzy=pending_is_fuzzy,
@@ -45,7 +71,7 @@ class PoCatalogParser:
                 continue
 
             if line.startswith("msgid "):
-                block, index = self.parse_block(
+                block, index = cls.parse_block(
                     lines=lines,
                     start_index=index,
                     pending_tokens=pending_tokens,
@@ -62,6 +88,8 @@ class PoCatalogParser:
                 pending_is_fuzzy = False
             index += 1
 
+        if not blocks:
+            raise PoCatalogError("PO contains no translatable messages with DSW references")
         return blocks
 
     def parse_entries(self) -> list[PoEntry]:
@@ -97,8 +125,8 @@ class PoCatalogParser:
             Structured PO reference or `None` if the token is unrelated.
         """
 
-        parts = token.split(":")
-        if len(parts) < 3 or not UUID_RE.fullmatch(parts[1]):
+        parts = token.split("/")
+        if len(parts) != 3 or not parts[0] or not parts[2] or not UUID_RE.fullmatch(parts[1]):
             return None
         return PoReference(
             prefix=parts[0],
@@ -160,8 +188,9 @@ class PoCatalogParser:
             pending_is_fuzzy = True
         return pending_tokens, pending_is_fuzzy
 
+    @classmethod
     def parse_block(
-        self,
+        cls,
         lines: list[str],
         start_index: int,
         pending_tokens: list[str],
@@ -179,15 +208,17 @@ class PoCatalogParser:
             Parsed PO block, if any, and the next unread line index.
         """
 
-        msgid, index = self.parse_string_block(lines, start_index)
+        msgid, index = cls.parse_string_block(lines, start_index)
         if index < len(lines) and lines[index].startswith("msgstr "):
-            msgstr, index = self.parse_string_block(lines, index)
+            msgstr, index = cls.parse_string_block(lines, index)
         else:
             msgstr = ""
 
-        references = tuple(self.parse_references(pending_tokens))
-        if not references:
+        if not msgid:
             return None, index
+        references = tuple(cls.parse_references(pending_tokens))
+        if not references:
+            raise PoCatalogError(f"PO message at line {start_index + 1} has no DSW references")
 
         return (
             PoBlock(
@@ -201,7 +232,7 @@ class PoCatalogParser:
 
     @staticmethod
     def parse_references(tokens: list[str]) -> Iterable[PoReference]:
-        """Parse PO reference tokens, skipping unrelated tokens.
+        """Parse every PO reference token; never silently discard unmapped messages.
 
         Args:
             tokens: Raw reference tokens collected from `#:` comments.
@@ -212,5 +243,6 @@ class PoCatalogParser:
 
         for token in tokens:
             reference = PoCatalogParser.parse_comment_token(token)
-            if reference is not None:
-                yield reference
+            if reference is None:
+                raise PoCatalogError(f"Invalid DSW reference {token!r}; expected entity/UUID/field")
+            yield reference
