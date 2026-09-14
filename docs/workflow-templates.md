@@ -56,7 +56,7 @@ current secret list and placement.
 
 `github_translation_import_template.yml` is the only translation-repository
 workflow that writes Weblate. It runs after reviewed changes reach `master`,
-imports only safe edits to fields blank in the contribution base, and fails with a report if Weblate
+imports safe new translations and corrections, and fails with a report if Weblate
 changed the same entries differently or the translation lost source Markdown
 formatting, including boundary whitespace. It resolves canonical shared edits,
 rejects competing field edits, and verifies that Weblate applied every uploaded
@@ -66,9 +66,9 @@ contains the proposed text.
 `validate_translation_config_template.yml` compares pull-request translation
 changes against the base commit recorded by the pull-request event. It checks
 Markdown and boundary-whitespace formatting, Weblate conflicts, and shared
-translation consistency, then uploads a field-level report. The workflow has
-blank-only checks that protect existing nonempty translations, including fuzzy
-entries, while allowing review of new translations within the same PR. It has
+translation consistency, then uploads a field-level report. These quality checks
+apply to new translations and corrections alike; existing nonempty text is not
+frozen. Reviewers keep corrections focused on reported issues. The workflow has
 read-only repository permission, receives no secrets, and never modifies the
 pull-request branch. It builds and uploads a native PO preview in its temporary
 checkout, without requiring translators to commit generated output changes.

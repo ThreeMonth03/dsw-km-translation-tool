@@ -20,7 +20,6 @@ from dsw_km_translation_tool.github_translation_contributions import (
     IMPORT_DECISION,
     GitHubTranslationContributionError,
     build_github_translation_report,
-    require_blank_contributions,
     write_import_po,
 )
 from tests.infra.test_translation_repository_config import write_config
@@ -29,7 +28,7 @@ TEST_UUID = "11111111-1111-1111-1111-111111111111"
 
 
 @pytest.mark.parametrize("target", ["改寫", ""])
-def test_blank_policy_freezes_existing_fields(workspace: Path, target: str) -> None:
+def test_report_accepts_corrections_to_existing_fields(workspace: Path, target: str) -> None:
     repo = initialize_translation_repo(workspace)
     base = commit_translation(repo, "base", "既有翻譯")
     head = commit_translation(repo, "change", target)
@@ -39,11 +38,11 @@ def test_blank_policy_freezes_existing_fields(workspace: Path, target: str) -> N
         head_ref=head,
         latest_po_path=write_latest_po(workspace / "latest.po", "既有翻譯"),
     )
-    with pytest.raises(GitHubTranslationContributionError, match="Only fields blank"):
-        require_blank_contributions(report)
+    assert report.importable_entries == 1
+    assert not report.has_conflicts
 
 
-def test_blank_policy_allows_review_within_same_pr(workspace: Path) -> None:
+def test_report_accepts_review_within_same_pr(workspace: Path) -> None:
     repo = initialize_translation_repo(workspace)
     base = commit_translation(repo, "base", "")
     latest = write_latest_po(workspace / "latest.po", "")
@@ -55,11 +54,10 @@ def test_blank_policy_allows_review_within_same_pr(workspace: Path) -> None:
             head_ref=head,
             latest_po_path=latest,
         )
-        require_blank_contributions(report)
         assert report.importable_entries == 1
 
 
-def test_blank_policy_freezes_canonical_shared_translation(workspace: Path) -> None:
+def test_report_accepts_corrections_to_canonical_shared_translation(workspace: Path) -> None:
     repo = initialize_translation_repo(workspace)
     commit_translation(repo, "base tree", "既有翻譯")
     base = commit_shared_translation(repo, "base shared", "既有翻譯")
@@ -70,11 +68,11 @@ def test_blank_policy_freezes_canonical_shared_translation(workspace: Path) -> N
         head_ref=head,
         latest_po_path=write_latest_po(workspace / "latest.po", "既有翻譯"),
     )
-    with pytest.raises(GitHubTranslationContributionError, match="Only fields blank"):
-        require_blank_contributions(report)
+    assert report.importable_entries == 1
+    assert not report.has_shared_block_errors
 
 
-def test_blank_policy_freezes_pending_canonical_text_even_if_head_matches_weblate(
+def test_report_keeps_pending_canonical_base_when_head_matches_weblate(
     workspace: Path,
 ) -> None:
     repo = initialize_translation_repo(workspace)
@@ -87,12 +85,13 @@ def test_blank_policy_freezes_pending_canonical_text_even_if_head_matches_weblat
         head_ref=head,
         latest_po_path=write_latest_po(workspace / "latest.po", "改寫"),
     )
-    with pytest.raises(GitHubTranslationContributionError, match="Only fields blank"):
-        require_blank_contributions(report)
+    assert report.decisions[0].base == "既有翻譯"
+    assert report.already_imported_entries == 1
+    assert not report.has_conflicts
 
 
 @pytest.mark.parametrize("cli", [report_github_translations, import_github_translations])
-def test_contribution_commands_reject_fuzzy_nonempty_base(
+def test_contribution_commands_accept_reviewed_fuzzy_corrections(
     monkeypatch, workspace: Path, cli
 ) -> None:
     repo = initialize_translation_repo(workspace)
@@ -124,8 +123,15 @@ def test_contribution_commands_reject_fuzzy_nonempty_base(
             str(workspace / "report.md"),
         ],
     )
-    with pytest.raises(GitHubTranslationContributionError, match="Only fields blank"):
-        cli.main()
+    if cli is import_github_translations:
+        sys.argv.append("--dry-run")
+        monkeypatch.setattr(
+            cli, "upload_translation_file", lambda **kwargs: pytest.fail("unexpected upload")
+        )
+    cli.main()
+    report = json.loads((workspace / "report.json").read_text())
+    assert report["importable_entries"] == 1
+    assert not report["has_conflicts"]
 
 
 def test_source_only_edits_are_not_ignored(workspace: Path) -> None:
@@ -640,17 +646,19 @@ def test_import_github_translations_cli_blocks_markdown_errors(
     assert "uploaded=false" in outputs
 
 
+@pytest.mark.parametrize("base_translation", ["", "舊翻譯"])
 def test_import_github_translations_cli_verifies_weblate_upload(
     monkeypatch,
     workspace: Path,
+    base_translation: str,
 ) -> None:
     """Verify a successful import is confirmed against a fresh Weblate PO."""
 
     repo = initialize_translation_repo(workspace)
     write_config(repo / "translation-config.yml")
-    base_ref = commit_translation(repo, "base", "")
+    base_ref = commit_translation(repo, "base", base_translation)
     head_ref = commit_translation(repo, "github", "GitHub 新翻譯")
-    latest_before = write_latest_po(workspace / "before.po", "")
+    latest_before = write_latest_po(workspace / "before.po", base_translation)
     latest_after = write_latest_po(workspace / "after.po", "GitHub 新翻譯")
     pulls = iter((latest_before, latest_after))
     github_output = workspace / "github-output.txt"

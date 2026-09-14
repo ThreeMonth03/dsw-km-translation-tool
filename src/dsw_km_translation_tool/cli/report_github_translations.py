@@ -13,7 +13,6 @@ from dsw_km_translation_tool.cli.github_outputs import (
 )
 from dsw_km_translation_tool.github_translation_contributions import (
     build_github_translation_report,
-    require_blank_contributions,
     write_github_translation_json,
     write_github_translation_markdown,
 )
@@ -99,7 +98,6 @@ def main() -> None:
             "GitHub translation changes contain shared-block conflicts. "
             "Keep the canonical translation and resolve the field edits listed in the report."
         )
-    require_blank_contributions(report)
 
 
 def _resolve_repo_path(repo_root: Path, path: Path) -> Path:

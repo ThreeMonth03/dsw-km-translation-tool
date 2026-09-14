@@ -3,25 +3,28 @@
 You can translate in Localize/Weblate or propose a GitHub pull request using
 only your browser. You do not need to install the tooling or edit code.
 
-## Blank-only contributions
+## Translation and review priorities
 
-Fill only translation fields that were empty in the pull request's base.
-Reviewers may revise those new translations within the same PR. Leave existing
-nonempty translations unchanged, including fuzzy entries; do not clear review
-flags. Report a suspected problem in an existing translation separately for a
-maintainer's decision. Do not rewrite surrounding text while filling a gap.
+Prioritize empty fields and review the newly added translations. Leave existing
+wording alone unless a problem has been identified; this is a work priority,
+not an archive or a restriction on future corrections. When a colleague reports
+an issue, propose a focused correction, link the report or discussion, and
+explain the wording. This also applies to nonempty fuzzy translations. Avoid
+unrelated rewrites while filling gaps or correcting a reported issue.
 
-CI checks this rule before merge and again before uploading to Weblate. Official
-Weblate synchronization remains authoritative and is not subject to this
-contributor restriction.
+CI validates source identity, Markdown formatting, shared translations, and
+Weblate conflicts for both new translations and corrections. It does not reject
+an edit merely because the previous translation was nonempty. Official Weblate
+synchronization remains authoritative.
 
 ## Edit on GitHub
 
-1. Open [the question outline](../tree/outline.md) and find an empty translation field.
+1. Open [the question outline](../tree/outline.md) and find an empty field or the
+   translation identified in a problem report.
 2. Open its `translation.md` file. For a repeated string, follow the shared
    block link and edit that group's `context.md` instead.
 3. Use GitHub's pencil button. Change only the text inside the
-   empty `Translation ({{TARGET_LANGUAGE}})` fenced block. Keep its fences, English
+   `Translation ({{TARGET_LANGUAGE}})` fenced block. Keep its fences, English
    source, UUIDs, links, and Markdown formatting intact.
 4. Propose the change on a new branch and open a pull request. Explain the
    wording briefly; do not edit generated PO files or run build commands.
