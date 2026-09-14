@@ -121,10 +121,11 @@ git push origin "$TAG"
 
 Replace the angle-bracket placeholders before running these commands.
 **Publish Native KM Locale** rebuilds and validates the PO and refuses
-uncommitted generated changes. It publishes the versioned PO, a stable PO
-alias, `translation-config.yml`, `manifest.json`, release notes, and
-`SHA256SUMS`. The manifest records the source KM checksum, translation commit,
-tooling commit, and message counts. The successful release becomes **Latest**.
+uncommitted generated changes. It publishes exactly three assets: the versioned
+PO, `manifest.json`, and `SHA256SUMS`. The manifest records the source KM checksum,
+translation commit, tooling commit, and message counts. Release notes appear in
+the release page body. The configuration is available in Git at the recorded
+translation commit. The successful release becomes **Latest**.
 Before publishing, CI imports the PO in disposable official DSW containers and
 checks language switching. Import or rendering errors block publication.
 Official POT coverage gaps produce a warning and are listed in the

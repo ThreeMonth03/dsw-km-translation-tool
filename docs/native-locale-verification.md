@@ -29,7 +29,9 @@ the `native-dsw-review` artifact. It includes:
 - `source-catalog/`: upstream POT snapshot, commit, checksums and source difference
   reports in `source-catalog.md` and `source-catalog.json`.
 - `locale-imported.png` and `questionnaire-*.png`: real browser screenshots.
-- `result.json`: test outcome, input PO checksum and DSW image versions.
+- `result.json`: test outcome, input PO checksum, DSW image versions, and coverage
+  status/counts with a link to `coverage.json`. Full coverage details are stored
+  only in the dedicated coverage reports.
 - `failure.png`, when a browser check fails.
 
 Artifacts are retained for 14 days. Screenshots check a translated chapter title;

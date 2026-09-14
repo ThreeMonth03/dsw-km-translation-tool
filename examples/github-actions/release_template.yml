@@ -69,7 +69,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          gh release create "$RELEASE_TAG" "$RUNNER_TEMP/locale-release/"* \
+          assets="$RUNNER_TEMP/locale-release/assets"
+          po_filename="$(python -c 'import json, sys; print(json.load(open(sys.argv[1]))["po"]["filename"])' "$assets/manifest.json")"
+          gh release create "$RELEASE_TAG" \
+            "$assets/$po_filename" "$assets/manifest.json" "$assets/SHA256SUMS" \
             --repo "$GITHUB_REPOSITORY" \
             --verify-tag --latest \
             --title "$RELEASE_TAG" \

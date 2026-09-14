@@ -7,6 +7,7 @@ from io import StringIO
 from pathlib import Path
 from typing import Iterable
 
+from babel.messages.catalog import Catalog
 from babel.messages.pofile import PoFileError, read_po
 
 from ..constants import UUID_RE
@@ -39,6 +40,13 @@ class PoCatalogParser:
 
     @classmethod
     def parse_text(cls, text: str, *, target_language: str | None = None) -> list[PoBlock]:
+        """Read validated DSW message blocks from text."""
+        return cls.parse_catalog(text, target_language=target_language)[1]
+
+    @classmethod
+    def parse_catalog(
+        cls, text: str, *, target_language: str | None = None
+    ) -> tuple[Catalog, list[PoBlock]]:
         """Validate syntax and every reference before accepting a downloaded catalog.
 
         Keep individual blocks intact: a local review can split a shared msgid
@@ -91,7 +99,7 @@ class PoCatalogParser:
 
         if not blocks:
             raise PoCatalogError("PO contains no translatable messages with DSW references")
-        return blocks
+        return catalog, blocks
 
     def parse_entries(self) -> list[PoEntry]:
         """Flatten parsed PO blocks into `(uuid, field)` entries.
@@ -100,8 +108,13 @@ class PoCatalogParser:
             Flattened PO entries.
         """
 
+        return self.entries_from_blocks(self.parse_blocks())
+
+    @staticmethod
+    def entries_from_blocks(blocks: Iterable[PoBlock]) -> list[PoEntry]:
+        """Flatten already parsed blocks without rereading the catalog."""
         entries: list[PoEntry] = []
-        for block in self.parse_blocks():
+        for block in blocks:
             for reference in block.references:
                 entries.append(
                     PoEntry(

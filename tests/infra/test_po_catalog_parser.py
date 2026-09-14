@@ -52,6 +52,13 @@ def test_split_shared_messages_remain_independent() -> None:
         f'#: phase/{UUID}/title\nmsgid "Shared"\nmsgstr "第二個"\n'
     )
     assert [b.msgstr for b in PoCatalogParser.parse_text(text)] == ["第一個", "第二個"]
+    catalog, blocks = PoCatalogParser.parse_catalog(text, target_language="zh_Hant")
+    assert catalog.locale_identifier == "zh_Hant"
+    assert len([message for message in catalog if message.id]) == 1
+    assert [entry.msgstr for entry in PoCatalogParser.entries_from_blocks(blocks)] == [
+        "第一個",
+        "第二個",
+    ]
 
 
 def test_windows_newlines_do_not_change_message_content() -> None:

@@ -106,6 +106,49 @@ class _SequenceOpener:
         return outcome
 
 
+@pytest.mark.parametrize("external_model", [False, True])
+def test_pull_validates_the_catalog_once(
+    workspace: Path, po_path: Path, model_path: Path, monkeypatch, external_model: bool
+):
+    from dsw_km_translation_tool.po_support import parser
+
+    config_path = workspace / "translation-config.yml"
+    write_config(config_path)
+    if not external_model:
+        km = workspace / "sources/knowledge-models/dsw-root-2.7.0/dsw-root-2.7.0.km"
+        km.parent.mkdir(parents=True)
+        km.write_bytes(model_path.read_bytes())
+    read_po = parser.read_po
+    reads = []
+
+    def counted_read(*args, **kwargs):
+        reads.append(1)
+        return read_po(*args, **kwargs)
+
+    monkeypatch.setattr(parser, "read_po", counted_read)
+    result = pull_localize_po(
+        config_path=config_path,
+        repo_root=workspace,
+        km_path=model_path if external_model else None,
+        downloader=lambda _: po_path.read_bytes(),
+    )
+    assert result.latest_po_path.read_bytes() == po_path.read_bytes()
+    assert len(reads) == 1
+
+
+def test_explicit_missing_model_cannot_skip_validation(workspace: Path, po_path: Path):
+    config_path = workspace / "translation-config.yml"
+    write_config(config_path)
+    with pytest.raises(FileNotFoundError):
+        pull_localize_po(
+            config_path=config_path,
+            repo_root=workspace,
+            km_path=workspace / "missing.km",
+            downloader=lambda _: po_path.read_bytes(),
+        )
+    assert not (workspace / "sources").exists()
+
+
 def _http_error(url: str, code: int, *, retry_after: str | None = None):
     headers = Message()
     if retry_after is not None:

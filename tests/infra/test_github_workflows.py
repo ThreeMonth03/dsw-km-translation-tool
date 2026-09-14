@@ -54,6 +54,10 @@ def test_native_locale_release_is_tagged_and_pinned(repo_root: Path) -> None:
     )
     assert native < publish
     assert "continue-on-error" not in steps[native]
+    command = steps[publish]["run"]
+    assert '"$assets/$po_filename" "$assets/manifest.json" "$assets/SHA256SUMS"' in command
+    assert "*" not in command
+    assert '--notes-file "$RUNNER_TEMP/locale-release/release-notes.md"' in command
 
 
 def load_workflow_yaml(path: Path) -> dict[str, object]:

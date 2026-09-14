@@ -6,9 +6,9 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from babel.messages.pofile import PoFileError, read_po
-
-from .workflow import TranslationWorkflowService
+from .data_models import PoBlock
+from .knowledge_model_service import KnowledgeModelService
+from .po_support.parser import PoCatalogError, PoCatalogParser
 
 
 class NativeLocaleValidationError(ValueError):
@@ -47,37 +47,34 @@ def validate_native_locale(
     resolved_po = po_path.resolve()
     resolved_km = km_path.resolve()
     try:
-        with resolved_po.open(encoding="utf-8") as handle:
-            catalog = read_po(handle, abort_invalid=True)
-    except PoFileError as error:
-        raise NativeLocaleValidationError(f"Invalid gettext catalog: {error}") from error
-
-    catalog_language = catalog.locale_identifier
-    if catalog_language != target_language:
-        raise NativeLocaleValidationError(
-            "PO Language header does not match translation-config.yml: "
-            f"expected {target_language!r}, got {catalog_language!r}"
+        catalog, blocks = PoCatalogParser.parse_catalog(
+            resolved_po.read_text(encoding="utf-8"), target_language=target_language
         )
-
-    workflow = TranslationWorkflowService(target_lang=target_language)
-    report = workflow.validate_po_against_model(
-        po_path=str(resolved_po),
-        model_path=str(resolved_km),
-    )
-    if _has_model_errors(report):
-        preview = "\n".join(_format_model_errors(report)[:50])
-        raise NativeLocaleValidationError(f"PO validation against KM failed:\n{preview}")
+    except PoCatalogError as error:
+        raise NativeLocaleValidationError(str(error)) from error
+    report = validate_locale_blocks(blocks=blocks, km_path=resolved_km)
 
     messages = [message for message in catalog if message.id]
     return NativeLocaleValidationResult(
         po_path=resolved_po,
         km_path=resolved_km,
         target_language=target_language,
-        catalog_language=catalog_language,
+        catalog_language=catalog.locale_identifier,
         total_messages=len(messages),
         translated_messages=sum(bool(message.string) for message in messages),
         model_report=report,
     )
+
+
+def validate_locale_blocks(*, blocks: list[PoBlock], km_path: Path) -> dict[str, Any]:
+    """Check parsed source fields against the KM without parsing the PO again."""
+    entries = PoCatalogParser.entries_from_blocks(blocks)
+    latest_by_uuid, _ = KnowledgeModelService.load_model(str(km_path))
+    report = KnowledgeModelService.validate_po_entries(entries, latest_by_uuid)
+    if _has_model_errors(report):
+        preview = "\n".join(_format_model_errors(report)[:50])
+        raise NativeLocaleValidationError(f"PO validation against KM failed:\n{preview}")
+    return report
 
 
 def _has_model_errors(report: dict[str, Any]) -> bool:

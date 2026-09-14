@@ -77,15 +77,14 @@ def prepare_locale_release(
         target_language=language,
     )
 
-    assets = output_dir.resolve()
-    if assets.exists():
-        raise LocaleReleaseError(f"Release output directory already exists: {assets}")
+    output = output_dir.resolve()
+    if output.exists():
+        raise LocaleReleaseError(f"Release output directory already exists: {output}")
+    assets = output / "assets"
     assets.mkdir(parents=True)
     stem = f"{km.organization_id}-{km.km_id}-{language}-locale"
     po_name = f"{stem}-{km.version}-r{revision}.po"
-    for name in (po_name, f"{stem}.po"):
-        shutil.copyfile(build.final_po_path, assets / name)
-    shutil.copyfile(config_file, assets / "translation-config.yml")
+    shutil.copyfile(build.final_po_path, assets / po_name)
     manifest: dict[str, object] = {
         "schema_version": 1,
         "tag": tag,
@@ -107,7 +106,7 @@ def prepare_locale_release(
     (assets / "manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
-    (assets / "release-notes.md").write_text(
+    (output / "release-notes.md").write_text(
         f"Native {language} locale for `{package_id}`, translation revision {revision}.\n\n"
         f"Download `{po_name}` and import it into this Knowledge Model version using "
         "DSW's **Import locale** action (DSW 4.33 or newer). "

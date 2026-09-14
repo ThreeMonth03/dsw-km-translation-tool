@@ -22,9 +22,11 @@ Before tagging:
 3. Confirm the source KM, editable tree, generated PO, and review outputs are
    committed and reproducible against the configured Registry KM.
 
-The workflow publishes a versioned PO, stable PO alias, config, provenance
-manifest, release notes, and `SHA256SUMS`. The manifest includes source KM and
-PO checksums, translation and tooling commits, language, and message counts.
+The workflow publishes exactly three assets: a versioned PO, `manifest.json`,
+and `SHA256SUMS`. Only the PO is needed for DSW import. The manifest includes
+source KM and PO checksums, translation and tooling commits, language, and
+message counts. Release notes appear in the release page body. The configuration
+is available in Git at the recorded translation commit.
 The successful release becomes Latest. Never replace an existing tag or asset
 to correct a translation; increment the locale revision.
 
@@ -55,3 +57,5 @@ commit SHA, regenerate managed docs/workflows, and review that update in a
 pull request. Updating a tool tag alone does not update downstream pins.
 
 See [the command reference](command-reference.md) for local asset preparation.
+Local preparation places the three uploadable files in `assets/` and writes
+`release-notes.md` alongside that directory, outside the upload set.
