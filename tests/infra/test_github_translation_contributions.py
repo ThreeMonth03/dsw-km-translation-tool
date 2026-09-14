@@ -197,7 +197,7 @@ def test_write_import_po_contains_only_importable_entries(workspace: Path) -> No
     )
 
     text = import_po.read_text(encoding="utf-8")
-    assert f"#: github:{TEST_UUID}:title" in text
+    assert f"#: github/{TEST_UUID}/title" in text
     assert 'msgid "Source title"' in text
     assert 'msgstr "GitHub 新翻譯"' in text
 
@@ -210,7 +210,7 @@ def test_write_import_po_contains_only_importable_entries(workspace: Path) -> No
         language="zh_Hant",
     ).read_text(encoding="utf-8")
     assert shared_po.count('msgid "Source title"') == 1
-    assert f"github:{second.uuid}:title" in shared_po
+    assert f"github/{second.uuid}/title" in shared_po
     conflicting = replace(second, github="不同翻譯")
     with pytest.raises(GitHubTranslationContributionError, match="same Weblate message"):
         write_import_po(
@@ -800,7 +800,7 @@ def write_latest_po(
                 'msgstr ""',
                 '"Language: zh_Hant\\n"',
                 "",
-                f"#: question:{TEST_UUID}:title",
+                f"#: question/{TEST_UUID}/title",
                 f'msgid "{source}"',
                 f'msgstr "{target}"',
                 "",

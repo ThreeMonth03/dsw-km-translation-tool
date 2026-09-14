@@ -80,7 +80,11 @@ def main() -> None:
     if args.details_out:
         write_alignment_status_markdown(report, args.details_out)
         print(f"Markdown details written to {args.details_out}")
-    if args.fail_on_mismatch and not report.aligned:
+    if report.pending_update:
+        print(
+            "::warning::Waiting for a matching upstream KM; repository integrity was checked separately."
+        )
+    if args.fail_on_mismatch and report.failed:
         raise SystemExit(1)
 
 

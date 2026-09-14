@@ -5,11 +5,37 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
+import pytest
+
 from dsw_km_translation_tool.ci_sync import CiSyncCommitConfig
 from dsw_km_translation_tool.localize_tree_sync import refresh_tree_from_localize
+from dsw_km_translation_tool.native_locale import NativeLocaleValidationError
 from dsw_km_translation_tool.po import PoCatalogWriter
 from dsw_km_translation_tool.workflow import TranslationWorkflowService
 from tests.helpers import parse_po_entries, update_tree_field
+
+
+def test_invalid_source_does_not_modify_existing_tree(
+    repo_root: Path, workspace: Path, po_path: Path, model_path: Path
+) -> None:
+    latest = workspace / "latest.po"
+    latest.write_text(
+        po_path.read_text(encoding="utf-8").replace('msgid "10 years"', 'msgid "11 years"', 1),
+        encoding="utf-8",
+    )
+    source = workspace / "source.km"
+    shutil.copyfile(model_path, source)
+    tree = workspace / "tree"
+    tree.mkdir()
+    marker = tree / "existing.md"
+    marker.write_text("Keep the current translations", encoding="utf-8")
+    config = _build_refresh_config(
+        host_repo=workspace, tooling_repo=repo_root, latest_po_path=latest, source_km_path=source
+    )
+    with pytest.raises(NativeLocaleValidationError, match="Source mismatch"):
+        refresh_tree_from_localize(config=config, km_version="2.7.0")
+    assert list(tree.iterdir()) == [marker]
+    assert marker.read_text(encoding="utf-8") == "Keep the current translations"
 
 
 def test_refresh_tree_from_localize_reexports_weblate_snapshot(

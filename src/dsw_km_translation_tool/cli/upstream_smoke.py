@@ -7,6 +7,7 @@ import argparse
 import os
 from pathlib import Path
 
+from dsw_km_translation_tool.source_readiness import SourceUpdatePending, report_pending
 from dsw_km_translation_tool.upstream_smoke import (
     UpstreamSmokeError,
     render_upstream_smoke_markdown,
@@ -72,6 +73,14 @@ def main() -> None:
             registry_token=token,
             skip_without_token=args.skip_without_token,
         )
+    except SourceUpdatePending as pending:
+        report_pending(
+            pending.report,
+            json_path=args.report,
+            markdown_path=args.details_out,
+            summary_path=args.summary,
+        )
+        return
     except UpstreamSmokeError as error:
         raise SystemExit(f"Unable to run upstream smoke: {error}") from error
 

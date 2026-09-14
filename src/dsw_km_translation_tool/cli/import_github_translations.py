@@ -21,8 +21,14 @@ from dsw_km_translation_tool.github_translation_contributions import (
     write_import_po,
 )
 from dsw_km_translation_tool.localize_sync import pull_localize_po
+from dsw_km_translation_tool.source_readiness import (
+    SourceUpdatePending,
+    check_po_source,
+    report_pending,
+)
 from dsw_km_translation_tool.translation_repository_config import (
     load_translation_repository_config,
+    version_paths,
 )
 from dsw_km_translation_tool.weblate_upload import (
     resolve_weblate_file_api_url,
@@ -74,6 +80,24 @@ def main() -> None:
             config_path=config_path,
             repo_root=temp_root,
         )
+        source_km = repo_root / version_paths(repository_config).source_km_path
+        if source_km.is_file():
+            try:
+                check_po_source(
+                    config=repository_config, po_path=pull_result.latest_po_path, km_path=source_km
+                )
+            except SourceUpdatePending as pending:
+                report_pending(
+                    pending.report,
+                    json_path=args.json_out,
+                    markdown_path=args.details_out,
+                    summary_path=args.summary,
+                )
+                append_github_outputs(
+                    output_path=args.github_output,
+                    values={"source_status": "waiting-for-km", "uploaded": False},
+                )
+                return
         report = build_github_translation_report(
             repo_root=repo_root,
             base_ref=args.base_ref,

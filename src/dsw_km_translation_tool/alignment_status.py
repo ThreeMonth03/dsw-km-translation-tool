@@ -6,11 +6,12 @@ import hashlib
 import json
 import shutil
 import tempfile
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 
 from .localize_sync import Downloader, _download_url
 from .native_locale import validate_native_locale
+from .source_readiness import PendingSourceUpdate, SourceUpdatePending, check_po_source
 from .translation_repository_config import (
     load_translation_repository_config,
     version_paths,
@@ -37,6 +38,7 @@ class AlignmentCheck:
     actual: AlignmentArtifact
     matched: bool
     guidance: str
+    deferred: bool = False
 
 
 @dataclass(frozen=True)
@@ -48,6 +50,7 @@ class AlignmentStatusReport:
     version: str
     localize_url: str
     checks: tuple[AlignmentCheck, ...]
+    pending_update: PendingSourceUpdate | None = None
 
     @property
     def aligned(self) -> bool:
@@ -55,11 +58,20 @@ class AlignmentStatusReport:
 
         return all(check.matched for check in self.checks)
 
+    @property
+    def failed(self) -> bool:
+        """Known upstream waits do not excuse broken checked-in artifacts."""
+        return any(not check.matched and not check.deferred for check in self.checks)
+
     def to_dict(self) -> dict[str, object]:
         """Return a JSON-ready representation."""
 
         data = asdict(self)
         data["aligned"] = self.aligned
+        data["failed"] = self.failed
+        data["status"] = (
+            "failed" if self.failed else "waiting-for-km" if self.pending_update else "aligned"
+        )
         return data
 
 
@@ -108,6 +120,7 @@ def build_alignment_status_report(
 
     download = downloader or _download_url
     localize_bytes = download(localize.download_url)
+    pending_update = None
 
     workflow = TranslationWorkflowService(
         source_lang=repository_config.translation.source_language,
@@ -120,6 +133,14 @@ def build_alignment_status_report(
         rebuilt_po = generated_root / "tree-rebuilt.po"
 
         downloaded_localize_po.write_bytes(localize_bytes)
+        try:
+            check_po_source(
+                config=repository_config,
+                po_path=downloaded_localize_po,
+                km_path=checked_in_source_km,
+            )
+        except SourceUpdatePending as pending:
+            pending_update = pending.report
         workflow.build_po_from_tree(
             tree_dir=str(checked_in_tree_dir),
             original_po_path=str(checked_in_localize_po),
@@ -154,6 +175,8 @@ def build_alignment_status_report(
                 ),
             ),
         )
+        if pending_update:
+            checks = (replace(checks[0], deferred=True), checks[1])
 
         if artifact_dir is not None:
             _write_alignment_artifacts(
@@ -167,13 +190,16 @@ def build_alignment_status_report(
         version=version,
         localize_url=localize.download_url,
         checks=checks,
+        pending_update=pending_update,
     )
 
 
 def render_alignment_status_markdown(report: AlignmentStatusReport) -> str:
     """Render an alignment report as GitHub-flavored Markdown."""
 
-    status = "aligned" if report.aligned else "not aligned"
+    status = (
+        "not aligned" if report.failed else "waiting-for-km" if report.pending_update else "aligned"
+    )
     lines = [
         "## Localize/Repository Alignment",
         "",
@@ -187,11 +213,13 @@ def render_alignment_status_markdown(report: AlignmentStatusReport) -> str:
         "| --- | --- | --- | --- |",
     ]
     for check in report.checks:
-        result = "pass" if check.matched else "fail"
+        result = "waiting" if check.deferred else "pass" if check.matched else "fail"
         lines.append(
             f"| {check.name} | {result} | `{check.expected.sha256}` | `{check.actual.sha256}` |"
         )
-    failed_checks = [check for check in report.checks if not check.matched]
+    if report.pending_update:
+        lines.extend(["", report.pending_update.markdown()])
+    failed_checks = [check for check in report.checks if not check.matched and not check.deferred]
     if failed_checks:
         lines.extend(["", "### Follow-up", ""])
         for check in failed_checks:

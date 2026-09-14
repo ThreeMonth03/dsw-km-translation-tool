@@ -4,7 +4,7 @@ These checks answer different questions:
 
 | Check | What it proves |
 | --- | --- |
-| PO validation | Catalog syntax, language and existing KM references are valid |
+| PO validation | A nonempty catalog has valid syntax, language and native KM references; every referenced source string matches the KM |
 | Official POT coverage | Which official DSW source messages are missing, empty, fuzzy or extra in the PO |
 | Upstream source catalog | Whether Weblate's shared repository POT includes the official source messages for the configured KM version |
 | Browser acceptance | Official DSW imports the PO, returns the same file and renders a translated chapter after language switching |
@@ -13,6 +13,11 @@ A PO can pass import validation while leaving some official source messages in
 English. A fully translated Weblate catalog does not necessarily cover the
 entire official POT. Coverage uses gettext context and source text as message
 identity, not the spelling of UUID references.
+
+Translation-tree inputs retain their source references, including the current
+official `entity/UUID/field` format. Existing snapshots do not need rewriting.
+Refresh catalogs from Weblate together with their matching official KM; do not
+rewrite source messages or relabel a bundle to bypass validation.
 
 ## Review in Actions
 
@@ -39,8 +44,10 @@ Both tooling and locale release workflows run acceptance before publishing.
 Only **KM Translation Operations** enables the live upstream source audit;
 releases validate their pinned inputs without depending on today's upstream POT.
 
-Import, download, malformed POT and browser failures fail CI. Missing, empty,
-fuzzy or extra entries make coverage **incomplete** and emit a warning, without
+Import, download, malformed POT and browser failures fail CI. A valid upstream
+POT for another version reports **waiting-for-km** without comparing coverage
+across versions. Missing, empty, fuzzy or extra entries make coverage
+**incomplete** and emit a warning, without
 blocking a usable partial locale. This check reports gaps; it does not change
 translations, upload to Weblate, or maintain an exceptions list.
 
@@ -49,13 +56,16 @@ translations, upload to Weblate, or maintain an exceptions list.
 The source audit reads `messages.pot` from the default branch of the public
 GitHub repository configured by `localize.repository`. It fetches a temporary
 bare snapshot without executing upstream code and records the exact commit.
-The upstream POT version must match the configured KM; an empty, invalid or
-wrong-version POT fails the audit. An unset repository is reported as
+Coverage comparison requires the upstream POT version to match the configured
+KM. An empty, invalid or unrecognized-package POT fails the audit. A valid POT for another version is
+reported as **waiting-for-km** without comparing its messages to the current KM.
+An unset repository is reported as
 **not-configured**, never as complete coverage.
 
 Read `source-catalog/source-catalog.md` in the Actions artifact:
 
 - **aligned**: both POTs contain the same gettext message identities.
+- **waiting-for-km**: upstream identifies a different KM version; retain the verified pair.
 - **additions-only**: the official export contains sources absent from upstream.
 - **review-required**: upstream also contains sources absent from the official
   export. Review source edits, removals or a different source model before proceeding.
@@ -109,3 +119,4 @@ It cannot target an existing DSW server. Reports contain no login tokens.
 The tested server/client image versions are pinned in
 `tests/native_locale/compose.yml`. Upgrade these together and rerun acceptance;
 they are independent of the `dsw-models` Python dependency.
+The disposable object store uses the upstream MinIO and client images from Quay.

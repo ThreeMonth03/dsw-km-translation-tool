@@ -176,10 +176,10 @@ def test_localize_status_report_template_is_read_only(repo_root: Path) -> None:
     assert workflow["permissions"]["contents"] == "read"
     assert_tooling_checkout_env(workflow)
     assert workflow["env"]["TRACKING_BRANCH"] == "master"
-    assert workflow["env"]["TARGET_LANG"] == "zh_Hant"
     assert workflow["env"]["TRANSLATION_CONFIG"] == "translation-config.yml"
     assert "KNOWN_FUZZY_REFERENCES" not in workflow["env"]
-    assert "tooling-repo/.venv/bin/dsw-km-pull-localize-po" in workflow_text
+    assert "dsw-km-pull-localize-po" not in workflow_text
+    assert '--repo-root "$GITHUB_WORKSPACE/translation-repo"' in workflow_text
     assert "tooling-repo/.venv/bin/dsw-km-report-localize-status" in workflow_text
     assert "tooling-repo/.venv/bin/dsw-km-report-weblate-checks" in workflow_text
     assert "secrets.LOCALIZE_API_TOKEN" in workflow_text

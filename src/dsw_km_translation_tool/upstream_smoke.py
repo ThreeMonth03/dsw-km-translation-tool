@@ -21,6 +21,7 @@ from .localize_sync import (
     pull_localize_po,
 )
 from .native_locale import validate_native_locale
+from .source_readiness import check_po_source
 from .translation_repository_config import (
     TranslationRepositoryConfig,
     load_translation_repository_config,
@@ -132,6 +133,7 @@ def run_upstream_smoke(
         downloader=localize_downloader,
     )
 
+    check_po_source(config=updated_config, po_path=latest_po_path, km_path=source_km_path)
     workflow = TranslationWorkflowService(
         source_lang=updated_config.translation.source_language,
         target_lang=updated_config.translation.target_language,

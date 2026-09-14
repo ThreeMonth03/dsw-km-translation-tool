@@ -10,6 +10,8 @@ from pathlib import Path
 from babel.messages.catalog import Catalog, Message
 from babel.messages.pofile import PoFileError, read_po
 
+from .translation_repository_config import normalize_version
+
 
 class LocaleCoverageError(ValueError):
     """Raised when catalogs cannot be compared reliably."""
@@ -116,17 +118,21 @@ def compare_source_catalog(
     so any upstream-only entry requires maintainer review, never automatic deletion.
     """
     pot = _read_official_pot(pot_path, package_id, source_language)
-    upstream = _read_catalog(upstream_pot_path)
-    project = dict(upstream.mime_headers).get("Project-Id-Version", "").strip()
-    version = package_id.rsplit(":", 1)[-1]
-    if project != package_id and not project.endswith(f" {version}"):
-        raise LocaleCoverageError("Upstream POT version does not match the configured KM")
-    if upstream.locale_identifier not in (None, "", source_language):
-        raise LocaleCoverageError("Upstream POT Language header differs from the source language")
+    upstream, project, version = read_upstream_pot(upstream_pot_path, package_id, source_language)
     expected = {_key(message): message for message in pot if message.id}
     actual = {_key(message): message for message in upstream if message.id}
-    if not actual:
-        raise LocaleCoverageError("Upstream POT contains no translatable messages")
+    if version != package_id.rsplit(":", 1)[-1]:
+        return {
+            "package_id": package_id,
+            "upstream_project_id_version": project,
+            "required_package_id": f"{package_id.rsplit(':', 1)[0]}:{version}",
+            "pot_sha256": hashlib.sha256(pot_path.read_bytes()).hexdigest(),
+            "upstream_pot_sha256": hashlib.sha256(upstream_pot_path.read_bytes()).hexdigest(),
+            "status": "waiting-for-km",
+            "counts": {"official": len(expected), "upstream": len(actual)},
+            "missing_upstream": [],
+            "upstream_only": [],
+        }
     missing = [_entry(message) for key, message in expected.items() if key not in actual]
     extra = [_entry(message) for key, message in actual.items() if key not in expected]
     return {
@@ -147,6 +153,31 @@ def compare_source_catalog(
     }
 
 
+def read_upstream_pot(
+    path: Path, package_id: str, source_language: str
+) -> tuple[Catalog, str, str]:
+    """Read a nonempty source POT and identify its KM without relabeling it."""
+    catalog = _read_catalog(path)
+    project = dict(catalog.mime_headers).get("Project-Id-Version", "").strip()
+    family, current_version = package_id.rsplit(":", 1)
+    if project.startswith(f"{family}:"):
+        try:
+            version = normalize_version(project[len(family) + 1 :])
+        except ValueError as error:
+            raise LocaleCoverageError("Upstream POT has an invalid KM version") from error
+    elif ":" not in project and project.endswith(f" {current_version}"):
+        version = current_version
+    else:
+        raise LocaleCoverageError(
+            "Upstream POT package/version does not identify the configured KM"
+        )
+    if catalog.locale_identifier not in (None, "", source_language):
+        raise LocaleCoverageError("Upstream POT Language header differs from the source language")
+    if not any(message.id for message in catalog):
+        raise LocaleCoverageError("Upstream POT contains no translatable messages")
+    return catalog, project, version
+
+
 def _render_entries(entries: list[dict[str, object]]) -> list[str]:
     lines = []
     for entry in entries:
@@ -160,6 +191,15 @@ def _render_entries(entries: list[dict[str, object]]) -> list[str]:
 
 def render_source_catalog(report: dict[str, object], *, details: bool = True) -> str:
     """Render an upstream review report, not a proposed translation replacement."""
+    if report["status"] == "waiting-for-km":
+        return (
+            "## Weblate upstream source catalog\n\n"
+            "Status: **waiting-for-km**\n\n"
+            f"Configured KM: `{report['package_id']}`\n\n"
+            f"Upstream POT requires: `{report['required_package_id']}`\n\n"
+            f"Upstream POT: {report['upstream_url']}\n\n"
+            "Coverage was not compared across KM versions. Existing translations are unchanged.\n"
+        )
     lines = [
         "## Weblate upstream source catalog",
         "",

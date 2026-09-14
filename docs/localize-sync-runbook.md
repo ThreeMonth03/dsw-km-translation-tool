@@ -38,8 +38,11 @@ The external translation workflow should run:
 
 The workflow runs the `dsw-km-sync-localize` command. That command:
 
-1. Downloads the current Weblate PO to `sources/localize/zh_Hant/latest.po`.
-2. Force-refreshes `tree/` from the latest Weblate PO.
+1. Downloads the current Weblate PO and validates syntax, language, and native
+   `entity/UUID/field` references. When a source KM exists, every referenced
+   field and source string must match it before the snapshot is replaced.
+2. Saves the validated snapshot to `sources/localize/zh_Hant/latest.po` and
+   force-refreshes `tree/`.
 3. Rebuilds `builds/final_translated.po`.
 4. Validates the PO for native DSW Knowledge Model locale import.
 5. Refreshes review outputs.
@@ -47,6 +50,14 @@ The workflow runs the `dsw-km-sync-localize` command. That command:
 
 Scheduled runs commit directly to `master` when repository policy allows it.
 The writer does not run for pull requests.
+
+Weblate and the Registry publish independently. If Weblate advances to a KM
+that the configured KM cannot represent, the tool checks the upstream POT.
+Only a valid POT identifying another KM, with the same source fields as the PO,
+can produce **waiting-for-km**. That state preserves the current snapshot and
+tree without committing or uploading translations. Obtain the matching official
+KM before resuming; do not change the PO header or remove unmatched messages to
+force a pass. Syntax errors and same-version source mismatches remain failures.
 
 ## Pull Request Validation
 
@@ -79,7 +90,8 @@ Use the status report workflow to inspect Weblate PO health without changing
 Git or Weblate. It:
 
 1. Checks out the translation repository.
-2. Pulls the latest Weblate PO into the ephemeral workflow checkout.
+2. Downloads the latest Weblate PO into a temporary directory without replacing
+   the checked-in snapshot, and checks whether it targets the configured KM.
 3. Runs `dsw-km-report-localize-status`.
 4. Writes a GitHub step summary and uploads
    `reviews/localize_status_report.json` and
@@ -105,7 +117,12 @@ changing Git or Weblate. It:
 4. Validates the final PO against the configured KM and target language.
 5. Uploads JSON, Markdown, and the generated PO comparison artifact.
 
-The alignment report is allowed to fail when drift is detected. That failure
+The alignment report still checks the existing PO/KM and tree when an upstream
+version transition is pending. It reports **waiting-for-km**, with `aligned: false`,
+and defers only the Weblate snapshot equality check. Broken checked-in artifacts
+still fail. A waiting result must not be described as a completed sync.
+
+The alignment report is allowed to fail when same-version drift is detected. That failure
 means a pull sync or tree rebuild should run before maintainers
 trust the repository outputs. It also requires only `contents: read` and does
 not change translations.

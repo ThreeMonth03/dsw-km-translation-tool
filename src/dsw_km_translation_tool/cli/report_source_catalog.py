@@ -59,7 +59,7 @@ def main() -> None:
             handle.write(summary)
     if report["status"] == "failed":
         raise SystemExit(1)
-    if report["status"] in ("additions-only", "review-required"):
+    if report["status"] in ("additions-only", "review-required", "waiting-for-km"):
         print("::warning::Upstream POT differs from the official export; review source-catalog.md.")
 
 

@@ -62,6 +62,11 @@ def build_translation_repository(
         source_lang=config.translation.source_language,
         target_lang=config.translation.target_language,
     )
+    validate_native_locale(
+        po_path=source_po,
+        km_path=source_km,
+        target_language=config.translation.target_language,
+    )
     if preserve_existing_translations and (tree_dir / "shared_blocks").is_dir():
         sync_translation_repository_shared_strings(repo_root=root, config_path=config_path)
     context = workflow.export_tree(

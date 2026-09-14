@@ -13,6 +13,7 @@ from dsw_km_translation_tool.km_latest_sync import (
     write_km_latest_sync_markdown,
     write_km_latest_sync_report,
 )
+from dsw_km_translation_tool.source_readiness import SourceUpdatePending, report_pending
 
 
 def build_argument_parser() -> argparse.ArgumentParser:
@@ -61,6 +62,14 @@ def main() -> None:
             skip_without_token=args.skip_without_token,
             dry_run=args.dry_run,
         )
+    except SourceUpdatePending as pending:
+        report_pending(
+            pending.report,
+            json_path=args.report,
+            markdown_path=args.details_out,
+            summary_path=args.summary,
+        )
+        return
     except KmLatestSyncError as error:
         raise SystemExit(f"Unable to sync latest KM: {error}") from error
 
