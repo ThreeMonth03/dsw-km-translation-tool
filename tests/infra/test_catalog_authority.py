@@ -23,6 +23,7 @@ from dsw_km_translation_tool.translation_repository_config import (
     load_translation_repository_config,
     version_paths,
 )
+from tests.helpers import read_translation_markdown_header
 from tests.infra.test_km_latest_sync import registry_payload
 from tests.infra.test_locale_release import _commit
 from tests.infra.test_translation_repository_config import write_config
@@ -67,6 +68,7 @@ def test_cross_version_export_is_lossless_and_editable(catalog_repository, workf
     unknown = scan.folders_by_uuid["ffffffff-ffff-4fff-8fff-ffffffffffff"]
     assert "New upstream phase" in unknown.path
     assert unknown.event_type is None
+    assert read_translation_markdown_header(unknown.translation_path)[1] is None
     assert "/" not in unknown.path
     assert unknown.path.startswith("0002 ")  # Keep known KM roots ahead of catalog-only roots.
     report = validate_native_locale(
