@@ -93,6 +93,16 @@ def test_package_id_header_is_accepted(catalogs):
     assert compare(catalogs)["status"] == "aligned"
 
 
+def test_known_different_version_is_waiting_not_a_coverage_comparison(catalogs):
+    catalogs[2].project, catalogs[2].version = "dsw:root:2.8.1", ""
+    report = compare(catalogs)
+    assert report["status"] == "waiting-for-km"
+    assert report["required_package_id"] == "dsw:root:2.8.1"
+    assert "shared" not in report["counts"]
+    report["upstream_url"] = "https://github.com/example/locales"
+    assert "not compared across KM versions" in render_source_catalog(report)
+
+
 def test_target_language_cannot_be_used_as_source(catalogs):
     catalogs[2].locale = "zh_Hant"
     with pytest.raises(LocaleCoverageError, match="Language"):

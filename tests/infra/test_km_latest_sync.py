@@ -35,6 +35,20 @@ def registry_payload(*versions: str) -> bytes:
     ).encode("utf-8")
 
 
+def candidate_bundle(model_path: Path, version: str) -> bytes:
+    """Create a test-only release with the same fields and a distinct coordinate."""
+    payload = json.loads(model_path.read_text(encoding="utf-8"))
+    current_id = payload["id"]
+    candidate_id = f"dsw:root:{version}"
+    payload["id"] = candidate_id
+    payload["version"] = version
+    for package in payload["packages"]:
+        if package["id"] == current_id:
+            package["id"] = candidate_id
+            package["version"] = version
+    return json.dumps(payload).encode("utf-8")
+
+
 def test_sync_latest_km_noops_when_config_is_current(workspace: Path) -> None:
     """Verify latest-KM sync is a no-op when Registry and config agree."""
 
@@ -144,6 +158,7 @@ def test_sync_latest_km_updates_validates_and_pushes_target_ref(
     workspace: Path,
     po_path: Path,
     model_path: Path,
+    monkeypatch,
 ) -> None:
     """Verify a new Registry KM updates only after validation commands pass."""
 
@@ -154,6 +169,9 @@ def test_sync_latest_km_updates_validates_and_pushes_target_ref(
     (tooling_repo / ".venv" / "bin" / "python").write_text("", encoding="utf-8")
     write_config(config_path)
     runner = RecordingRunner()
+    monkeypatch.setattr(
+        "dsw_km_translation_tool.km_latest_sync.upstream_target_version", lambda _: "2.8.0"
+    )
 
     result = sync_latest_km_version(
         repo_root=workspace,
@@ -162,7 +180,7 @@ def test_sync_latest_km_updates_validates_and_pushes_target_ref(
         registry_token="secret",
         target_ref="master",
         downloader=lambda _url: registry_payload("2.7.0", "2.8.0"),
-        bundle_downloader=lambda _url, _token: model_path.read_bytes(),
+        bundle_downloader=lambda _url, _token: candidate_bundle(model_path, "2.8.0"),
         localize_downloader=lambda _url: po_path.read_bytes(),
         runner=runner,
     )
@@ -172,7 +190,7 @@ def test_sync_latest_km_updates_validates_and_pushes_target_ref(
     assert "bundle_path" not in config["knowledge_model"]
     assert (
         workspace / "sources/knowledge-models/dsw-root-2.8.0/dsw-root-2.8.0.km"
-    ).read_bytes() == model_path.read_bytes()
+    ).read_bytes() == candidate_bundle(model_path, "2.8.0")
     assert (workspace / "sources/localize/zh_Hant/latest.po").read_bytes() == po_path.read_bytes()
     assert result.changed is True
     assert result.status == "updated"
@@ -195,7 +213,7 @@ def test_sync_latest_km_updates_validates_and_pushes_target_ref(
 
 
 def test_sync_latest_km_does_not_push_when_validation_fails(
-    workspace: Path, po_path: Path, model_path: Path
+    workspace: Path, po_path: Path, model_path: Path, monkeypatch
 ) -> None:
     """Verify failed validation stops before committing any generated changes."""
 
@@ -204,6 +222,9 @@ def test_sync_latest_km_does_not_push_when_validation_fails(
     tooling_repo.mkdir()
     write_config(config_path)
     runner = RecordingRunner(fail_on="dsw-km-report-alignment")
+    monkeypatch.setattr(
+        "dsw_km_translation_tool.km_latest_sync.upstream_target_version", lambda _: "2.8.0"
+    )
 
     try:
         sync_latest_km_version(
@@ -213,7 +234,7 @@ def test_sync_latest_km_does_not_push_when_validation_fails(
             registry_token="secret",
             target_ref="master",
             downloader=lambda _url: registry_payload("2.7.0", "2.8.0"),
-            bundle_downloader=lambda _url, _token: model_path.read_bytes(),
+            bundle_downloader=lambda _url, _token: candidate_bundle(model_path, "2.8.0"),
             localize_downloader=lambda _url: po_path.read_bytes(),
             runner=runner,
         )

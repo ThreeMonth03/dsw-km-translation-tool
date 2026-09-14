@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from io import StringIO
 from pathlib import Path
 from typing import Iterable
@@ -125,13 +126,13 @@ class PoCatalogParser:
             Structured PO reference or `None` if the token is unrelated.
         """
 
-        parts = token.split("/")
-        if len(parts) != 3 or not parts[0] or not parts[2] or not UUID_RE.fullmatch(parts[1]):
+        match = re.fullmatch(r"([^:/\s]+)([:/])([^:/\s]+)\2([^:/\s]+)", token)
+        if match is None or not UUID_RE.fullmatch(match[3]):
             return None
         return PoReference(
-            prefix=parts[0],
-            uuid=parts[1],
-            field=parts[2],
+            prefix=match[1],
+            uuid=match[3],
+            field=match[4],
             comment=token,
         )
 

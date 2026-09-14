@@ -67,7 +67,7 @@ def test_pull_rejects_wrong_language_without_creating_snapshot(workspace: Path, 
 
 
 def test_pull_rejects_new_source_before_replacing_current_snapshot(
-    workspace: Path, po_path: Path, model_path: Path
+    workspace: Path, po_path: Path, model_path: Path, monkeypatch
 ):
     config_path = workspace / "translation-config.yml"
     write_config(config_path)
@@ -77,6 +77,11 @@ def test_pull_rejects_new_source_before_replacing_current_snapshot(
     latest = workspace / "sources/localize/zh_Hant/latest.po"
     latest.parent.mkdir(parents=True)
     latest.write_bytes(po_path.read_bytes())
+    from tests.infra.test_source_readiness import mock_pot
+
+    pot = workspace / "current.pot"
+    pot.write_bytes(po_path.read_bytes().replace(b"Language: zh_Hant", b"Language: en"))
+    mock_pot(monkeypatch, pot)
     payload = po_path.read_bytes().replace(b'msgid "10 years"', b'msgid "11 years"', 1)
 
     with pytest.raises(NativeLocaleValidationError, match="Source mismatch"):

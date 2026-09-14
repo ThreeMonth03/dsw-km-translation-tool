@@ -28,6 +28,16 @@ The sync writer:
 
 Scheduled sync does not upload translations to Weblate.
 
+Weblate and the Registry publish independently. When a valid upstream POT and
+PO target a different KM, reports show **waiting-for-km** and the writer keeps
+the last verified PO, KM, and translation tree. No sync commit or Weblate upload
+is made while waiting. New KM/PO pairs are validated in a temporary workspace
+before they replace the active inputs.
+
+Waiting is not a completed sync: alignment remains false until the sources
+are ready. Repository integrity, syntax errors, and same-version source
+mismatches are still checked and can fail CI.
+
 Reviewed GitHub translation pull requests use a guarded reverse path:
 
 ```text

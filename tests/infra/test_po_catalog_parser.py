@@ -32,7 +32,7 @@ def test_native_references_and_unicode_survive_parsing() -> None:
         HEADER,
         "<html>Service unavailable</html>",
         HEADER + 'msgid "Unmapped"\nmsgstr "未對應"\n',
-        HEADER + f'#: question:{UUID}:title\nmsgid "Old reference"\nmsgstr ""\n',
+        HEADER + f'#: question:{UUID}/title\nmsgid "Mixed separator"\nmsgstr ""\n',
         HEADER + f'#: question/{UUID}/title\n#: invalid\nmsgid "Mixed"\nmsgstr ""\n',
         HEADER + '#: question/not-a-uuid/title\nmsgid "Invalid"\nmsgstr ""\n',
     ],
@@ -59,3 +59,12 @@ def test_windows_newlines_do_not_change_message_content() -> None:
     assert PoCatalogParser.parse_text(text.replace("\n", "\r\n")) == PoCatalogParser.parse_text(
         text
     )
+
+
+@pytest.mark.parametrize("separator", [":", "/"])
+def test_existing_and_native_reference_tokens_are_preserved(separator: str):
+    reference = separator.join(("question", UUID, "title"))
+    blocks = PoCatalogParser.parse_text(HEADER + f'#: {reference}\nmsgid "Source"\nmsgstr "譯文"\n')
+    assert blocks[0].references[0].comment == reference
+    assert blocks[0].references[0].uuid == UUID
+    assert blocks[0].references[0].field == "title"

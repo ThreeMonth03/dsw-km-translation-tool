@@ -130,7 +130,7 @@ def test_alignment_status_report_flags_weblate_mismatch(
     report = build_alignment_status_report(
         repo_root=repo_root,
         config_path=repo_root / "translation-config.yml",
-        downloader=_static_downloader(b"stale remote content\n"),
+        downloader=_static_downloader(po_path.read_bytes() + b"\n# Updated translator metadata\n"),
     )
 
     assert report.aligned is False

@@ -12,7 +12,6 @@ env:
   TOOLING_REPOSITORY: {{TOOLING_REPOSITORY}}
   TOOLING_REF: {{TOOLING_REF}}
   TRACKING_BRANCH: {{TRACKING_BRANCH}}
-  TARGET_LANG: zh_Hant
   TRANSLATION_CONFIG: translation-config.yml
 
 jobs:
@@ -44,16 +43,11 @@ jobs:
         working-directory: tooling-repo
         run: make install-dev BOOTSTRAP_PYTHON=python
 
-      - name: Pull latest Localize PO snapshot
-        run: >-
-          tooling-repo/.venv/bin/dsw-km-pull-localize-po
-          --repo-root "$GITHUB_WORKSPACE/translation-repo"
-          --config "$TRANSLATION_CONFIG"
-
       - name: Generate Localize status report
         run: >-
           tooling-repo/.venv/bin/dsw-km-report-localize-status
-          --po "$GITHUB_WORKSPACE/translation-repo/sources/localize/$TARGET_LANG/latest.po"
+          --repo-root "$GITHUB_WORKSPACE/translation-repo"
+          --config "$TRANSLATION_CONFIG"
           --json-out "$GITHUB_WORKSPACE/translation-repo/reviews/localize_status_report.json"
           --details-out "$GITHUB_WORKSPACE/translation-repo/reviews/localize_status_report.md"
           --summary "$GITHUB_STEP_SUMMARY"
