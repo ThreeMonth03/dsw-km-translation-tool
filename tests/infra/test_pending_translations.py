@@ -126,7 +126,10 @@ def test_km_update_preserves_pending_edit_and_all_sources(pending_repository, mo
 def test_invalid_input_is_not_restored_or_overwritten(pending_repository, shared):
     root, config, payload = pending_repository
     path, _ = editable_path(root, shared)
-    path.write_text(path.read_text().replace("~~~text", "broken fence", 1))
+    heading = "### Translation (zh_Hant)\n\n~~~text"
+    text = path.read_text()
+    assert heading in text
+    path.write_text(text.replace(heading, "### Translation (zh_Hant)\n\nbroken fence", 1))
     before = repository_bytes(root)
     with pytest.raises(ValueError):
         pull_localize_po(config_path=config, repo_root=root, downloader=lambda _: payload)
