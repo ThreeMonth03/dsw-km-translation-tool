@@ -24,6 +24,7 @@ from .km_registry import Downloader, discover_km_versions
 from .knowledge_model_service import KnowledgeModelService
 from .localize_sync import Downloader as LocalizeDownloader
 from .localize_sync import pull_localize_po
+from .pending_translations import ensure_no_pending_translations
 from .translation_repository_config import (
     DEFAULT_REGISTRY_API_URL,
     TranslationRepositoryConfigError,
@@ -158,6 +159,11 @@ def sync_latest_km_version(
             config_path=candidate_config,
             repo_root=candidate_root,
             downloader=localize_downloader,
+        )
+        ensure_no_pending_translations(
+            repo_root=host_repo,
+            config=config,
+            downloaded=(candidate_root / candidate_paths.source_po_path).read_bytes(),
         )
         for relative in (
             candidate_paths.source_km_path,

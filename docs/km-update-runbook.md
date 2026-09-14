@@ -26,6 +26,7 @@ published KM, the workflow:
 
 - downloads the new KM bundle using `DSW_REGISTRY_TOKEN`;
 - downloads the current Weblate PO without uploading anything to Weblate;
+- confirms Git translation edits are already in Weblate before replacing inputs;
 - checks the bundle identity and catalog format, then updates config and sources;
 - rebuilds `tree/` and `builds/final_translated.po`;
 - validates the PO for native DSW Knowledge Model locale import;
@@ -34,6 +35,10 @@ published KM, the workflow:
 
 If the token is missing or any validation step fails, no Git commit is pushed.
 The next scheduled run will retry.
+
+If the update reports `not yet in Weblate`, complete or repair the reviewed
+GitHub Translation Import first. The updater leaves the current config, KM,
+PO snapshot and Markdown untouched while translations await import.
 
 The latest Weblate catalog and Registry package need not advance together.
 PO synchronization continues with the current KM when a newer bundle is not

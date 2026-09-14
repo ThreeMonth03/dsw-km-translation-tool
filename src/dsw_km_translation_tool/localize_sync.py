@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 
+from .pending_translations import ensure_no_pending_translations
 from .po_support.parser import PoCatalogParser
 from .translation_repository_config import (
     TranslationRepositoryConfig,
@@ -67,6 +68,9 @@ def pull_localize_po(
     downloaded = download_localize_po(
         config=repository_config,
         downloader=downloader,
+    )
+    ensure_no_pending_translations(
+        repo_root=repo_root, config=repository_config, downloaded=downloaded
     )
 
     latest_exists = latest_po_path.exists()

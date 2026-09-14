@@ -6,8 +6,9 @@ This repository uses a Weblate-first synchronization policy.
 
 The latest translation state is governed by Localize/Weblate.
 
-GitHub mirrors the website state. Direct changes to `tree/` outside the
-reviewed pull-request path may be overwritten by the next sync.
+GitHub mirrors the website state. Submit changes to `tree/` through reviewed
+pull requests. Source sync stops if edits have not yet reached Weblate; it
+does not discard pending translations to restore alignment.
 
 ## Direction
 
@@ -20,7 +21,7 @@ Localize/Weblate -> GitHub
 The sync writer:
 
 1. Downloads the latest Weblate PO.
-2. Refreshes `tree/` from that PO.
+2. Checks Git edits against the saved and downloaded PO before refreshing `tree/`.
 3. Rebuilds `builds/final_translated.po`.
 4. Validates the PO for DSW's native Knowledge Model locale import.
 5. Refreshes review outputs.
@@ -71,6 +72,13 @@ shared-block and Markdown checks.
 
 These writer workflows share a concurrency group and do not cancel an active
 import, sync, or KM update when a later run starts.
+
+Before replacing inputs, source sync and KM updates also check individual and
+canonical shared translations against the saved Weblate snapshot. If Git has
+an edit that the incoming PO does not contain, they stop without changing files.
+This protects reviewed translations when an import fails or another writer runs
+first. Complete or retry the import, resolving conflicts if necessary; see the
+[maintenance runbook](maintenance-runbook.md#troubleshooting).
 
 ## Read-Only Reports
 

@@ -59,5 +59,7 @@ same-repository pull requests both run without secrets or branch write access.
 After merge, automation checks Weblate again, imports safe edits, and refreshes
 the generated files. A conflicting edit needs maintainer review; automation
 does not choose which translation wins.
+Source sync pauses while merged edits await Weblate import, so a failed import
+does not cause your translation to be overwritten by the next scheduled run.
 
 For approved, long-term downloads, use this repository's **Releases → Latest**.
