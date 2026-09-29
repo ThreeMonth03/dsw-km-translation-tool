@@ -21,15 +21,16 @@ EXPECTED_TOOLING_REF = "REPLACE_WITH_COMMIT_SHA"
 
 def test_artifact_cleanup_is_pinned_and_does_not_run_pr_code(repo_root: Path) -> None:
     wrapper, wrapper_text = load_rendered_workflow(repo_root, "artifact_cleanup_template.yml")
-    assert wrapper["on"]["pull_request"]["types"] == ["closed"]
-    assert wrapper["on"]["workflow_run"]["types"] == ["completed"]
-    assert wrapper["on"]["workflow_dispatch"]["inputs"]["apply"]["default"] == "false"
+    assert wrapper["on"] == {"pull_request": {"types": ["closed"], "branches": ["master"]}}
     assert "pull_request_target" not in wrapper_text
     job = wrapper["jobs"]["cleanup"]
     assert job["uses"].endswith("/cleanup_pr_artifacts.yml@" + EXPECTED_TOOLING_REF)
     assert job["with"]["tooling_ref"] == EXPECTED_TOOLING_REF
-    assert "github.event.pull_request.merged == true" in job["if"]
-    assert "head.repo.full_name == github.repository" in job["if"]
+    assert job["if"] == (
+        "github.event.pull_request.merged == true && "
+        "github.event.pull_request.head.repo.full_name == github.repository"
+    )
+    assert job["with"]["apply"] == "true"
     implementation = repo_root / ".github/workflows/cleanup_pr_artifacts.yml"
     reusable = load_workflow_yaml(implementation)
     assert reusable["permissions"] == {
@@ -44,6 +45,18 @@ def test_artifact_cleanup_is_pinned_and_does_not_run_pr_code(repo_root: Path) ->
     checkout = reusable["jobs"]["cleanup"]["steps"][1]
     assert checkout["with"]["ref"] == "${{ inputs.tooling_ref }}"
     assert checkout["with"]["persist-credentials"] == "false"
+
+
+def test_tool_artifact_cleanup_only_runs_after_merge(repo_root: Path) -> None:
+    workflow = load_workflow_yaml(repo_root / ".github/workflows/artifact_cleanup.yml")
+    assert workflow["on"] == {"pull_request": {"types": ["closed"], "branches": ["master"]}}
+    job = workflow["jobs"]["cleanup"]
+    assert job["if"] == (
+        "github.event.pull_request.merged == true && "
+        "github.event.pull_request.head.repo.full_name == github.repository"
+    )
+    assert job["with"]["tooling_ref"] == "${{ github.sha }}"
+    assert job["with"]["apply"] == "true"
 
 
 def test_contributor_guide_names_the_translation_workflow(repo_root: Path) -> None:
