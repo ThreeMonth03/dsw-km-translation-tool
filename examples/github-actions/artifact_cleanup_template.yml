@@ -4,19 +4,6 @@ on:
   pull_request:
     types: [closed]
     branches: ["{{TRACKING_BRANCH}}"]
-  push:
-    branches: ["{{TRACKING_BRANCH}}"]
-  workflow_run:
-    workflows: ["KM Translation Operations"]
-    types: [completed]
-  schedule:
-    - cron: "17 2,14 * * *"
-  workflow_dispatch:
-    inputs:
-      apply:
-        description: Delete eligible artifacts; leave off to preview the plan.
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -26,13 +13,12 @@ permissions:
 jobs:
   cleanup:
     if: >-
-      github.event_name != 'pull_request' ||
-      (github.event.pull_request.merged == true &&
-       github.event.pull_request.head.repo.full_name == github.repository)
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.repo.full_name == github.repository
     uses: {{TOOLING_REPOSITORY}}/.github/workflows/cleanup_pr_artifacts.yml@{{TOOLING_REF}}
     with:
       tooling_ref: {{TOOLING_REF}}
-      apply: ${{ github.event_name != 'workflow_dispatch' || inputs.apply }}
+      apply: true
       artifact_patterns: |
         github-translation-report
         native-locale-*

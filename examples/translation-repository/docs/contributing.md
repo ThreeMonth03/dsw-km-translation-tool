@@ -51,6 +51,8 @@ Successful pull-request screenshots are retained for 14 days; failure diagnostic
 are retained for up to 7 days; merged PR evidence can be removed earlier.
 Download evidence you need before merging or before it expires. For
 long-term PO downloads, use **Releases**, not temporary Actions artifacts.
+Cleanup runs when a same-repository PR merges. If CI is still running at that
+point, its artifacts wait for a later merge or their normal expiry.
 
 Read `resource-pages.md` for the separate resource-page outcome, then inspect
 `resource-pages.json` and `resource-*.png` for individual fields. **incomplete**

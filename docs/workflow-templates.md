@@ -47,10 +47,11 @@ workflow removes allowlisted artifacts from completed PR runs only after every
 associated PR has merged. It does not delete releases, workflow runs, logs, or
 artifacts produced by pushes, scheduled runs, or manual runs.
 
-Cleanup runs after merges, after validation completes, and twice daily to catch
-late uploads and older merged PRs. Unknown ownership and running jobs are skipped.
-Each run deletes at most 100 artifacts; later runs handle the remaining backlog.
-Use **Clean merged PR artifacts** with `apply` disabled to review a dry-run plan.
+Cleanup runs only when a same-repository PR merges. It does not require a
+schedule or a default-branch change. Unknown ownership and running jobs are
+skipped. Each merge deletes at most 100 artifacts, including older merged PRs;
+later merges handle the remaining backlog. Late uploads and fork-PR artifacts
+wait for a later eligible merge or their retention expiry.
 The plan and deletion results appear in logs and the job summary, without creating
 another artifact. It requires only the repository's built-in GitHub token and
 never executes PR code. Artifact expiration remains the fallback for unmerged PRs
