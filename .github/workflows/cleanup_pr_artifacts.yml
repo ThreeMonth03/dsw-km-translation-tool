@@ -1,0 +1,58 @@
+name: Clean merged PR artifacts
+
+on:
+  workflow_call:
+    inputs:
+      tooling_ref:
+        description: Reviewed commit of the cleanup implementation.
+        required: true
+        type: string
+      artifact_patterns:
+        description: Newline-separated allowlist of temporary artifact names.
+        required: true
+        type: string
+      apply:
+        description: Delete matching artifacts; otherwise report only.
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  actions: write
+  pull-requests: read
+
+concurrency:
+  group: merged-pr-artifact-cleanup
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Validate trusted tooling revision
+        env:
+          TOOLING_REF: ${{ inputs.tooling_ref }}
+        run: '[[ "$TOOLING_REF" =~ ^[0-9a-f]{40}$ ]]'
+      - name: Checkout reviewed cleanup implementation
+        uses: actions/checkout@v5
+        with:
+          repository: ThreeMonth03/dsw-km-translation-tool
+          ref: ${{ inputs.tooling_ref }}
+          persist-credentials: false
+      - name: Clean completed, merged pull requests
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APPLY: ${{ inputs.apply }}
+          ARTIFACT_PATTERNS: ${{ inputs.artifact_patterns }}
+        run: |
+          args=(--repository "$GITHUB_REPOSITORY")
+          while IFS= read -r pattern; do
+            if [[ -n "$pattern" ]]; then
+              args+=(--artifact-pattern "$pattern")
+            fi
+          done <<< "$ARTIFACT_PATTERNS"
+          if [[ "$APPLY" == true ]]; then
+            args+=(--apply)
+          fi
+          python3 src/dsw_km_translation_tool/github_artifact_cleanup.py "${args[@]}"
