@@ -47,6 +47,10 @@ source/translated language switching. The screenshots cover a translated
 chapter title and resource pages with matching, non-fuzzy PO translations,
 not every changed question. Review other changes interactively using the steps below.
 
+Successful pull-request screenshots are retained for 14 days; failure diagnostics
+are retained for 7 days. Download evidence you need before it expires. For
+long-term PO downloads, use **Releases**, not temporary Actions artifacts.
+
 Read `resource-pages.md` for the separate resource-page outcome, then inspect
 `resource-pages.json` and `resource-*.png` for individual fields. **incomplete**
 means checked fields still display source text; **not-checked** means there were

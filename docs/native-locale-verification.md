@@ -41,9 +41,12 @@ the `native-dsw-review` artifact. It includes:
   stored only in their dedicated reports.
 - `failure.png`, when a browser check fails.
 
-Artifacts are retained for 14 days. Screenshots check a translated chapter title
-and resource pages with eligible translations; they are not a review of every
-question or a hosted, interactive preview.
+Successful PR and manual-run artifacts are retained for 14 days, successful
+scheduled-run artifacts for 3 days, and failure diagnostics and other runs for
+7 days. See [artifact retention](workflow-templates.md#artifact-retention).
+Screenshots check a translated chapter title and resource pages with eligible
+translations; they are not a review of every question or a hosted, interactive
+preview.
 Download the PR's `native-locale-<head SHA>` artifact to review other changes in
 your own test DSW instance.
 

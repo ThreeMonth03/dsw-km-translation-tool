@@ -95,6 +95,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: github-translation-import
+          retention-days: 7
           if-no-files-found: ignore
           path: |
             ${{ runner.temp }}/github_translation_import.json

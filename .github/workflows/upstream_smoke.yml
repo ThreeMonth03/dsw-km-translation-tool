@@ -52,6 +52,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: upstream-smoke
+          retention-days: 7
           if-no-files-found: ignore
           path: |
             .cache/upstream-smoke/upstream_smoke_report.json

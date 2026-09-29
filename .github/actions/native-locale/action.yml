@@ -49,4 +49,8 @@ runs:
         name: ${{ inputs.artifact-name }}
         path: ${{ runner.temp }}/native-dsw-review/
         if-no-files-found: warn
-        retention-days: 14
+        retention-days: >-
+          ${{ failure() && 7
+            || (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch') && 14
+            || github.event_name == 'schedule' && 3
+            || 7 }}
