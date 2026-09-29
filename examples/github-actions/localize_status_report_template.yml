@@ -68,6 +68,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: localize-status-report
+          retention-days: 7
           path: |
             translation-repo/reviews/localize_status_report.json
             translation-repo/reviews/localize_status_report.md

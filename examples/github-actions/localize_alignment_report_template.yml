@@ -57,6 +57,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: localize-alignment-report
+          retention-days: 7
           path: |
             translation-repo/reviews/localize_alignment_report.json
             translation-repo/reviews/localize_alignment_report.md

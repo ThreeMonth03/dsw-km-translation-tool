@@ -28,6 +28,25 @@ in that config rather than hard-coding them into workflow steps.
 | [`localize_alignment_report_template.yml`][alignment-template] | Translation repository | No | None | Verify Weblate, tree, and final PO outputs still match. |
 | [`km_version_auto_update_template.yml`][km-update-template] | Translation repository | Yes | `DSW_REGISTRY_TOKEN` | Move to a newer published KM only after validation passes. |
 
+## Artifact Retention
+
+GitHub automatically expires workflow artifacts using these upload settings:
+
+| Artifact | Retention |
+| --- | --- |
+| Status, alignment, sync/import, and upstream smoke reports | 7 days |
+| Pull-request translation reports and PO previews | 14 days |
+| Native DSW diagnostics after a failed job | 7 days |
+| Native DSW screenshots from successful pull requests or manual runs | 14 days |
+| Native DSW screenshots from successful scheduled runs | 3 days |
+| Other native DSW verification artifacts | 7 days |
+
+Download review evidence before it expires. Published PO assets in GitHub
+Releases are separate and are not deleted by artifact expiration. These settings
+do not shorten workflow-log retention or require a cleanup workflow or token.
+Changing an upload's retention applies to new artifacts only; maintainers must
+review and remove unwanted older artifacts separately when reclaiming space.
+
 ## Rendered Values
 
 Workflow templates use explicit placeholders such as:

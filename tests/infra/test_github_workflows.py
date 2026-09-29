@@ -318,7 +318,13 @@ def test_native_locale_action_is_isolated_and_retains_failure_artifacts(repo_roo
     action = load_workflow_yaml(repo_root / ".github/actions/native-locale/action.yml")
     upload = action["runs"]["steps"][-1]
     assert upload["if"] == "always()"
-    assert upload["with"]["retention-days"] == "14"
+    assert " ".join(upload["with"]["retention-days"].split()) == (
+        "${{ (steps.verify.outcome != 'success' "
+        "|| (inputs.audit-source-catalog == 'true' && steps.audit.outcome != 'success')) && 7 "
+        "|| (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch') && 14 "
+        "|| github.event_name == 'schedule' && 3 || 7 }}"
+    )
+    assert {step.get("id") for step in action["runs"]["steps"]} >= {"verify", "audit"}
     compose = load_workflow_yaml(repo_root / "tests/native_locale/compose.yml")
     for service in compose["services"].values():
         assert not service["image"].endswith(":latest")
@@ -326,6 +332,38 @@ def test_native_locale_action_is_isolated_and_retains_failure_artifacts(repo_roo
             assert port.startswith("127.0.0.1:${DSW_TEST_")
     docs = (repo_root / "docs/km-update-runbook.md").read_text()
     assert "The sync writer has no manual trigger" in docs
+
+
+def test_report_and_preview_artifacts_have_explicit_retention(repo_root: Path) -> None:
+    """Keep routine artifacts bounded without expiring human-review previews early."""
+
+    expected = {
+        "github-translation-import": "7",
+        "km-version-auto-update": "7",
+        "localize-alignment-report": "7",
+        "localize-status-report": "7",
+        "github-translation-report": "14",
+        "native-locale-${{ github.event.pull_request.head.sha }}": "14",
+        "upstream-smoke": "7",
+    }
+    config = load_translation_repository_config(repo_root / "examples/translation-config.yml")
+    workflows = [
+        yaml.load(item.content, Loader=yaml.BaseLoader)
+        for item in render_translation_repository_scaffold(tooling_repo=repo_root, config=config)
+        if item.path.parent == Path(".github/workflows")
+    ]
+    workflows.extend(
+        load_workflow_yaml(path) for path in (repo_root / ".github/workflows").glob("*.yml")
+    )
+    actual = {}
+    for workflow in workflows:
+        for job in workflow["jobs"].values():
+            for step in job.get("steps", []):
+                if step.get("uses", "").startswith("actions/upload-artifact@"):
+                    settings = step["with"]
+                    assert settings["retention-days"] == expected[settings["name"]]
+                    actual[settings["name"]] = settings["retention-days"]
+    assert actual == expected
 
 
 def test_tooling_ci_and_release_run_native_acceptance(repo_root: Path) -> None:
