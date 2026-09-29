@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import replace
 from pathlib import Path
 
@@ -332,6 +333,26 @@ def test_native_locale_action_is_isolated_and_retains_failure_artifacts(repo_roo
             assert port.startswith("127.0.0.1:${DSW_TEST_")
     docs = (repo_root / "docs/km-update-runbook.md").read_text()
     assert "The sync writer has no manual trigger" in docs
+
+
+def test_native_storage_builds_pinned_official_release_assets(repo_root: Path) -> None:
+    compose = load_workflow_yaml(repo_root / "tests/native_locale/compose.yml")
+    for name, target in (("minio", "minio"), ("bucket", "mc")):
+        service = compose["services"][name]
+        assert service["image"].startswith(f"dsw-ci-{target}:RELEASE.")
+        assert service["platform"] == "linux/amd64"
+        assert service["pull_policy"] == "build"
+        assert service["build"] == {
+            "context": "${DSW_TEST_STORAGE_CONTEXT:?}",
+            "target": target,
+        }
+    dockerfile = (repo_root / "tests/native_locale/storage/Dockerfile").read_text()
+    assert re.search(r"^FROM debian:bookworm-slim@sha256:[0-9a-f]{64} AS base$", dockerfile, re.M)
+    assert len(re.findall(r"^ADD .*--checksum=sha256:[0-9a-f]{64}\s", dockerfile, re.M)) == 2
+    for project in ("minio", "mc"):
+        assert f"https://github.com/minio/{project}/releases/download/RELEASE." in dockerfile
+    checker = (repo_root / "tests/native_locale/check.py").read_text()
+    assert '"DSW_TEST_STORAGE_CONTEXT": str(COMPOSE.parent / "storage")' in checker
 
 
 def test_report_and_preview_artifacts_have_explicit_retention(repo_root: Path) -> None:

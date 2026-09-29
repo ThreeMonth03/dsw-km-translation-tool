@@ -140,4 +140,10 @@ It cannot target an existing DSW server. Reports contain no login tokens.
 The tested server/client image versions are pinned in
 `tests/native_locale/compose.yml`. Upgrade these together and rerun acceptance;
 they are independent of the `dsw-models` Python dependency.
-The disposable object store uses the upstream MinIO and client images from Quay.
+The disposable object store builds MinIO and its client from official GitHub
+release assets using `tests/native_locale/storage/Dockerfile`. The build pins
+asset SHA-256 checksums and the Debian base-image digest. Compose builds these
+Linux/amd64 test images locally; it does not pull MinIO images from a registry.
+Updating storage requires updating the release URLs, checksums and local image
+tags together, then rerunning browser acceptance. These are isolated test
+fixtures, not production deployment images.
