@@ -352,6 +352,7 @@ def main() -> None:
         env = {
             **os.environ,
             "DSW_TEST_CONFIG": str(config_path),
+            "DSW_TEST_STORAGE_CONTEXT": str(COMPOSE.parent / "storage"),
             "DSW_TEST_API_URL": api,
             "DSW_TEST_API_PORT": str(api_port),
             "DSW_TEST_CLIENT_PORT": str(client_port),
