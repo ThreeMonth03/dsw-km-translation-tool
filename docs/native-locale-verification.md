@@ -43,7 +43,7 @@ the `native-dsw-review` artifact. It includes:
 
 Successful PR and manual-run artifacts are retained for 14 days, successful
 scheduled-run artifacts for 3 days, and failure diagnostics and other runs for
-7 days. See [artifact retention](workflow-templates.md#artifact-retention).
+7 days. See the [workflow artifact policy](workflow-templates.md).
 Screenshots check a translated chapter title and resource pages with eligible
 translations; they are not a review of every question or a hosted, interactive
 preview.

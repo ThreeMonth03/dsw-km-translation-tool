@@ -319,10 +319,12 @@ def test_native_locale_action_is_isolated_and_retains_failure_artifacts(repo_roo
     upload = action["runs"]["steps"][-1]
     assert upload["if"] == "always()"
     assert " ".join(upload["with"]["retention-days"].split()) == (
-        "${{ failure() && 7 "
+        "${{ (steps.verify.outcome != 'success' "
+        "|| (inputs.audit-source-catalog == 'true' && steps.audit.outcome != 'success')) && 7 "
         "|| (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch') && 14 "
         "|| github.event_name == 'schedule' && 3 || 7 }}"
     )
+    assert {step.get("id") for step in action["runs"]["steps"]} >= {"verify", "audit"}
     compose = load_workflow_yaml(repo_root / "tests/native_locale/compose.yml")
     for service in compose["services"].values():
         assert not service["image"].endswith(":latest")
