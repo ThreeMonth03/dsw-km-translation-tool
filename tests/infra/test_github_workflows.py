@@ -19,6 +19,33 @@ EXPECTED_TOOLING_REPOSITORY = "ThreeMonth03/dsw-km-translation-tool"
 EXPECTED_TOOLING_REF = "REPLACE_WITH_COMMIT_SHA"
 
 
+def test_artifact_cleanup_is_pinned_and_does_not_run_pr_code(repo_root: Path) -> None:
+    wrapper, wrapper_text = load_rendered_workflow(repo_root, "artifact_cleanup_template.yml")
+    assert wrapper["on"]["pull_request"]["types"] == ["closed"]
+    assert wrapper["on"]["workflow_run"]["types"] == ["completed"]
+    assert wrapper["on"]["workflow_dispatch"]["inputs"]["apply"]["default"] == "false"
+    assert "pull_request_target" not in wrapper_text
+    job = wrapper["jobs"]["cleanup"]
+    assert job["uses"].endswith("/cleanup_pr_artifacts.yml@" + EXPECTED_TOOLING_REF)
+    assert job["with"]["tooling_ref"] == EXPECTED_TOOLING_REF
+    assert "github.event.pull_request.merged == true" in job["if"]
+    assert "head.repo.full_name == github.repository" in job["if"]
+    implementation = repo_root / ".github/workflows/cleanup_pr_artifacts.yml"
+    reusable = load_workflow_yaml(implementation)
+    assert reusable["permissions"] == {
+        "contents": "read",
+        "actions": "write",
+        "pull-requests": "read",
+    }
+    text = implementation.read_text()
+    assert "secrets." not in text
+    assert "upload-artifact" not in text
+    assert "github.head_ref" not in text
+    checkout = reusable["jobs"]["cleanup"]["steps"][1]
+    assert checkout["with"]["ref"] == "${{ inputs.tooling_ref }}"
+    assert checkout["with"]["persist-credentials"] == "false"
+
+
 def test_contributor_guide_names_the_translation_workflow(repo_root: Path) -> None:
     """Keep the contributor-facing CI name aligned with the rendered workflow."""
 
@@ -315,7 +342,9 @@ def test_validate_translation_config_template_is_read_only(repo_root: Path) -> N
     assert "secrets." not in workflow_text
 
 
-def test_native_locale_action_is_isolated_and_retains_failure_artifacts(repo_root: Path) -> None:
+def test_native_locale_action_is_isolated_and_retains_failure_artifacts(
+    repo_root: Path,
+) -> None:
     action = load_workflow_yaml(repo_root / ".github/actions/native-locale/action.yml")
     upload = action["runs"]["steps"][-1]
     assert upload["if"] == "always()"

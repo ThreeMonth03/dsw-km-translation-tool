@@ -27,6 +27,7 @@ in that config rather than hard-coding them into workflow steps.
 | [`localize_status_report_template.yml`][status-template] | Translation repository | No | Optional `LOCALIZE_API_TOKEN` | Report Weblate PO health and website-side checks. |
 | [`localize_alignment_report_template.yml`][alignment-template] | Translation repository | No | None | Verify Weblate, tree, and final PO outputs still match. |
 | [`km_version_auto_update_template.yml`][km-update-template] | Translation repository | Yes | `DSW_REGISTRY_TOKEN` | Move to a newer published KM only after validation passes. |
+| `artifact_cleanup_template.yml` | Translation repository | No | None | Remove temporary artifacts belonging exclusively to merged PRs. |
 
 ## Artifact Retention
 
@@ -41,11 +42,19 @@ GitHub automatically expires workflow artifacts using these upload settings:
 | Native DSW screenshots from successful scheduled runs | 3 days |
 | Other native DSW verification artifacts | 7 days |
 
-Download review evidence before it expires. Published PO assets in GitHub
-Releases are separate and are not deleted by artifact expiration. These settings
-do not shorten workflow-log retention or require a cleanup workflow or token.
-Changing an upload's retention applies to new artifacts only; maintainers must
-review and remove unwanted older artifacts separately when reclaiming space.
+Download review evidence before merging its PR or before it expires. The cleanup
+workflow removes allowlisted artifacts from completed PR runs only after every
+associated PR has merged. It does not delete releases, workflow runs, logs, or
+artifacts produced by pushes, scheduled runs, or manual runs.
+
+Cleanup runs after merges, after validation completes, and twice daily to catch
+late uploads and older merged PRs. Unknown ownership and running jobs are skipped.
+Each run deletes at most 100 artifacts; later runs handle the remaining backlog.
+Use **Clean merged PR artifacts** with `apply` disabled to review a dry-run plan.
+The plan and deletion results appear in logs and the job summary, without creating
+another artifact. It requires only the repository's built-in GitHub token and
+never executes PR code. Artifact expiration remains the fallback for unmerged PRs
+and non-PR runs; changes to retention settings affect new uploads only.
 
 ## Rendered Values
 

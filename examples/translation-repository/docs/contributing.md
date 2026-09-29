@@ -39,7 +39,7 @@ field and keep the edit in the canonical shared block.
 
 Open the pull request's Actions run and download `native-locale-<head SHA>`
 from **Artifacts**. It contains `final_translated.po` and a review diff, retained
-for 14 days. This artifact is not a hosted DSW preview.
+for up to 14 days and removed after the PR merges. This artifact is not a hosted DSW preview.
 
 Download `native-dsw-review` from the same run for actual DSW screenshots and
 `coverage.md`. CI imports the PO in a temporary official DSW instance and checks
@@ -48,7 +48,8 @@ chapter title and resource pages with matching, non-fuzzy PO translations,
 not every changed question. Review other changes interactively using the steps below.
 
 Successful pull-request screenshots are retained for 14 days; failure diagnostics
-are retained for 7 days. Download evidence you need before it expires. For
+are retained for up to 7 days; merged PR evidence can be removed earlier.
+Download evidence you need before merging or before it expires. For
 long-term PO downloads, use **Releases**, not temporary Actions artifacts.
 
 Read `resource-pages.md` for the separate resource-page outcome, then inspect

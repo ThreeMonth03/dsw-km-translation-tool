@@ -1,0 +1,36 @@
+name: Clean merged PR artifacts
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [master]
+  push:
+    branches: [master]
+  workflow_run:
+    workflows: ["Unit Test"]
+    types: [completed]
+  schedule:
+    - cron: "27 2,14 * * *"
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: Delete eligible artifacts; leave off to preview the plan.
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  actions: write
+  pull-requests: read
+
+jobs:
+  cleanup:
+    if: >-
+      github.event_name != 'pull_request' ||
+      (github.event.pull_request.merged == true &&
+       github.event.pull_request.head.repo.full_name == github.repository)
+    uses: ./.github/workflows/cleanup_pr_artifacts.yml
+    with:
+      tooling_ref: ${{ github.sha }}
+      apply: ${{ github.event_name != 'workflow_dispatch' || inputs.apply }}
+      artifact_patterns: native-dsw-review
