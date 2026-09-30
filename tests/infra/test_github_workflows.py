@@ -336,14 +336,14 @@ def test_validate_translation_config_template_is_read_only(repo_root: Path) -> N
     assert "tooling-repo/.venv/bin/dsw-km-report-github-translations" in workflow_text
     assert '--base-ref "base/pr-base"' in workflow_text
     assert '--head-ref "HEAD"' in workflow_text
-    assert "github-translation-report" in workflow_text
+    assert '--github-output "$GITHUB_OUTPUT"' in workflow_text
     assert "actions/upload-artifact@v7" in workflow_text
     assert workflow_text.count("persist-credentials: false") == 3
     assert "tooling-repo/.venv/bin/dsw-km-scaffold check" in workflow_text
     assert "--summary" in workflow_text
     assert "dsw-km-sync-repository-shared-strings" not in workflow_text
     assert "git diff --exit-code" not in workflow_text
-    assert "native-locale-${{ github.event.pull_request.head.sha }}" in workflow_text
+    assert "native-locale-${{ github.event.pull_request.head.sha || github.sha }}" in workflow_text
     assert "translation-repo/builds/final_translated.po" in workflow_text
     assert "dsw-km-sync-localize" not in workflow_text
     assert "dsw-km-sync-latest-km" not in workflow_text
@@ -353,20 +353,34 @@ def test_validate_translation_config_template_is_read_only(repo_root: Path) -> N
     assert workflow["on"]["schedule"][0]["cron"] == "45 3 * * *"
     assert "uses: ./tooling-repo/.github/actions/native-locale" in workflow_text
     assert "secrets." not in workflow_text
+    preview = next(
+        step
+        for step in workflow["jobs"]["validate-translation-config"]["steps"]
+        if step.get("name") == "Upload native locale preview"
+    )
+    assert preview["if"] == (
+        "steps.translation-changes.outputs.has_translation_changes == 'true' "
+        "|| inputs.upload_review == true"
+    )
+    assert workflow["on"]["workflow_dispatch"]["inputs"]["upload_review"]["default"] == "false"
+    assert "name: github-translation-report" not in workflow_text
 
 
 def test_native_locale_action_is_isolated_and_retains_failure_artifacts(
     repo_root: Path,
 ) -> None:
     action = load_workflow_yaml(repo_root / ".github/actions/native-locale/action.yml")
-    upload = action["runs"]["steps"][-1]
-    assert upload["if"] == "always()"
-    assert " ".join(upload["with"]["retention-days"].split()) == (
-        "${{ (steps.verify.outcome != 'success' "
-        "|| (inputs.audit-source-catalog == 'true' && steps.audit.outcome != 'success')) && 7 "
-        "|| (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch') && 14 "
-        "|| github.event_name == 'schedule' && 3 || 7 }}"
+    review, failure = action["runs"]["steps"][-2:]
+    assert action["inputs"]["upload-review"]["default"] == "false"
+    assert review["if"] == "success() && inputs.upload-review == 'true'"
+    assert review["with"]["retention-days"] == "7"
+    assert failure["if"] == (
+        "failure() && (steps.verify.outcome == 'failure' || steps.audit.outcome == 'failure')"
     )
+    assert failure["with"]["retention-days"] == "3"
+    assert "failure.png" in failure["with"]["path"]
+    assert "/*.png" not in failure["with"]["path"]
+    assert "continue-on-error" not in str(action)
     assert {step.get("id") for step in action["runs"]["steps"]} >= {"verify", "audit"}
     compose = load_workflow_yaml(repo_root / "tests/native_locale/compose.yml")
     for service in compose["services"].values():
@@ -405,9 +419,7 @@ def test_report_and_preview_artifacts_have_explicit_retention(repo_root: Path) -
         "km-version-auto-update": "7",
         "localize-alignment-report": "7",
         "localize-status-report": "7",
-        "github-translation-report": "14",
-        "native-locale-${{ github.event.pull_request.head.sha }}": "14",
-        "upstream-smoke": "7",
+        "native-locale-${{ github.event.pull_request.head.sha || github.sha }}": "7",
     }
     config = load_translation_repository_config(repo_root / "examples/translation-config.yml")
     workflows = [
@@ -486,9 +498,29 @@ def test_upstream_smoke_workflow_is_tooling_integration_check(repo_root: Path) -
     assert ".cache/upstream-smoke/sources/knowledge-models" in workflow_text
     assert "make upstream-smoke" in workflow_text
     assert "secrets.DSW_REGISTRY_TOKEN" in workflow_text
-    assert "actions/upload-artifact@v7" in workflow_text
+    assert "actions/upload-artifact" not in workflow_text
+    assert "GITHUB_STEP_SUMMARY" in workflow_text
     assert "git push" not in workflow_text
     assert "contents: write" not in workflow_text
+
+
+def test_routine_report_uploads_require_manual_opt_in(repo_root: Path) -> None:
+    for template in (
+        "localize_status_report_template.yml",
+        "localize_alignment_report_template.yml",
+        "km_version_auto_update_template.yml",
+    ):
+        workflow, text = load_rendered_workflow(repo_root, template)
+        assert workflow["on"]["workflow_dispatch"]["inputs"]["upload_report"]["default"] == "false"
+        assert "GITHUB_STEP_SUMMARY" in text
+        uploads = [
+            step
+            for job in workflow["jobs"].values()
+            for step in job["steps"]
+            if step.get("uses", "").startswith("actions/upload-artifact@")
+        ]
+        assert len(uploads) == 1
+        assert uploads[0]["if"] == "always() && inputs.upload_report == true"
 
 
 def test_workflow_run_blocks_do_not_interpolate_repository_config(

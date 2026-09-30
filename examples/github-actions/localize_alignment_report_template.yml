@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "45 1,13 * * *"
   workflow_dispatch:
+    inputs:
+      upload_report:
+        description: Upload the full report for seven days.
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -53,7 +58,7 @@ jobs:
           --fail-on-mismatch
 
       - name: Upload alignment report artifact
-        if: always()
+        if: always() && inputs.upload_report == true
         uses: actions/upload-artifact@v7
         with:
           name: localize-alignment-report

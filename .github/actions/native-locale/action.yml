@@ -7,6 +7,9 @@ inputs:
   artifact-name:
     description: Name of the downloadable coverage and screenshot artifact.
     default: native-dsw-review
+  upload-review:
+    description: Upload successful browser review evidence for seven days.
+    default: "false"
   audit-source-catalog:
     description: Compare the live upstream POT during operational checks, not reproducible releases.
     default: "false"
@@ -45,15 +48,22 @@ runs:
           --out "$RUNNER_TEMP/native-dsw-review/source-catalog" \
           --summary "$GITHUB_STEP_SUMMARY"
     - name: Upload coverage and browser screenshots
-      if: always()
+      if: success() && inputs.upload-review == 'true'
       uses: actions/upload-artifact@v7
       with:
         name: ${{ inputs.artifact-name }}
         path: ${{ runner.temp }}/native-dsw-review/
         if-no-files-found: warn
-        retention-days: >-
-          ${{ (steps.verify.outcome != 'success'
-            || (inputs.audit-source-catalog == 'true' && steps.audit.outcome != 'success')) && 7
-            || (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch') && 14
-            || github.event_name == 'schedule' && 3
-            || 7 }}
+        retention-days: 7
+    - name: Upload failure diagnostics
+      if: failure() && (steps.verify.outcome == 'failure' || steps.audit.outcome == 'failure')
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: |
+          ${{ runner.temp }}/native-dsw-review/result.json
+          ${{ runner.temp }}/native-dsw-review/failure.png
+          ${{ runner.temp }}/native-dsw-review/*.md
+          ${{ runner.temp }}/native-dsw-review/source-catalog/*.md
+        if-no-files-found: warn
+        retention-days: 3

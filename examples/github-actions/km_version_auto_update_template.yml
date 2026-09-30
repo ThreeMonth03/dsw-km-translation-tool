@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "15 2 * * *"
   workflow_dispatch:
+    inputs:
+      upload_report:
+        description: Upload the full report for seven days.
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -61,7 +66,7 @@ jobs:
           --summary "$GITHUB_STEP_SUMMARY"
 
       - name: Upload KM auto-update report artifact
-        if: always()
+        if: always() && inputs.upload_report == true
         uses: actions/upload-artifact@v7
         with:
           name: km-version-auto-update

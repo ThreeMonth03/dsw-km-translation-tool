@@ -28,8 +28,8 @@ synchronization remains authoritative.
    source, UUIDs, links, and Markdown formatting intact.
 4. Propose the change on a new branch and open a pull request. Explain the
    wording briefly; do not edit generated PO files or run build commands.
-5. Wait for **KM Translation Operations**. Its `github-translation-report`
-   artifact identifies formatting errors or conflicting Weblate edits.
+5. Wait for **KM Translation Operations**. Its job summary identifies formatting
+   errors or conflicting Weblate edits.
 
 CI expands canonical shared translations in its temporary checkout. If you
 edited a repeated string's individual field to a different value, restore that
@@ -37,9 +37,9 @@ field and keep the edit in the canonical shared block.
 
 ## Review the PO
 
-Open the pull request's Actions run and download `native-locale-<head SHA>`
+For a PR with translation changes, open its Actions run and download `native-locale-<head SHA>`
 from **Artifacts**. It contains `final_translated.po` and a review diff, retained
-for up to 14 days and removed after the PR merges. This artifact is not a hosted DSW preview.
+for up to 7 days and removed after the PR merges. This artifact is not a hosted DSW preview.
 
 Download `native-dsw-review` from the same run for actual DSW screenshots and
 `coverage.md`. CI imports the PO in a temporary official DSW instance and checks
@@ -47,8 +47,11 @@ source/translated language switching. The screenshots cover a translated
 chapter title and resource pages with matching, non-fuzzy PO translations,
 not every changed question. Review other changes interactively using the steps below.
 
-Successful pull-request screenshots are retained for 14 days; failure diagnostics
-are retained for up to 7 days; merged PR evidence can be removed earlier.
+Successful translation-review screenshots are retained for 7 days; failure diagnostics
+are retained for up to 3 days; merged PR evidence can be removed earlier.
+Infrastructure-only PRs still run every check but do not upload successful PO or
+screenshot previews. To request them, run **KM Translation Operations** manually
+with `upload_review` enabled.
 Download evidence you need before merging or before it expires. For
 long-term PO downloads, use **Releases**, not temporary Actions artifacts.
 Cleanup runs when a same-repository PR merges. If CI is still running at that

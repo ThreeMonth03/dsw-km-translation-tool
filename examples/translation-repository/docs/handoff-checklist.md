@@ -51,7 +51,8 @@ Configure these secrets in this repository:
 3. Check the latest `localize_status_report.yml` run.
 4. Check the latest `km_version_auto_update.yml` run.
 5. Check the latest `validate_translation_config.yml` source and native locale reports.
-6. If a report failed, download its artifact before changing files.
+6. If a report failed, read its job summary and logs before changing files.
+   Request a full report with `upload_report` on a manual run if needed.
 
 See [Maintenance Runbook](maintenance-runbook.md) for commands.
 
@@ -71,14 +72,14 @@ and actual DSW import failures still block CI.
 | Symptom | First Place to Look |
 | --- | --- |
 | Sync failed | `localize_auto_sync.yml` log |
-| Git and Weblate drifted | `localize-alignment-report` artifact |
-| Weblate checks changed | `localize-status-report` artifact |
-| KM update failed | `km-version-auto-update` artifact |
+| Git and Weblate drifted | Alignment workflow job summary |
+| Weblate checks changed | Status workflow job summary |
+| KM update failed | KM auto-update workflow job summary |
 | Config validation failed | `translation-config.yml` and `validate_translation_config.yml` log |
-| Translation PR failed | `github-translation-report` artifact |
-| Native import failed or coverage is incomplete | `native-dsw-review` artifact |
-| Resource pages remain untranslated | `resource-pages.md` and `resource-*.png` in `native-dsw-review` |
-| Shared source POT differs | `source-catalog/source-catalog.md` in `native-dsw-review` |
+| Translation PR failed | KM Translation Operations job summary |
+| Native import failed | Job log and `native-dsw-review` failure diagnostics |
+| Coverage is incomplete or resource pages remain untranslated | Job summary; enable `upload_review` for the full review bundle |
+| Shared source POT differs | Source-catalog job summary; enable `upload_review` for snapshots |
 
 ## Local Maintenance
 
