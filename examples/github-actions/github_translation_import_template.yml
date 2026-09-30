@@ -91,7 +91,7 @@ jobs:
           --mode schedule
 
       - name: Upload GitHub translation import report
-        if: always()
+        if: always() && (steps.import-github-translations.outputs.has_translation_changes == 'true' || failure())
         uses: actions/upload-artifact@v7
         with:
           name: github-translation-import

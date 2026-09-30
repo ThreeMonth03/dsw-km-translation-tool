@@ -124,13 +124,17 @@ Before publishing, CI imports the PO in disposable official DSW containers and
 checks language switching and resource-page rendering. Import, questionnaire,
 page-load errors and unexpected resource-page text block publication.
 Official POT coverage gaps and resource-page source fallback produce warnings in the
-`native-dsw-review` artifact; an importable partial locale can still be released.
+job summary; an importable partial locale can still be released.
 
 Download all assets and run `sha256sum -c SHA256SUMS` to verify them. DSW needs
 only the PO. Use a new revision tag for corrections; do not replace existing
 release assets.
 
 ## Troubleshooting
+
+Routine verification results appear in the job summary. For full screenshots
+and source snapshots, run **KM Translation Operations** with `upload_review`
+enabled. Failed native checks retain compact diagnostics for three days.
 
 - Sync or KM update reports `not yet in Weblate`: check **GitHub Translation
   Import** and resolve its error before retrying. For multiple pending reviewed
@@ -139,8 +143,8 @@ release assets.
   untouched; do not force-refresh the tree to bypass the check.
 - Sync created no commit: the rebuild found no tracked changes. Use the alignment
   report to confirm the repository still matches live Weblate.
-- Alignment failed: download `localize-alignment-report` and compare the
-  generated files with the checked-in files.
+- Alignment failed: read the job summary. For the full generated-file diff, run
+  the alignment workflow manually with `upload_report` enabled.
 - Native locale validation failed: compare `sources/localize/*/latest.po` with
   `builds/final_translated.po`, then inspect the syntax or language error.
 - Native DSW acceptance failed: download `native-dsw-review` for the result and
@@ -158,8 +162,8 @@ release assets.
 - KM auto-update failed before downloading a bundle: check `DSW_REGISTRY_TOKEN`.
 - KM auto-update failed after rebuilding the translation tree and locale PO:
   inspect the validation or alignment error.
-- A translation PR failed Markdown validation: download the
-  `github-translation-report` artifact and restore the missing emphasis, link,
+- A translation PR failed Markdown validation: read the job summary and restore
+  the missing emphasis, link,
   list, code, or boundary-whitespace formatting.
 - A translation PR failed shared-block validation: keep the intended wording
   in the canonical shared Translation block and restore competing individual

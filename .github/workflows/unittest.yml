@@ -57,3 +57,5 @@ jobs:
           python-version: "3.13"
       - run: make install-dev BOOTSTRAP_PYTHON=python
       - uses: ./.github/actions/native-locale
+        with:
+          upload-review: ${{ github.event_name == 'pull_request' }}

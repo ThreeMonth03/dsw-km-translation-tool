@@ -31,16 +31,19 @@ in that config rather than hard-coding them into workflow steps.
 
 ## Artifact Retention
 
-GitHub automatically expires workflow artifacts using these upload settings:
+Routine status, alignment, version-update, PR-change, and upstream-smoke reports
+appear in the Actions job summary without attachments. For a full status,
+alignment, or version-update report, run its workflow with `upload_report` enabled.
+Native verification still runs on successful pushes, schedules, and releases;
+only the optional evidence upload is omitted.
 
 | Artifact | Retention |
 | --- | --- |
-| Status, alignment, sync/import, and upstream smoke reports | 7 days |
-| Pull-request translation reports and PO previews | 14 days |
-| Native DSW diagnostics after a failed job | 7 days |
-| Native DSW screenshots from successful pull requests or manual runs | 14 days |
-| Native DSW screenshots from successful scheduled runs | 3 days |
-| Other native DSW verification artifacts | 7 days |
+| Explicitly requested full reports | 7 days |
+| Weblate import reports when translations changed or an import failed | 7 days |
+| PO previews and screenshots for translation-changing PRs | 7 days |
+| Manually requested PO previews and screenshots (`upload_review`) | 7 days |
+| Native DSW failure screenshot, result, and diagnostic summaries | 3 days |
 
 Download review evidence before merging its PR or before it expires. The cleanup
 workflow removes allowlisted artifacts from completed PR runs only after every
@@ -95,22 +98,23 @@ contains the proposed text.
 `validate_translation_config_template.yml` compares pull-request translation
 changes against the base commit recorded by the pull-request event. It checks
 Markdown and boundary-whitespace formatting, Weblate conflicts, and shared
-translation consistency, then uploads a field-level report. These quality checks
+translation consistency, then publishes a field-level job summary. These quality checks
 apply to new translations and corrections alike; existing nonempty text is not
 frozen. Reviewers keep corrections focused on reported issues. The workflow has
 read-only repository permission, receives no secrets, and never modifies the
-pull-request branch. It builds and uploads a native PO preview in its temporary
+pull-request branch. For a PR with translation changes it builds and uploads a PO preview in its temporary
 checkout, without requiring translators to commit generated output changes.
 It then runs the pinned tooling's native-locale action in disposable official
 DSW containers. The same check runs daily, on manual runs, and before locale
-releases. Coverage warnings and real screenshots are available in
-`native-dsw-review`; import, questionnaire and page-load errors fail the workflow.
+releases. Coverage warnings appear in the job summary. Translation-changing PRs
+and manual runs with `upload_review` also retain screenshots in `native-dsw-review`;
+import, questionnaire and page-load errors fail the workflow.
 Resource-page source fallback is reported separately as a warning. See
 [Native Locale Verification](native-locale-verification.md).
 
 Translation operations also enable `audit-source-catalog` on the native-locale
 action. It compares the exported POT with the configured public upstream POT,
-retaining a source report and immutable snapshot in the same artifact. Source
+retaining a source report and immutable snapshot when review upload is requested. Source
 differences warn; fetch or validation failures fail the audit. Locale releases
 leave this live-source audit disabled and verify only their pinned inputs.
 

@@ -47,13 +47,10 @@ jobs:
           path: .cache/upstream-smoke/sources/knowledge-models
           key: upstream-smoke-km-${{ runner.os }}-${{ hashFiles('.cache/upstream-smoke/sources/knowledge-models/**') }}
 
-      - name: Upload upstream smoke report artifact
+      - name: Publish upstream smoke summary
         if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: upstream-smoke
-          retention-days: 7
-          if-no-files-found: ignore
-          path: |
-            .cache/upstream-smoke/upstream_smoke_report.json
-            .cache/upstream-smoke/upstream_smoke_report.md
+        run: |
+          report=.cache/upstream-smoke/upstream_smoke_report.md
+          if [ -f "$report" ]; then
+            cat "$report" >> "$GITHUB_STEP_SUMMARY"
+          fi

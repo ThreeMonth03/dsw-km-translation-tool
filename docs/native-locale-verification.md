@@ -24,8 +24,10 @@ without invented parent relationships. Source text always comes from the PO.
 
 ## Review in Actions
 
-In a translation repository, open **KM Translation Operations**, then download
-the `native-dsw-review` artifact. It includes:
+Open the **KM Translation Operations** job summary for the verification results.
+Translation-changing PRs also upload `native-dsw-review`. To download evidence
+for another revision, run the workflow manually with `upload_review` enabled.
+The full review artifact includes:
 
 - `coverage.md` and `coverage.json`: counts and the full missing source strings.
 - `official.pot`: the template exported by DSW for this exact source KM.
@@ -41,9 +43,10 @@ the `native-dsw-review` artifact. It includes:
   stored only in their dedicated reports.
 - `failure.png`, when a browser check fails.
 
-Successful PR and manual-run artifacts are retained for 14 days, successful
-scheduled-run artifacts for 3 days, and failure diagnostics and other runs for
-7 days. See the [workflow artifact policy](workflow-templates.md).
+Review artifacts are retained for 7 days. Failed native checks retain only the
+failure screenshot, result JSON, and diagnostic Markdown reports for 3 days.
+Successful routine checks do not upload artifacts. See the
+[workflow artifact policy](workflow-templates.md).
 Screenshots check a translated chapter title and resource pages with eligible
 translations; they are not a review of every question or a hosted, interactive
 preview.
@@ -92,7 +95,8 @@ An empty, invalid or unrecognized-package POT fails the audit. Source version
 differences are reported, not treated as a reason to wait. An unset repository is reported as
 **not-configured**, never as complete coverage.
 
-Read `source-catalog/source-catalog.md` in the Actions artifact:
+Read the source-catalog job summary, or `source-catalog/source-catalog.md`
+in a requested review artifact:
 
 - **aligned**: both POTs contain the same gettext message identities.
 - **different**: the two catalogs contain different source messages. The report

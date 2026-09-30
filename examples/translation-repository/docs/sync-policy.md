@@ -84,7 +84,8 @@ first. Complete or retry the import, resolving conflicts if necessary; see the
 
 - `validate_translation_config.yml` validates repository configuration and
   scaffold state. On pull requests, it also compares the exact head and base
-  commits and uploads the GitHub translation report and a native PO preview.
+  commits and publishes a field-level job summary. Translation-changing PRs also
+  upload a native PO preview and screenshots for seven days.
   Daily native verification also compares the official DSW POT with Weblate's
   shared repository POT. Generated PO/review changes need not be committed by translators.
 - `localize_status_report.yml` reports empty entries, review-state counts, and
@@ -96,7 +97,8 @@ first. Complete or retry the import, resolving conflicts if necessary; see the
 
 The official Weblate upstream repository owns the shared POT. This repository
 does not maintain a separate canonical POT or upload new source strings.
-The `native-dsw-review` artifact includes `source-catalog/source-catalog.md`,
+The job summary includes the source comparison. On translation-changing PRs,
+or manual runs with `upload_review` enabled, `native-dsw-review` also includes `source-catalog/source-catalog.md`,
 the upstream POT snapshot and its exact commit. The audit checks the configured
 KM version and reports missing or differing sources without changing any language.
 
