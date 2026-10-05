@@ -102,9 +102,15 @@ jobs:
           --tooling-repo "$GITHUB_WORKSPACE/tooling-repo"
 
       - name: Rebuild and validate native DSW locale
-        run: >-
-          tooling-repo/.venv/bin/dsw-km-build-translation-repo
-          --repo-root "$GITHUB_WORKSPACE/translation-repo"
+        env:
+          VALIDATE_PR_OUTPUTS: ${{ github.event_name == 'pull_request' }}
+        run: |
+          args=()
+          if [[ "$VALIDATE_PR_OUTPUTS" == "true" ]]; then
+            args+=(--base-ref "base/pr-base" --head-ref "HEAD")
+          fi
+          tooling-repo/.venv/bin/dsw-km-build-translation-repo \
+            --repo-root "$GITHUB_WORKSPACE/translation-repo" "${args[@]}"
 
       - name: Upload native locale preview
         if: steps.translation-changes.outputs.has_translation_changes == 'true' || inputs.upload_review == true
@@ -122,4 +128,5 @@ jobs:
         with:
           translation-repository: ${{ github.workspace }}/translation-repo
           audit-source-catalog: "true"
+          trusted-config: ${{ github.event_name == 'pull_request' && format('{0}/pull-request-base/translation-config.yml', github.workspace) || '' }}
           upload-review: ${{ steps.translation-changes.outputs.has_translation_changes == 'true' || inputs.upload_review == true }}

@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
+from .catalog_limits import MAX_CATALOG_BYTES
+from .command import default_command_runner, make_checked_runner
 from .native_locale import validate_native_locale
 from .translation_repository_config import (
     load_translation_repository_config,
@@ -18,6 +21,46 @@ from .workflow import TranslationWorkflowService
 
 class TranslationRepositoryBuildError(RuntimeError):
     """Raised when a Git-managed translation repository cannot be rebuilt."""
+
+
+def validate_committed_locale(
+    *, repo_root: Path, final_po_path: Path, base_ref: str, head_ref: str
+) -> None:
+    """Any PO changed by a PR must be byte-identical to its rebuilt locale.
+
+    Unchanged PO files may be regenerated from Markdown during CI. This does not
+    require translators to commit generated files when editing translation blocks.
+    """
+    run = make_checked_runner(TranslationRepositoryBuildError, include_command=False)
+    path = final_po_path.relative_to(repo_root).as_posix()
+    changed = run(
+        default_command_runner,
+        ["git", "diff", "--name-only", base_ref, head_ref, "--", path],
+        cwd=repo_root,
+        description="identify committed locale changes",
+    ).stdout.strip()
+    if not changed:
+        return
+    size = run(
+        default_command_runner,
+        ["git", "cat-file", "-s", f"{head_ref}:{path}"],
+        cwd=repo_root,
+        description="check committed locale size",
+    ).stdout
+    if int(size) > MAX_CATALOG_BYTES:
+        raise TranslationRepositoryBuildError("Committed locale exceeds the 8 MiB limit")
+    committed = subprocess.run(
+        ["git", "show", "--end-of-options", f"{head_ref}:{path}"],
+        cwd=repo_root,
+        capture_output=True,
+        check=True,
+        timeout=30,
+    ).stdout
+    if committed != final_po_path.read_bytes():
+        raise TranslationRepositoryBuildError(
+            "Committed locale PO differs from its rebuild; edit translation blocks, "
+            "not builds/final_translated.po."
+        )
 
 
 @dataclass(frozen=True)

@@ -18,6 +18,30 @@ executing upstream code. It writes review artifacts only. Shared-source updates
 require an upstream PR accepted by the official maintainers; our automation does
 not upload POT files, add Weblate source strings or change component settings.
 
+## Untrusted Input Boundaries
+
+Pull-request reports download Weblate from the configuration committed at the
+accepted base revision. The upstream POT audit also uses that base configuration
+for network authority, while the candidate KM remains the context for coverage.
+Changing a download URL in a PR cannot redirect validation traffic.
+
+Catalog downloads are limited to 8 MiB and a 60-second elapsed-time budget,
+checked between reads, with a maximum 10-second blocking I/O timeout. Retries
+share the same budget. Parsing accepts at most 20,000 messages and 64 KiB per
+physical line. The POT audit downloads bounded GitHub metadata and only the
+immutable `messages.pot` blob; it does not clone the upstream repository.
+
+Disposable browser tests allow only the exact loopback client and API origins.
+External resource requests, external redirects, WebSockets and service workers
+are blocked. This protects the test runner without changing translations or
+the production DSW frontend. Chromium's local-network permission is scoped to
+the disposable client origin; target restrictions still apply to that page.
+
+A PR that changes the generated locale PO must provide bytes identical to its
+rebuild. Translation-only edits can leave the generated PO untouched. Shared
+block metadata and deletion checks always compare against the accepted base,
+even when flattened translations already match Weblate.
+
 ## Required Workflow Permissions
 
 | Workflow | GitHub permission | Secrets | Writes translations? |

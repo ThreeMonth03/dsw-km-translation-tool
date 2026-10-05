@@ -761,6 +761,7 @@ def initialize_translation_repo(workspace: Path) -> Path:
     run_git(repo, "init")
     run_git(repo, "config", "user.name", "Test User")
     run_git(repo, "config", "user.email", "test@example.invalid")
+    write_config(repo / "translation-config.yml")
     return repo
 
 
@@ -837,6 +838,8 @@ def commit_translation(
         "tree/node/_uuid.txt",
         "tree/_translation_tree.json",
     )
+    if (repo / "translation-config.yml").exists():
+        run_git(repo, "add", "translation-config.yml")
     run_git(repo, "commit", "-m", message)
     return run_git(repo, "rev-parse", "HEAD").stdout.strip()
 

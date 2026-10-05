@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -49,11 +50,29 @@ def build_argument_parser() -> argparse.ArgumentParser:
 def main() -> None:
     """Run the GitHub translation contribution report."""
 
-    args = build_argument_parser().parse_args()
+    parser = build_argument_parser()
+    args = parser.parse_args()
     repo_root = Path(args.repo_root).resolve()
-    config_path = _resolve_repo_path(repo_root, Path(args.config))
-    repository_config = load_translation_repository_config(config_path)
+    config_relative = Path(args.config)
+    if config_relative.is_absolute():
+        try:
+            config_relative = config_relative.relative_to(repo_root)
+        except ValueError:
+            parser.error("--config must name a committed path inside --repo-root")
+    if ".." in config_relative.parts:
+        parser.error("--config must name a committed path inside --repo-root")
     with TemporaryDirectory(prefix="dsw-github-translations-") as temp_dir:
+        # Network authority comes from the accepted revision, never the PR checkout.
+        config_path = Path(temp_dir) / "translation-config.yml"
+        accepted = subprocess.run(
+            ["git", "show", "--end-of-options", f"{args.base_ref}:{config_relative.as_posix()}"],
+            cwd=repo_root,
+            check=True,
+            capture_output=True,
+            timeout=30,
+        )
+        config_path.write_bytes(accepted.stdout)
+        repository_config = load_translation_repository_config(config_path)
         pull_result = pull_localize_po(
             config_path=config_path,
             repo_root=Path(temp_dir),
@@ -98,12 +117,6 @@ def main() -> None:
             "GitHub translation changes contain shared-block conflicts. "
             "Keep the canonical translation and resolve the field edits listed in the report."
         )
-
-
-def _resolve_repo_path(repo_root: Path, path: Path) -> Path:
-    if path.is_absolute():
-        return path.resolve()
-    return (repo_root / path).resolve()
 
 
 if __name__ == "__main__":

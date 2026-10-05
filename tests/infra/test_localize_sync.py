@@ -30,7 +30,8 @@ class _FakeResponse:
     """Small context-managed response used by downloader retry tests."""
 
     def __init__(self, payload: bytes) -> None:
-        self._payload = payload
+        self._payload = io.BytesIO(payload)
+        self.headers = {}
 
     def __enter__(self):
         return self
@@ -38,8 +39,8 @@ class _FakeResponse:
     def __exit__(self, _exc_type, _exc, _traceback) -> bool:
         return False
 
-    def read(self) -> bytes:
-        return self._payload
+    def read1(self, size: int) -> bytes:
+        return self._payload.read(size)
 
 
 @pytest.mark.parametrize("payload", [b"", b"<html>Unavailable</html>", b'msgid ""\nmsgstr ""\n'])
@@ -91,7 +92,7 @@ class _SequenceOpener:
         self.calls = 0
 
     def open(self, _url: str, *, timeout: int):
-        assert timeout == 60
+        assert 0 < timeout <= 10
         self.calls += 1
         outcome = self._outcomes.pop(0)
         if isinstance(outcome, BaseException):

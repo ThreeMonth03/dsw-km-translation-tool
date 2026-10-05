@@ -20,6 +20,7 @@ import yaml
 from babel.messages.pofile import read_po
 from playwright.sync_api import Error, TimeoutError, expect, sync_playwright
 
+from dsw_km_translation_tool.browser_network import install_browser_network_policy
 from dsw_km_translation_tool.locale_coverage import (
     compare_locale_coverage,
     render_locale_coverage,
@@ -130,7 +131,10 @@ def verify_resource_pages(page, client, package_uuid, candidates, language, out,
 def verify_browser(api, client, minio, km_path, po_path, package_id, source, target, out, result):
     with sync_playwright() as pw:
         browser = pw.chromium.launch()
-        context = browser.new_context(viewport={"width": 1500, "height": 1080})
+        context = browser.new_context(
+            viewport={"width": 1500, "height": 1080}, service_workers="block"
+        )
+        install_browser_network_policy(context, client=client, api=api)
         page = context.new_page()
         page.set_default_timeout(30000)
         page.on("dialog", lambda dialog: dialog.accept())

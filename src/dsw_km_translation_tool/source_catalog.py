@@ -2,13 +2,34 @@
 
 from __future__ import annotations
 
-import os
+import json
 import re
-import subprocess
-import tempfile
+import time
+import urllib.error
+import urllib.request
 from pathlib import Path
 
+from .bounded_download import DOWNLOAD_SECONDS, IO_TIMEOUT_SECONDS, read_bounded_response
+from .catalog_limits import MAX_CATALOG_BYTES, CatalogLimitError
 from .locale_coverage import LocaleCoverageError, compare_source_catalog
+
+
+class _NoRedirects(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        raise LocaleCoverageError("Public POT snapshots must not redirect")
+
+
+def _public_download(url: str, *, max_bytes: int, deadline: float) -> bytes:
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise LocaleCoverageError("Public POT snapshot exceeded its elapsed-time budget")
+    request = urllib.request.Request(url, headers={"User-Agent": "dsw-km-translation-tool"})
+    opener = urllib.request.build_opener(_NoRedirects())
+    try:
+        with opener.open(request, timeout=min(IO_TIMEOUT_SECONDS, remaining)) as response:
+            return read_bounded_response(response, max_bytes=max_bytes, deadline=deadline)
+    except (urllib.error.URLError, TimeoutError, CatalogLimitError) as error:
+        raise LocaleCoverageError("Could not read the bounded public POT snapshot") from error
 
 
 def snapshot_upstream_pot(repository: str, destination: Path) -> tuple[str, str]:
@@ -25,35 +46,24 @@ def snapshot_upstream_pot(repository: str, destination: Path) -> tuple[str, str]
     if not match:
         raise LocaleCoverageError("Source catalog audit requires a public HTTPS GitHub repository")
     url = f"https://github.com/{match[1]}"
-    with tempfile.TemporaryDirectory(prefix="dsw-source-catalog-") as temp:
-        command = ["git", "-c", "credential.helper=", "-c", "core.hooksPath=/dev/null"]
-        env = {
-            **os.environ,
-            "GIT_TERMINAL_PROMPT": "0",
-            "GIT_ASKPASS": "/bin/false",
-            "GIT_CONFIG_GLOBAL": "/dev/null",
-            "GIT_CONFIG_NOSYSTEM": "1",
-            "GIT_CONFIG_COUNT": "0",
-        }
-
-        def git(*args: str) -> bytes:
-            try:
-                return subprocess.run(
-                    [*command, *args],
-                    env=env,
-                    check=True,
-                    capture_output=True,
-                    timeout=60,
-                ).stdout
-            except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
-                raise LocaleCoverageError(
-                    "Could not read the public upstream POT snapshot"
-                ) from error
-
-        clone = str(Path(temp) / "upstream.git")
-        git("clone", "--bare", "--depth=1", "--", url, clone)
-        commit = git("--git-dir", clone, "rev-parse", "HEAD").decode().strip()
-        content = git("--git-dir", clone, "show", f"{commit}:messages.pot")
+    deadline = time.monotonic() + DOWNLOAD_SECONDS
+    metadata = _public_download(
+        f"https://api.github.com/repos/{match[1]}/commits?per_page=1",
+        max_bytes=1024 * 1024,
+        deadline=deadline,
+    )
+    try:
+        commits = json.loads(metadata)
+        commit = commits[0]["sha"]
+        if not isinstance(commit, str) or not re.fullmatch(r"[0-9a-f]{40}", commit):
+            raise ValueError("Invalid commit")
+    except (ValueError, KeyError, IndexError, TypeError) as error:
+        raise LocaleCoverageError("Public GitHub response did not identify a commit") from error
+    content = _public_download(
+        f"https://raw.githubusercontent.com/{match[1]}/{commit}/messages.pot",
+        max_bytes=MAX_CATALOG_BYTES,
+        deadline=deadline,
+    )
     destination.write_bytes(content)
     return commit, f"{url}/blob/{commit}/messages.pot"
 

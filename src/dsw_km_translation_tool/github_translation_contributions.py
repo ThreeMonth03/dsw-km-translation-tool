@@ -191,30 +191,15 @@ def build_github_translation_report(
     upstream_mirror = _matches_catalog(head_entries, weblate_entries)
     shared = resolve_shared_block_translations(
         repo_root=repo_root,
-        base_ref=head_ref if upstream_mirror else base_ref,
+        base_ref=base_ref,
         head_ref=head_ref,
-        base_targets={
-            key: entry.target
-            for key, entry in (head_entries if upstream_mirror else base_entries).items()
-        },
+        base_targets={key: entry.target for key, entry in base_entries.items()},
         head_targets={key: entry.target for key, entry in head_entries.items()},
         tree_path=tree_path,
         target_lang=target_lang,
         runner=runner,
     )
     base_targets = shared.base_targets
-    if upstream_mirror:
-        # Accepted canonical text may not yet be expanded into the base tree.
-        base_targets = resolve_shared_block_translations(
-            repo_root=repo_root,
-            base_ref=base_ref,
-            head_ref=base_ref,
-            base_targets={key: entry.target for key, entry in base_entries.items()},
-            head_targets={key: entry.target for key, entry in base_entries.items()},
-            tree_path=tree_path,
-            target_lang=target_lang,
-            runner=runner,
-        ).head_targets
     base_entries = {
         key: replace(entry, target=base_targets[key]) for key, entry in base_entries.items()
     }

@@ -96,6 +96,19 @@ Use a new output directory. The command reads the public upstream repository
 configured by `localize.repository` and writes a snapshot and reports only.
 It does not upload to Weblate, edit translations or create a pull request.
 Source differences produce warnings; invalid inputs and download failures fail.
+For PR checks, pass `--trusted-config /path/to/accepted-base/translation-config.yml`
+so the candidate configuration cannot choose the download source.
+
+Rebuild a PR while checking any changed generated PO against its committed bytes:
+
+```shell
+.venv/bin/dsw-km-build-translation-repo \
+  --repo-root /path/to/translation-repo \
+  --base-ref origin/master --head-ref HEAD
+```
+
+Supply both Git refs or neither. A changed generated PO must match the rebuild;
+ordinary Markdown contributions do not need to commit generated outputs.
 
 Plan a native locale release without publishing it (requires an authenticated
 GitHub CLI and a checkout containing all tags):

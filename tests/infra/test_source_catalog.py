@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import json
-import subprocess
 import sys
+import urllib.error
 
 import pytest
 import yaml
@@ -142,36 +142,39 @@ def test_snapshot_rejects_untrusted_repository_urls(tmp_path, repository):
     assert not list(tmp_path.iterdir())
 
 
-def test_snapshot_records_immutable_revision_without_checkout_or_push(tmp_path, monkeypatch):
-    commands = []
+def test_snapshot_downloads_only_bounded_metadata_and_immutable_pot(tmp_path, monkeypatch):
+    downloads = []
     commit = "a" * 40
 
-    def run(command, **kwargs):
-        commands.append(command)
-        assert kwargs["env"]["GIT_TERMINAL_PROMPT"] == "0"
-        assert kwargs["env"]["GIT_CONFIG_GLOBAL"] == "/dev/null"
-        assert kwargs["env"]["GIT_CONFIG_COUNT"] == "0"
-        assert "credential.helper=" in command
-        assert "core.hooksPath=/dev/null" in command
-        output = f"{commit}\n".encode() if "rev-parse" in command else b"POT bytes"
-        return subprocess.CompletedProcess(command, 0, stdout=output)
+    def download(url, **kwargs):
+        downloads.append((url, kwargs))
+        return json.dumps([{"sha": commit}]).encode() if "api.github.com" in url else b"POT bytes"
 
-    monkeypatch.setattr(subprocess, "run", run)
+    monkeypatch.setattr("dsw_km_translation_tool.source_catalog._public_download", download)
     path = tmp_path / "upstream.pot"
     revision, url = snapshot_upstream_pot("https://github.com/ds-wizard/dsw-root-locales.git", path)
     assert revision == commit
     assert url == f"https://github.com/ds-wizard/dsw-root-locales/blob/{commit}/messages.pot"
     assert path.read_bytes() == b"POT bytes"
-    assert len(commands) == 3
-    assert "--bare" in commands[0] and "--depth=1" in commands[0]
-    assert commands[-1][-1] == f"{commit}:messages.pot"
+    assert len(downloads) == 2
+    assert (
+        downloads[0][0]
+        == "https://api.github.com/repos/ds-wizard/dsw-root-locales/commits?per_page=1"
+    )
+    assert (
+        downloads[1][0]
+        == f"https://raw.githubusercontent.com/ds-wizard/dsw-root-locales/{commit}/messages.pot"
+    )
+    assert downloads[0][1]["max_bytes"] == 1024 * 1024
+    assert downloads[1][1]["max_bytes"] == 8 * 1024 * 1024
+    assert downloads[0][1]["deadline"] == downloads[1][1]["deadline"]
 
 
-def test_clone_error_does_not_leak_git_output(tmp_path, monkeypatch):
+def test_download_error_does_not_leak_remote_output(tmp_path, monkeypatch):
     def fail(*args, **kwargs):
-        raise subprocess.CalledProcessError(128, "git", stderr=b"private diagnostic")
+        raise urllib.error.URLError("private diagnostic")
 
-    monkeypatch.setattr(subprocess, "run", fail)
+    monkeypatch.setattr("urllib.request.OpenerDirector.open", fail)
     with pytest.raises(LocaleCoverageError, match="Could not read") as error:
         snapshot_upstream_pot("https://github.com/owner/repo", tmp_path / "upstream.pot")
     assert "private diagnostic" not in str(error.value)

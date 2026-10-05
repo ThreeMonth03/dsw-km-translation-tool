@@ -10,6 +10,7 @@ from typing import Iterable
 from babel.messages.catalog import Catalog
 from babel.messages.pofile import PoFileError, read_po
 
+from ..catalog_limits import validate_catalog_size
 from ..constants import UUID_RE
 from ..data_models import PoBlock, PoEntry, PoReference
 from .codec import PoStringCodec
@@ -53,6 +54,7 @@ class PoCatalogParser:
         into multiple translations, which a gettext catalog alone would merge.
         """
         try:
+            validate_catalog_size(text)
             catalog = read_po(StringIO(text), abort_invalid=True)
         except (PoFileError, ValueError) as error:
             raise PoCatalogError(f"Invalid gettext catalog: {error}") from error
