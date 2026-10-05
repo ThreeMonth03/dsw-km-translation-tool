@@ -5,11 +5,13 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from io import StringIO
 from pathlib import Path
 
 from babel.messages.catalog import Catalog, Message
 from babel.messages.pofile import PoFileError, read_po
 
+from .catalog_limits import MAX_CATALOG_BYTES, validate_catalog_size
 from .translation_repository_config import normalize_version
 
 
@@ -19,8 +21,10 @@ class LocaleCoverageError(ValueError):
 
 def _read_catalog(path: Path) -> Catalog:
     try:
-        with path.open(encoding="utf-8") as handle:
-            return read_po(handle, abort_invalid=True)
+        with path.open("rb") as handle:
+            text = handle.read(MAX_CATALOG_BYTES + 1).decode("utf-8")
+        validate_catalog_size(text)
+        return read_po(StringIO(text), abort_invalid=True)
     except (PoFileError, UnicodeError, ValueError) as error:
         raise LocaleCoverageError(f"Invalid gettext catalog {path.name}: {error}") from error
 

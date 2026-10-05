@@ -364,6 +364,18 @@ def test_validate_translation_config_template_is_read_only(repo_root: Path) -> N
     )
     assert workflow["on"]["workflow_dispatch"]["inputs"]["upload_review"]["default"] == "false"
     assert "name: github-translation-report" not in workflow_text
+    steps = workflow["jobs"]["validate-translation-config"]["steps"]
+    rebuild = next(
+        step for step in steps if step.get("name") == "Rebuild and validate native DSW locale"
+    )
+    assert rebuild["env"]["VALIDATE_PR_OUTPUTS"] == "${{ github.event_name == 'pull_request' }}"
+    assert 'args+=(--base-ref "base/pr-base" --head-ref "HEAD")' in rebuild["run"]
+    assert '"${args[@]}"' in rebuild["run"]
+    native = next(step for step in steps if step.get("uses", "").endswith("/native-locale"))
+    assert native["with"]["trusted-config"] == (
+        "${{ github.event_name == 'pull_request' && "
+        "format('{0}/pull-request-base/translation-config.yml', github.workspace) || '' }}"
+    )
 
 
 def test_native_locale_action_is_isolated_and_retains_failure_artifacts(
@@ -382,6 +394,16 @@ def test_native_locale_action_is_isolated_and_retains_failure_artifacts(
     assert "/*.png" not in failure["with"]["path"]
     assert "continue-on-error" not in str(action)
     assert {step.get("id") for step in action["runs"]["steps"]} >= {"verify", "audit"}
+    steps = action["runs"]["steps"]
+    network = next(
+        i for i, step in enumerate(steps) if step.get("name") == "Verify browser network isolation"
+    )
+    verify = next(i for i, step in enumerate(steps) if step.get("id") == "verify")
+    assert network < verify
+    assert steps[network]["run"] == ".venv/bin/python tests/native_locale/network_check.py"
+    audit = next(step for step in steps if step.get("id") == "audit")
+    assert audit["env"]["TRUSTED_CONFIG"] == "${{ inputs.trusted-config }}"
+    assert 'args+=(--trusted-config "$TRUSTED_CONFIG")' in audit["run"]
     compose = load_workflow_yaml(repo_root / "tests/native_locale/compose.yml")
     for service in compose["services"].values():
         assert not service["image"].endswith(":latest")

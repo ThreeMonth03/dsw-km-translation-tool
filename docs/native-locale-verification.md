@@ -89,11 +89,18 @@ language selection alone does not prove that standalone pages use that language.
 ## Source Catalog Updates
 
 The source audit reads `messages.pot` from the default branch of the public
-GitHub repository configured by `localize.repository`. It fetches a temporary
-bare snapshot without executing upstream code and records the exact commit.
+GitHub repository configured by `localize.repository`. It downloads bounded
+commit metadata and the immutable POT blob without cloning the repository or
+executing upstream code. On PRs, the repository URL comes from the accepted base.
 An empty, invalid or unrecognized-package POT fails the audit. Source version
 differences are reported, not treated as a reason to wait. An unset repository is reported as
 **not-configured**, never as complete coverage.
+
+Before DSW verification, a Chromium regression checks that images, fetches,
+redirects and WebSockets cannot reach an unapproved local HTTP server. The DSW
+review browser uses the same exact-origin policy with service workers disabled.
+External images may therefore be absent from screenshots; translations and the
+production frontend remain unchanged.
 
 Read the source-catalog job summary, or `source-catalog/source-catalog.md`
 in a requested review artifact:

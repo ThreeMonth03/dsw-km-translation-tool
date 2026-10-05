@@ -24,12 +24,20 @@ def main() -> None:
     parser.add_argument("--official-pot", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True, help="New directory for audit evidence.")
     parser.add_argument("--summary", type=Path)
+    parser.add_argument(
+        "--trusted-config",
+        type=Path,
+        help="Accepted base configuration for upstream network authority.",
+    )
     args = parser.parse_args()
     config = load_translation_repository_config(args.repo_root / "translation-config.yml")
+    trusted = (
+        load_translation_repository_config(args.trusted_config) if args.trusted_config else config
+    )
     if args.out.exists():
         parser.error("--out must not exist to avoid mixing source catalog snapshots")
     args.out.mkdir(parents=True)
-    if not config.localize.repository:
+    if not trusted.localize.repository:
         report = {"status": "not-configured"}
         summary = (
             "## Weblate upstream source catalog\n\nNot checked: localize.repository is unset.\n"
@@ -37,7 +45,7 @@ def main() -> None:
     else:
         try:
             report = audit_source_catalog(
-                repository=config.localize.repository,
+                repository=trusted.localize.repository,
                 pot_path=args.official_pot,
                 out=args.out,
                 package_id=version_paths(config).package_id,

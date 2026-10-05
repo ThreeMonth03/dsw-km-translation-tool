@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 
+from .bounded_download import DOWNLOAD_SECONDS, IO_TIMEOUT_SECONDS, read_bounded_response
 from .pending_translations import ensure_no_pending_translations
 from .po_support.parser import PoCatalogParser
 from .translation_repository_config import (
@@ -168,10 +169,14 @@ def _download_url(
         raise ValueError("max_attempts must be at least 1")
 
     trusted_opener = opener or urllib.request.build_opener(_SameOriginHttpsRedirectHandler(url))
+    deadline = time.monotonic() + DOWNLOAD_SECONDS
     for attempt in range(1, max_attempts + 1):
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError("Localize download exceeded its elapsed-time budget")
         try:
-            with trusted_opener.open(url, timeout=60) as response:
-                return response.read()
+            with trusted_opener.open(url, timeout=min(IO_TIMEOUT_SECONDS, remaining)) as response:
+                return read_bounded_response(response, deadline=deadline)
         except urllib.error.HTTPError as error:
             if not is_retryable_localize_download_error(error) or attempt == max_attempts:
                 raise
@@ -198,6 +203,8 @@ def _download_url(
                 max_attempts,
                 delay,
             )
+        if time.monotonic() + delay >= deadline:
+            raise TimeoutError("Localize download exceeded its elapsed-time budget")
         sleep(delay)
 
     raise AssertionError("Localize download retry loop exited unexpectedly")
