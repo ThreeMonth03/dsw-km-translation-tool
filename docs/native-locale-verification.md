@@ -131,7 +131,7 @@ or production credentials are needed.
 make install-dev
 .venv/bin/python -m pip install -e '.[browser]'
 .venv/bin/python -m playwright install --with-deps chromium
-.venv/bin/python tests/native_locale/check.py \
+.venv/bin/python -m tests.native_locale.check \
   --repo-root /path/to/translation-repository \
   --out /tmp/native-dsw-review
 ```
@@ -158,3 +158,8 @@ Linux/amd64 test images locally; it does not pull MinIO images from a registry.
 Updating storage requires updating the release URLs, checksums and local image
 tags together, then rerunning browser acceptance. These are isolated test
 fixtures, not production deployment images.
+
+Image preparation retries recognized temporary HTTP 5xx and network download
+errors up to three times per stage, within one five-minute budget. Containers
+start only after preparation succeeds. Invalid images, checksum failures,
+container startup and browser checks are not retried.

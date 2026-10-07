@@ -40,7 +40,7 @@ runs:
         if [[ -n "$TRANSLATION_REPOSITORY" ]]; then
           args+=(--repo-root "$TRANSLATION_REPOSITORY")
         fi
-        .venv/bin/python tests/native_locale/check.py "${args[@]}" --out "$RUNNER_TEMP/native-dsw-review"
+        .venv/bin/python -m tests.native_locale.check "${args[@]}" --out "$RUNNER_TEMP/native-dsw-review"
     - name: Audit Weblate upstream source catalog
       id: audit
       if: ${{ inputs.audit-source-catalog == 'true' }}

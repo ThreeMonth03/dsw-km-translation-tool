@@ -36,6 +36,7 @@ from dsw_km_translation_tool.translation_repository_config import (
     load_translation_repository_config,
     version_paths,
 )
+from tests.native_locale.images import prepare_images
 
 ROOT = Path(__file__).resolve().parents[2]
 COMPOSE = Path(__file__).with_name("compose.yml")
@@ -381,7 +382,8 @@ def main() -> None:
             )
 
         try:
-            compose("up", "-d")
+            prepare_images(command, env=env)
+            compose("up", "-d", "--no-build", "--pull", "never")
             result["images"] = {
                 name: service["image"]
                 for name, service in yaml.safe_load(compose_path.read_text())["services"].items()

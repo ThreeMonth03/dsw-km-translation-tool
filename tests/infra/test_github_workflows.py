@@ -431,6 +431,11 @@ def test_native_storage_builds_pinned_official_release_assets(repo_root: Path) -
         assert f"https://github.com/minio/{project}/releases/download/RELEASE." in dockerfile
     checker = (repo_root / "tests/native_locale/check.py").read_text()
     assert '"DSW_TEST_STORAGE_CONTEXT": str(COMPOSE.parent / "storage")' in checker
+    assert 'compose("up", "-d", "--no-build", "--pull", "never")' in checker
+    assert checker.index("prepare_images(command, env=env)") < checker.index('compose("up"')
+    action = load_workflow_yaml(repo_root / ".github/actions/native-locale/action.yml")
+    verify = next(step for step in action["runs"]["steps"] if step.get("id") == "verify")
+    assert ".venv/bin/python -m tests.native_locale.check" in verify["run"]
 
 
 def test_report_and_preview_artifacts_have_explicit_retention(repo_root: Path) -> None:
